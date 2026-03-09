@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#080808"/>
+<title>Moretti · Cheques</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --red:#D4000A;--red2:#A8000A;
+  --black:#080808;--dark:#0F0F0F;
+  --surf:#141414;--surf2:#1C1C1C;--surf3:#242424;
+  --brd:#222;--brd2:#2E2E2E;
+  --txt:#EFEFEF;--txt2:#8A8A8A;--txt3:#444;
+  --green-lt:#4ADE80;--amber-lt:#FCD34D;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+html,body{
+  height:100%;background:var(--black);color:var(--txt);
+  font-family:'Inter',sans-serif;font-size:15px;
+  -webkit-font-smoothing:antialiased;overflow:hidden;
+}
+
+/* ── SCREENS ──────────────────────────────────── */
+.screen{
+  position:fixed;inset:0;
+  padding-top:calc(var(--safe-top) + 0px);
+  padding-bottom:var(--safe-bot);
+  display:flex;flex-direction:column;
+  transition:transform .35s cubic-bezier(.4,0,.2,1),opacity .35s;
+}
+.screen.hidden{transform:translateY(30px);opacity:0;pointer-events:none}
+.screen.slide-left{transform:translateX(-100%);opacity:0;pointer-events:none}
+
+/* ── TOPBAR ───────────────────────────────────── */
+.topbar{
+  display:flex;align-items:center;
+  padding:12px 20px;gap:12px;
+  background:rgba(8,8,8,.95);
+  border-bottom:1px solid var(--brd);
+  flex-shrink:0;
+  backdrop-filter:blur(10px);
+}
+.topbar-back{
+  width:36px;height:36px;background:var(--surf2);
+  border:none;border-radius:50%;color:var(--txt2);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;
+}
+.topbar-back svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5}
+.topbar-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:20px;letter-spacing:.1em;flex:1;
+}
+.topbar-logo{height:22px;filter:brightness(0) invert(1)}
+
+/* ── HOME SCREEN ──────────────────────────────── */
+#homeScreen{
+  background:var(--black);
+  justify-content:space-between;
+}
+.home-hero{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:32px 24px;gap:8px;
+}
+.home-logo{
+  width:64px;height:64px;background:var(--red);
+  border-radius:16px;display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:36px;color:#fff;
+  margin-bottom:16px;
+  box-shadow:0 8px 32px rgba(212,0,10,.3);
+}
+.home-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:32px;letter-spacing:.1em;text-align:center;
+}
+.home-sub{font-size:13px;color:var(--txt3);text-align:center;letter-spacing:.04em}
+
+.home-actions{
+  padding:24px;display:flex;flex-direction:column;gap:12px;
+  flex-shrink:0;
+}
+.btn-main{
+  width:100%;padding:18px;border:none;border-radius:14px;
+  font-family:'Inter',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;gap:14px;
+  transition:.15s;text-align:left;
+}
+.btn-main.primary{background:var(--red);color:#fff}
+.btn-main.primary:active{background:var(--red2)}
+.btn-main.secondary{background:var(--surf2);color:var(--txt);border:1px solid var(--brd2)}
+.btn-main.secondary:active{background:var(--surf3)}
+.btn-main-icon{
+  width:44px;height:44px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.btn-main.primary .btn-main-icon{background:rgba(255,255,255,.15)}
+.btn-main.secondary .btn-main-icon{background:var(--surf3)}
+.btn-main-icon svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn-main-text{flex:1}
+.btn-main-label{font-size:15px;font-weight:700;display:block}
+.btn-main-hint{font-size:12px;opacity:.6;font-weight:400;display:block;margin-top:2px}
+
+/* ── SCAN SCREEN ──────────────────────────────── */
+#scanScreen{background:var(--black)}
+.scan-body{flex:1;overflow-y:auto;padding:20px}
+
+.scan-zone{
+  border:2px dashed var(--brd2);border-radius:16px;
+  padding:40px 24px;text-align:center;
+  cursor:pointer;transition:.2s;position:relative;
+  margin-bottom:16px;
+}
+.scan-zone.active{border-color:var(--red);background:rgba(212,0,10,.05)}
+.scan-zone input{display:none}
+.scan-zone-icon{
+  width:72px;height:72px;border-radius:20px;
+  background:var(--surf2);border:1px solid var(--brd2);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;
+}
+.scan-zone-icon svg{width:32px;height:32px;stroke:var(--txt2);fill:none;stroke-width:1.5}
+.scan-zone h3{font-size:17px;font-weight:700;margin-bottom:6px}
+.scan-zone p{font-size:13px;color:var(--txt2)}
+.scan-zone .hint{
+  display:inline-flex;align-items:center;gap:6px;
+  margin-top:14px;padding:6px 14px;border-radius:20px;
+  background:var(--surf2);border:1px solid var(--brd);
+  font-size:11px;font-weight:600;color:var(--txt3);
+}
+
+/* SCANNING STATE */
+.scanning-overlay{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:40px 24px;gap:16px;
+}
+.scan-spinner{
+  width:56px;height:56px;border:3px solid var(--brd2);
+  border-top-color:var(--red);border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.scan-spinner-label{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:22px;letter-spacing:.15em;color:var(--txt2);
+}
+.scan-dots span{
+  display:inline-block;width:6px;height:6px;
+  border-radius:50%;background:var(--red);margin:0 3px;
+  animation:dot .9s ease infinite;
+}
+.scan-dots span:nth-child(2){animation-delay:.2s}
+.scan-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,80%,100%{transform:scale(.6);opacity:.3}40%{transform:scale(1);opacity:1}}
+
+/* PREVIEW IMAGE */
+.preview-img{
+  width:100%;border-radius:12px;border:1px solid var(--brd);
+  margin-bottom:16px;max-height:200px;object-fit:cover;
+}
+
+/* ── FORM SCREEN ──────────────────────────────── */
+#formScreen{background:var(--black)}
+.form-body{flex:1;overflow-y:auto;padding:20px;padding-bottom:100px}
+
+.ai-banner{
+  background:rgba(212,0,10,.08);border:1px solid rgba(212,0,10,.2);
+  border-radius:12px;padding:14px 16px;margin-bottom:20px;
+  display:flex;align-items:center;gap:10px;
+}
+.ai-banner svg{width:18px;height:18px;stroke:var(--red);fill:none;stroke-width:2;flex-shrink:0}
+.ai-banner-text{font-size:12px;color:var(--txt2);line-height:1.4}
+.ai-banner-text strong{color:#fff;display:block;margin-bottom:2px}
+
+.form-section{margin-bottom:20px}
+.form-section-title{
+  font-size:9px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--txt3);
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.form-section-title::before{
+  content:'';width:3px;height:9px;background:var(--red);border-radius:2px;
+}
+.field{margin-bottom:12px}
+.field label{
+  display:block;font-size:11px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--txt3);margin-bottom:6px;
+}
+.field input,.field select{
+  width:100%;padding:14px 16px;
+  background:var(--surf2);border:1px solid var(--brd2);
+  border-radius:12px;color:var(--txt);font-size:15px;
+  font-family:'Inter',sans-serif;outline:none;
+  appearance:none;-webkit-appearance:none;
+  transition:.15s;
+}
+.field input:focus,.field select:focus{
+  border-color:var(--red);background:var(--surf3);
+}
+.field input::placeholder{color:var(--txt3)}
+.field input[readonly]{opacity:.45}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.saldo-chip{
+  background:var(--surf2);border:1px solid var(--brd);
+  border-radius:12px;padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:4px;
+}
+.saldo-chip-label{font-size:11px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em}
+.saldo-chip-val{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:28px;letter-spacing:.04em;
+}
+.saldo-chip-val.debt{color:var(--red)}
+.saldo-chip-val.ok{color:var(--green-lt)}
+
+/* BOTTOM BAR */
+.bottom-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:12px 20px;
+  padding-bottom:calc(12px + var(--safe-bot));
+  background:rgba(8,8,8,.97);
+  border-top:1px solid var(--brd);
+  backdrop-filter:blur(10px);
+}
+.btn-submit{
+  width:100%;padding:16px;border:none;border-radius:14px;
+  background:var(--red);color:#fff;
+  font-family:'Inter',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  gap:8px;transition:.15s;
+}
+.btn-submit:active{background:var(--red2);transform:scale(.98)}
+.btn-submit:disabled{opacity:.4}
+.btn-submit svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5}
+
+/* ── SUCCESS SCREEN ───────────────────────────── */
+#successScreen{
+  background:var(--black);
+  align-items:center;justify-content:center;
+  padding:40px 24px;
+}
+.success-icon{
+  width:80px;height:80px;border-radius:50%;
+  background:rgba(74,222,128,.1);border:2px solid rgba(74,222,128,.3);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:20px;
+  animation:pop .4s cubic-bezier(.4,0,.2,1);
+}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.success-icon svg{width:36px;height:36px;stroke:var(--green-lt);fill:none;stroke-width:2.5}
+.success-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:36px;letter-spacing:.1em;margin-bottom:8px;
+  text-align:center;
+}
+.success-sub{font-size:14px;color:var(--txt2);text-align:center;line-height:1.5;max-width:280px}
+.success-detail{
+  margin-top:24px;background:var(--surf2);border:1px solid var(--brd);
+  border-radius:14px;padding:16px 20px;width:100%;max-width:320px;
+}
+.success-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px solid var(--brd);font-size:13px;
+}
+.success-row:last-child{border-bottom:none}
+.success-row-label{color:var(--txt3);font-weight:600}
+.success-row-val{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500}
+.success-row-val.red{color:var(--red)}
+.success-row-val.green{color:var(--green-lt)}
+.success-actions{margin-top:24px;display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px}
+
+/* ── TOAST ────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:calc(80px + var(--safe-bot));left:20px;right:20px;
+  padding:14px 18px;border-radius:12px;
+  font-size:13px;font-weight:600;z-index:999;
+  transform:translateY(20px);opacity:0;
+  transition:.25s cubic-bezier(.4,0,.2,1);pointer-events:none;
+}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.success{background:#052e16;border:1px solid rgba(74,222,128,.25);color:#86efac}
+#toast.error{background:#180000;border:1px solid rgba(212,0,10,.3);color:#f87171}
+</style>
+</head>
+<body>
+
+<!-- ── HOME ─────────────────────────────────── -->
+<div class="screen" id="homeScreen">
+  <div class="topbar">
+    <img class="topbar-logo" src="https://moretti.com.ar/wp-content/uploads/2021/08/logo-moretti-1.png" alt="Moretti"
+      onerror="this.style.display='none';document.getElementById('logoFallback').style.display='flex'"/>
+    <div id="logoFallback" style="display:none;width:32px;height:32px;background:var(--red);border-radius:6px;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:20px;color:#fff">M</div>
+    <div class="topbar-title">Tesorería · Cheques</div>
+  </div>
+
+  <div class="home-hero">
+    <div class="home-logo">M</div>
+    <div class="home-title">Registrar Cheque Rechazado</div>
+    <div class="home-sub">Moretti S.A. · Sistema de Tesorería</div>
+  </div>
+
+  <div class="home-actions">
+    <button class="btn-main primary" onclick="goScan('rechazados')">
+      <div class="btn-main-icon">
+        <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </div>
+      <div class="btn-main-text">
+        <span class="btn-main-label">Escanear con Cámara</span>
+        <span class="btn-main-hint">IA lee el comprobante automáticamente</span>
+      </div>
+      <svg style="width:18px;height:18px;stroke:rgba(255,255,255,.5);fill:none;stroke-width:2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+
+    <button class="btn-main secondary" onclick="goManual('rechazados')">
+      <div class="btn-main-icon">
+        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </div>
+      <div class="btn-main-text">
+        <span class="btn-main-label">Carga Manual</span>
+        <span class="btn-main-hint">Ingresá los datos a mano</span>
+      </div>
+      <svg style="width:18px;height:18px;stroke:var(--txt3);fill:none;stroke-width:2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+
+    <button class="btn-main secondary" onclick="goManual('cancelados')">
+      <div class="btn-main-icon" style="background:rgba(74,222,128,.08)">
+        <svg style="stroke:var(--green-lt)" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="btn-main-text">
+        <span class="btn-main-label" style="color:var(--green-lt)">Registrar Cancelado</span>
+        <span class="btn-main-hint">Cheque recuperado / cobrado</span>
+      </div>
+      <svg style="width:18px;height:18px;stroke:var(--txt3);fill:none;stroke-width:2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ── SCAN ──────────────────────────────────── -->
+<div class="screen hidden" id="scanScreen">
+  <div class="topbar">
+    <button class="topbar-back" onclick="goHome()">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="topbar-title">Escanear Comprobante</div>
+  </div>
+  <div class="scan-body" id="scanBody">
+    <div class="scan-zone" id="scanZone" onclick="document.getElementById('camInput').click()">
+      <input type="file" id="camInput" accept="image/*,application/pdf" capture="environment" onchange="handleCapture(this.files[0])"/>
+      <div class="scan-zone-icon">
+        <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </div>
+      <h3>Fotografiá el comprobante</h3>
+      <p>Apuntá la cámara al comprobante del banco<br/>o subí una imagen / PDF</p>
+      <div class="hint">
+        <svg style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        JPG · PNG · PDF
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── FORM ──────────────────────────────────── -->
+<div class="screen hidden" id="formScreen">
+  <div class="topbar">
+    <button class="topbar-back" onclick="backToScan()">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="topbar-title" id="formTitle">Nuevo Rechazado</div>
+  </div>
+  <div class="form-body" id="formBody"></div>
+  <div class="bottom-bar">
+    <button class="btn-submit" id="submitBtn" onclick="submitCheque()">
+      <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+      Guardar Cheque
+    </button>
+  </div>
+</div>
+
+<!-- ── SUCCESS ───────────────────────────────── -->
+<div class="screen hidden" id="successScreen">
+  <div class="success-icon">
+    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+  </div>
+  <div class="success-title">¡Guardado!</div>
+  <div class="success-sub" id="successSub">El cheque fue registrado correctamente en la planilla.</div>
+  <div class="success-detail" id="successDetail"></div>
+  <div class="success-actions">
+    <button class="btn-submit" onclick="goHome()">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Registrar otro
+    </button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API='https://script.google.com/macros/s/AKfycbwpf9Hvudj-Z95KcygAUO9EkrFuUwkJ8cexlxWHECcV58J9_-Q_nv4Ty2FGqpKQ19DPJg/exec';
+const MOTIVOS=['SIN FONDOS','CTA CERRADA','CUENTA EMBARGADA','MAL CONFECCIONADO','CUENTA CONCURSADA','VENCIDO','MAL ENDOSADO','CUENTA INEXISTENTE'];
+const ACCIONES=['Deposito Galicia','Deposito Nacion','Deposito Santander','Deposito Frances','Negociado Galicia','Negociado Nacion','Negociado Santander','Pago a proveedores','Efectivo','Transferencia','En gestión'];
+const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+
+let STATE={destino:'rechazados',fromAI:false,lastSaved:null};
+
+// ── NAVIGATION ──────────────────────────────────
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>{
+    s.classList.add('hidden');s.classList.remove('slide-left');
+  });
+  const el=document.getElementById(id);
+  el.classList.remove('hidden','slide-left');
+}
+
+function goHome(){show('homeScreen');}
+function goScan(dest){
+  STATE.destino=dest||'rechazados';
+  STATE.fromAI=true;
+  resetScan();
+  show('scanScreen');
+}
+function goManual(dest){
+  STATE.destino=dest||'rechazados';
+  STATE.fromAI=false;
+  buildForm({});
+  show('formScreen');
+}
+function backToScan(){
+  if(STATE.fromAI) show('scanScreen');
+  else goHome();
+}
+
+// ── SCAN ──────────────────────────────────────
+function resetScan(){
+  document.getElementById('scanBody').innerHTML=`
+    <div class="scan-zone" id="scanZone" onclick="document.getElementById('camInput').click()">
+      <input type="file" id="camInput" accept="image/*,application/pdf" capture="environment" onchange="handleCapture(this.files[0])"/>
+      <div class="scan-zone-icon">
+        <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </div>
+      <h3>Fotografiá el comprobante</h3>
+      <p>Apuntá la cámara al comprobante del banco<br/>o subí una imagen / PDF</p>
+      <div class="hint">
+        <svg style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        JPG · PNG · PDF
+      </div>
+    </div>`;
+}
+
+async function handleCapture(file){
+  if(!file)return;
+  const body=document.getElementById('scanBody');
+
+  // Show preview + scanning
+  const isPDF=file.type==='application/pdf';
+  let previewHTML='';
+  if(!isPDF){
+    const url=URL.createObjectURL(file);
+    previewHTML=`<img class="preview-img" src="${url}" alt="Comprobante"/>`;
+  }
+
+  body.innerHTML=`
+    ${previewHTML}
+    <div class="scanning-overlay">
+      <div class="scan-spinner"></div>
+      <div class="scan-spinner-label">Analizando</div>
+      <div class="scan-dots"><span></span><span></span><span></span></div>
+      <div style="font-size:12px;color:var(--txt3);text-align:center;margin-top:4px">
+        La IA está leyendo el comprobante
+      </div>
+    </div>`;
+
+  try{
+    const base64=await toBase64(file);
+    const mediaType=isPDF?'application/pdf':(file.type||'image/jpeg');
+
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{
+          role:'user',
+          content:[
+            {
+              type:isPDF?'document':'image',
+              source:{type:'base64',media_type:mediaType,data:base64}
+            },
+            {
+              type:'text',
+              text:`Sos un asistente de tesorería argentina. Analizá este comprobante de cheque rechazado y extraé los datos. Devolvé SOLO un JSON sin markdown:
+{
+  "cliente": "nombre completo del emisor",
+  "nroCheque": "número",
+  "tipo": "Electronico o Fisico",
+  "emision": "dd/mm/yyyy",
+  "vencimiento": "dd/mm/yyyy",
+  "fechaRechazo": "dd/mm/yyyy",
+  "motivo": "uno de: SIN FONDOS, CTA CERRADA, CUENTA EMBARGADA, MAL CONFECCIONADO, CUENTA CONCURSADA, VENCIDO, MAL ENDOSADO, CUENTA INEXISTENTE",
+  "importe": número sin símbolos
+}
+Si no ves un campo, usá cadena vacía o 0.`
+            }
+          ]
+        }]
+      })
+    });
+
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+
+    const txt=data.content.map(c=>c.text||'').join('');
+    const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
+
+    buildForm(parsed, true);
+    show('formScreen');
+  }catch(e){
+    body.innerHTML=`
+      ${previewHTML}
+      <div style="padding:20px;color:#f87171;font-size:13px;text-align:center;line-height:1.6">
+        ⚠ No pude leer el comprobante automáticamente.<br/>
+        <span style="color:var(--txt3)">Intentá con otra foto o cargalo manualmente.</span>
+      </div>
+      <div style="padding:0 0 16px;display:flex;gap:10px">
+        <button onclick="resetScan()" style="flex:1;padding:14px;background:var(--surf2);border:1px solid var(--brd2);border-radius:12px;color:var(--txt);font-size:14px;font-weight:600;cursor:pointer">
+          Reintentar
+        </button>
+        <button onclick="goManual('${STATE.destino}')" style="flex:1;padding:14px;background:var(--red);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:600;cursor:pointer">
+          Carga manual
+        </button>
+      </div>`;
+    toast('No pude leer el comprobante','error');
+  }
+}
+
+// ── FORM ──────────────────────────────────────
+function buildForm(d, fromAI){
+  STATE.fromAI=!!fromAI;
+  const dest=STATE.destino;
+  document.getElementById('formTitle').textContent=
+    dest==='cancelados'?'Nuevo Cancelado':'Nuevo Rechazado';
+
+  const motOpts=MOTIVOS.map(m=>`<option value="${m}" ${d.motivo===m?'selected':''}>${m}</option>`).join('');
+  const accOpts=ACCIONES.map(a=>`<option value="${a}">${a}</option>`).join('');
+
+  document.getElementById('formBody').innerHTML=`
+    ${fromAI?`<div class="ai-banner">
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      <div class="ai-banner-text">
+        <strong>Datos leídos por IA</strong>
+        Revisá y corregí si hace falta antes de guardar
+      </div>
+    </div>`:''}
+
+    <div class="form-section">
+      <div class="form-section-title">Datos del Cheque</div>
+      <div class="field">
+        <label>Cliente / Emisor</label>
+        <input type="text" id="fCliente" value="${esc(d.cliente||'')}" placeholder="Nombre del emisor" autocomplete="off"/>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>N° Cheque</label>
+          <input type="text" id="fNro" value="${esc(d.nroCheque||'')}" placeholder="28326020"/>
+        </div>
+        <div class="field">
+          <label>Tipo</label>
+          <select id="fTipo">
+            <option value="Electronico" ${d.tipo==='Electronico'||!d.tipo?'selected':''}>Electrónico</option>
+            <option value="Fisico" ${d.tipo==='Fisico'?'selected':''}>Físico</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Emisión</label>
+          <input type="date" id="fEmision" value="${toDate(d.emision||'')}"/>
+        </div>
+        <div class="field">
+          <label>Vencimiento</label>
+          <input type="date" id="fVto" value="${toDate(d.vencimiento||'')}"/>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Fecha Rechazo</label>
+          <input type="date" id="fRechazo" value="${toDate(d.fechaRechazo||'')}"/>
+        </div>
+        <div class="field">
+          <label>Motivo</label>
+          <select id="fMotivo">
+            <option value="">— Seleccionar —</option>
+            ${motOpts}
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Importe $</label>
+          <input type="number" id="fImporte" value="${d.importe||''}" placeholder="0.00" step="0.01" oninput="calcTotal()"/>
+        </div>
+        <div class="field">
+          <label>Gastos banco $</label>
+          <input type="number" id="fGastos" value="" placeholder="0.00" step="0.01" oninput="calcTotal()"/>
+        </div>
+      </div>
+      <div class="saldo-chip">
+        <div class="saldo-chip-label">Total pendiente</div>
+        <div class="saldo-chip-val debt" id="totalVal">${d.importe?'$'+Number(d.importe).toLocaleString('es-AR',{minimumFractionDigits:2}):'—'}</div>
+      </div>
+    </div>
+
+    ${dest==='cancelados'?`
+    <div class="form-section">
+      <div class="form-section-title">Cancelación</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Tipo Cancelación</label>
+          <select id="fTipoCan"><option value="">— Sin —</option>${accOpts}</select>
+        </div>
+        <div class="field">
+          <label>Importe Canc. $</label>
+          <input type="number" id="fImpCan" placeholder="0.00" step="0.01"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Fecha Cancelación</label>
+        <input type="date" id="fFechaCan"/>
+      </div>
+    </div>`:''}
+
+    <div class="form-section">
+      <div class="form-section-title">Gestión</div>
+      <div class="field">
+        <label>Acción / Detalle</label>
+        <select id="fDetalle"><option value="">— Sin acción —</option>${accOpts}</select>
+      </div>
+      <div class="field">
+        <label>Envío / Observaciones</label>
+        <input type="text" id="fEnvio" placeholder="Ej: Enviado a cobro judicial..." autocomplete="off"/>
+      </div>
+    </div>`;
+}
+
+function calcTotal(){
+  const imp=parseFloat(document.getElementById('fImporte')?.value||0)||0;
+  const gas=parseFloat(document.getElementById('fGastos')?.value||0)||0;
+  const tot=imp+gas;
+  const el=document.getElementById('totalVal');
+  if(el){
+    el.textContent=tot>0?'$'+tot.toLocaleString('es-AR',{minimumFractionDigits:2}):'—';
+    el.className='saldo-chip-val '+(tot>0?'debt':'ok');
+  }
+}
+
+// ── SUBMIT ─────────────────────────────────────
+async function submitCheque(){
+  const cliente=document.getElementById('fCliente')?.value?.trim();
+  const nro=document.getElementById('fNro')?.value?.trim();
+  const importe=parseFloat(document.getElementById('fImporte')?.value||0);
+
+  if(!cliente){toast('El cliente es obligatorio','error');return;}
+  if(!nro){toast('El N° de cheque es obligatorio','error');return;}
+  if(!importe||importe<=0){toast('El importe debe ser mayor a 0','error');return;}
+
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;
+  btn.innerHTML='<div class="scan-spinner" style="width:20px;height:20px;border-width:2px"></div> Guardando...';
+
+  const fechaRec=document.getElementById('fRechazo')?.value||'';
+  const gastos=parseFloat(document.getElementById('fGastos')?.value||0)||0;
+  const total=importe+gastos;
+  let mes='',anio='';
+  if(fechaRec){const dt=new Date(fechaRec);mes=MESES[dt.getMonth()];anio=String(dt.getFullYear());}
+
+  const dest=STATE.destino;
+  const row={
+    cliente,
+    emision:     fromDate(document.getElementById('fEmision')?.value||''),
+    vencimiento: fromDate(document.getElementById('fVto')?.value||''),
+    tipo:        document.getElementById('fTipo')?.value||'Electronico',
+    tipoLetra:   'V',
+    nroCheque:   nro,
+    fechaRechazo:fromDate(fechaRec),
+    mes,anio,
+    motivo:      document.getElementById('fMotivo')?.value||'',
+    importe,gastos,total,
+    detalle:     document.getElementById('fDetalle')?.value||'',
+    envio:       document.getElementById('fEnvio')?.value||'',
+    tipoCancelacion: document.getElementById('fTipoCan')?.value||'',
+    importeCancelacion: parseFloat(document.getElementById('fImpCan')?.value||0)||0,
+    cancelacion: fromDate(document.getElementById('fFechaCan')?.value||''),
+    pendiente:   dest==='cancelados'?0:total,
+  };
+
+  try{
+    const action=dest==='cancelados'?'agregarCancelado':'agregarRechazado';
+    const res=await fetch(API,{method:'POST',body:JSON.stringify({action,row})});
+    const r=await res.json();
+    if(!r.ok)throw new Error(r.error||'Error desconocido');
+
+    STATE.lastSaved=row;
+    showSuccess(row,dest);
+  }catch(e){
+    toast('Error: '+e.message,'error');
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg> Guardar Cheque';
+  }
+}
+
+function showSuccess(row,dest){
+  document.getElementById('successSub').textContent=
+    `Cheque N° ${row.nroCheque} registrado en ${dest.toUpperCase()}.`;
+  document.getElementById('successDetail').innerHTML=`
+    <div class="success-row">
+      <span class="success-row-label">Cliente</span>
+      <span class="success-row-val">${row.cliente}</span>
+    </div>
+    <div class="success-row">
+      <span class="success-row-label">N° Cheque</span>
+      <span class="success-row-val red">${row.nroCheque}</span>
+    </div>
+    <div class="success-row">
+      <span class="success-row-label">Motivo</span>
+      <span class="success-row-val">${row.motivo||'—'}</span>
+    </div>
+    <div class="success-row">
+      <span class="success-row-label">Importe</span>
+      <span class="success-row-val red">$${Number(row.importe).toLocaleString('es-AR',{minimumFractionDigits:2})}</span>
+    </div>
+    <div class="success-row">
+      <span class="success-row-label">Destino</span>
+      <span class="success-row-val green">${dest.toUpperCase()}</span>
+    </div>`;
+  show('successScreen');
+}
+
+// ── HELPERS ─────────────────────────────────────
+function toBase64(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result.split(',')[1]);
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+function toDate(d){if(!d)return'';const p=d.split('/');return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:d.includes('-')?d:'';}
+function fromDate(d){if(!d)return'';const p=d.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:'';}
+function esc(s){return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+let toastTimer;
+function toast(msg,type='error'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='show '+type;
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{el.classList.remove('show')},3000);
+}
+</script>
+</body>
+</html>
