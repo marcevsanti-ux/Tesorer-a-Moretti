@@ -227,28 +227,28 @@ const S = {
 };
 
 // ── INIT ─────────────────────────────────────────────
+const API = 'https://script.google.com/macros/s/AKfycbwpf9Hvudj-Z95KcygAUO9EkrFuUwkJ8cexlxWHECcV58J9_-Q_nv4Ty2FGqpKQ19DPJg/exec';
+
 window.onload = () => loadAll();
 
-function loadAll() {
+async function loadAll() {
   setSyncState('loading');
-  google.script.run
-    .withSuccessHandler(r => {
-      if (!r.ok) { setSyncState('error'); toast('Error: ' + r.error, 'error'); return; }
-      S.rechazados = r.data;
-      S.kpis = r.kpis;
-      // ahora cargar cancelados
-      google.script.run
-        .withSuccessHandler(r2 => {
-          if (r2.ok) S.cancelados = r2.data;
-          setSyncState('ok');
-          render();
-          toast('✓ ' + S.rechazados.length + ' rechazados · ' + S.cancelados.length + ' cancelados', 'success');
-        })
-        .withFailureHandler(e => { setSyncState('error'); toast('Error cancelados: ' + e.message, 'error'); })
-        .getCancelados();
-    })
-    .withFailureHandler(e => { setSyncState('error'); toast('Error: ' + e.message, 'error'); })
-    .getRechazados();
+  try {
+    const [r1, r2] = await Promise.all([
+      fetch(API + '?action=getRechazados').then(r => r.json()),
+      fetch(API + '?action=getCancelados').then(r => r.json()),
+    ]);
+    if (!r1.ok) throw new Error(r1.error);
+    S.rechazados = r1.data;
+    S.kpis = r1.kpis;
+    if (r2.ok) S.cancelados = r2.data;
+    setSyncState('ok');
+    render();
+    toast('✓ ' + S.rechazados.length + ' rechazados · ' + S.cancelados.length + ' cancelados', 'success');
+  } catch(e) {
+    setSyncState('error');
+    toast('Error: ' + e.message, 'error');
+  }
 }
 
 // ── TABS ─────────────────────────────────────────────
@@ -483,18 +483,23 @@ function saveRow(fila, imp, gas) {
     cacDev:             document.getElementById('fCac').value,
     pendiente:          imp+gas-canc,
   };
-  google.script.run
-    .withSuccessHandler(r => {
-      if (!r.ok) { toast('Error: '+r.error,'error'); btn.disabled=false; btn.textContent='Guardar'; return; }
-      const idx = S.rechazados.findIndex(r=>r.fila===fila);
-      if(idx>=0) Object.assign(S.rechazados[idx], campos);
-      S.kpis = recalcKPIs(S.rechazados);
-      closeModal();
-      toast('✓ Guardado correctamente','success');
-      render();
-    })
-    .withFailureHandler(e => { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Guardar'; })
-    .actualizarFila(fila, campos);
+  try {
+    const res = await fetch(API, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'actualizarFila', fila, campos }),
+    });
+    const r = await res.json();
+    if (!r.ok) { toast('Error: '+r.error,'error'); btn.disabled=false; btn.textContent='Guardar'; return; }
+    const idx = S.rechazados.findIndex(r=>r.fila===fila);
+    if(idx>=0) Object.assign(S.rechazados[idx], campos);
+    S.kpis = recalcKPIs(S.rechazados);
+    closeModal();
+    toast('✓ Guardado correctamente','success');
+    render();
+  } catch(e) {
+    toast('Error: '+e.message,'error');
+    btn.disabled=false; btn.textContent='Guardar';
+  }
 }
 
 function closeModal() { document.getElementById('modalOverlay').style.display='none'; }
