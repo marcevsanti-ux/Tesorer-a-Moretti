@@ -1,864 +1,430 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Tesorería · Moretti S.A.</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --red:       #D4000A;
-  --red2:      #A8000A;
-  --red-glow:  rgba(212,0,10,0.15);
-  --black:     #080808;
-  --dark:      #0F0F0F;
-  --surf:      #141414;
-  --surf2:     #1C1C1C;
-  --surf3:     #242424;
-  --brd:       #222222;
-  --brd2:      #2E2E2E;
-  --txt:       #EFEFEF;
-  --txt2:      #8A8A8A;
-  --txt3:      #444444;
-  --green:     #16A34A;
-  --green-lt:  #4ADE80;
-  --amber:     #D97706;
-  --amber-lt:  #FCD34D;
+// ============================================================
+// MORETTI S.A. · Tesorería · Sistema de Cheques Rechazados
+// v1.0.1 — 09/03/2026
+// ============================================================
+
+const SHEET_RECHAZADOS = 'RECHAZADOS';
+const SHEET_CANCELADOS = 'CANCELADOS';
+const SHEET_CONFIG     = 'CONFIG';      // Se crea automáticamente
+
+// ─── HELPER RESPONSE ─────────────────────────────────────────
+function respJSON(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
-html,body{
-  min-height:100%;
-  background:var(--black);
-  color:var(--txt);
-  font-family:'Inter',sans-serif;
-  font-size:13px;
-  -webkit-font-smoothing:antialiased;
+// ─── GET ─────────────────────────────────────────────────────
+function doGet(e) {
+  const action = e.parameter && e.parameter.action;
+  if (action === 'getRechazados') return respJSON(getRechazados());
+  if (action === 'getCancelados') return respJSON(getCancelados());
+  if (action === 'getConfig')     return respJSON(getConfig());
+  return HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('Tesorería · Moretti S.A.')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-/* ── SCROLLBAR ─────────────────────────────────── */
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:var(--dark)}
-::-webkit-scrollbar-thumb{background:var(--surf3);border-radius:2px}
-::-webkit-scrollbar-thumb:hover{background:var(--red2)}
-
-/* ── HEADER ────────────────────────────────────── */
-header{
-  position:sticky;top:0;z-index:100;
-  background:rgba(8,8,8,0.96);
-  border-bottom:1px solid var(--brd);
-  backdrop-filter:blur(12px);
-}
-.hdr{
-  max-width:1600px;margin:0 auto;
-  padding:0 28px;height:56px;
-  display:flex;align-items:center;justify-content:space-between;
-}
-.brand{display:flex;align-items:center;gap:14px}
-.brand-logo{
-  height:30px;
-  /* Logo oficial Moretti */
-}
-.brand-logo img{height:30px;width:auto;display:block;filter:brightness(0) invert(1)}
-.brand-divider{width:1px;height:24px;background:var(--brd2)}
-.brand-label{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:18px;letter-spacing:.12em;
-  color:var(--txt2);line-height:1;
-}
-.brand-label span{color:var(--red)}
-
-.hdr-right{display:flex;align-items:center;gap:6px}
-.sync-pill{
-  display:flex;align-items:center;gap:6px;
-  padding:4px 10px;border-radius:20px;
-  background:var(--surf2);border:1px solid var(--brd);
-  font-size:10px;font-weight:600;letter-spacing:.08em;
-  text-transform:uppercase;color:var(--txt3);
-  transition:.2s;
-}
-.sync-pill.ok{color:var(--green-lt);border-color:rgba(74,222,128,.15);background:rgba(22,163,74,.06)}
-.sync-pill.loading{color:var(--amber-lt);border-color:rgba(252,211,77,.1);background:rgba(217,119,6,.05)}
-.sync-pill.error{color:#f87171;border-color:rgba(212,0,10,.2);background:rgba(212,0,10,.06)}
-.sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
-.sync-pill.loading .sync-dot{animation:pulse 1.2s ease infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
-
-.icon-btn{
-  width:34px;height:34px;border:none;
-  background:transparent;color:var(--txt3);
-  cursor:pointer;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  transition:.15s;
-}
-.icon-btn:hover{background:var(--surf2);color:var(--txt)}
-.icon-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-
-/* ── NAV ───────────────────────────────────────── */
-.nav{
-  background:var(--dark);
-  border-bottom:1px solid var(--brd);
-}
-.nav-inner{
-  max-width:1600px;margin:0 auto;
-  padding:0 28px;display:flex;gap:0;
-}
-.tab{
-  padding:12px 20px;
-  font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--txt3);border:none;background:transparent;
-  cursor:pointer;position:relative;transition:.2s;
-  border-bottom:2px solid transparent;
-}
-.tab::after{
-  content:'';position:absolute;bottom:-1px;left:0;right:0;
-  height:2px;background:var(--red);
-  transform:scaleX(0);transition:.2s ease;
-}
-.tab:hover{color:var(--txt2)}
-.tab.active{color:#fff}
-.tab.active::after{transform:scaleX(1)}
-
-/* ── MAIN ──────────────────────────────────────── */
-#app{display:flex;flex-direction:column;min-height:100vh}
-main{flex:1;max-width:1600px;width:100%;margin:0 auto;padding:28px}
-
-/* ── SECTION HEADER ────────────────────────────── */
-.section-header{
-  display:flex;align-items:baseline;gap:12px;
-  margin-bottom:20px;
-}
-.section-title{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:22px;letter-spacing:.1em;color:#fff;
-}
-.section-sub{font-size:10px;font-weight:600;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase}
-
-/* ── KPI GRID ──────────────────────────────────── */
-.kpi-grid{
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:10px;margin-bottom:24px;
-}
-@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:700px){.kpi-grid{grid-template-columns:1fr 1fr}}
-
-.kpi{
-  background:var(--surf);
-  border:1px solid var(--brd);
-  border-radius:10px;padding:18px 20px;
-  position:relative;overflow:hidden;
-  transition:.2s;
-}
-.kpi:hover{border-color:var(--brd2);background:var(--surf2)}
-.kpi::after{
-  content:'';
-  position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,var(--red),transparent);
-  opacity:0;transition:.2s;
-}
-.kpi:hover::after{opacity:1}
-.kpi-label{
-  font-size:9px;font-weight:700;letter-spacing:.15em;
-  text-transform:uppercase;color:var(--txt3);margin-bottom:8px;
-}
-.kpi-val{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:30px;letter-spacing:.04em;color:#fff;line-height:1;
-}
-.kpi-val.danger{color:var(--red)}
-.kpi-val.warn{color:var(--amber-lt)}
-.kpi-val.good{color:var(--green-lt)}
-.kpi-sub{
-  font-size:10px;color:var(--txt3);margin-top:6px;
-  font-weight:500;
+// ─── POST ─────────────────────────────────────────────────────
+function doPost(e) {
+  try {
+    const body   = JSON.parse(e.postData.contents);
+    const action = body.action;
+    if (action === 'actualizarFila')      return respJSON(actualizarFila(body.fila, body.campos));
+    if (action === 'importarRechazados')  return respJSON(importarRechazados(body.rows));
+    if (action === 'guardarConfig')       return respJSON(guardarConfig(body.config));
+    return respJSON({ ok: false, error: 'Acción no reconocida: ' + action });
+  } catch(err) {
+    return respJSON({ ok: false, error: err.message });
+  }
 }
 
-/* ── CHARTS GRID ───────────────────────────────── */
-.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-@media(max-width:900px){.charts-grid{grid-template-columns:1fr}}
+// ─── LEER RECHAZADOS ─────────────────────────────────────────
+function getRechazados() {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_RECHAZADOS);
+    if (!sheet) return { ok: false, error: 'Hoja RECHAZADOS no encontrada' };
 
-.card{
-  background:var(--surf);border:1px solid var(--brd);
-  border-radius:10px;padding:20px 24px;
-}
-.card-title{
-  font-size:9px;font-weight:700;letter-spacing:.15em;
-  text-transform:uppercase;color:var(--txt3);
-  margin-bottom:18px;display:flex;align-items:center;gap:8px;
-}
-.card-title::before{
-  content:'';width:3px;height:10px;
-  background:var(--red);border-radius:2px;flex-shrink:0;
-}
+    const data = sheet.getDataRange().getValues();
+    if (data.length < 4) return { ok: true, data: [], kpis: getKPIs([]) };
 
-/* ── BARS ──────────────────────────────────────── */
-.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.bar-row:last-child{margin-bottom:0}
-.bar-lbl{
-  font-size:11px;font-weight:500;color:var(--txt2);
-  width:145px;overflow:hidden;text-overflow:ellipsis;
-  white-space:nowrap;flex-shrink:0;
-}
-.bar-track{
-  flex:1;height:6px;background:var(--surf3);
-  border-radius:3px;overflow:hidden;
-}
-.bar-fill{
-  height:100%;border-radius:3px;
-  background:var(--red);
-  transition:width .6s cubic-bezier(.4,0,.2,1);
-}
-.bar-fill.gold{background:linear-gradient(90deg,var(--amber),var(--amber-lt))}
-.bar-val{
-  font-family:'JetBrains Mono',monospace;
-  font-size:10px;font-weight:500;color:var(--txt3);
-  width:68px;text-align:right;flex-shrink:0;
-}
-
-/* ── TOOLBAR ───────────────────────────────────── */
-.toolbar{
-  display:flex;align-items:center;gap:8px;
-  margin-bottom:14px;flex-wrap:wrap;
-}
-.search-wrap{position:relative;flex:1;min-width:200px;max-width:380px}
-.search-ico{
-  position:absolute;left:10px;top:50%;transform:translateY(-50%);
-  width:13px;height:13px;color:var(--txt3);pointer-events:none;
-  stroke:currentColor;fill:none;stroke-width:2;
-  stroke-linecap:round;stroke-linejoin:round;
-}
-.search-input{
-  width:100%;padding:8px 12px 8px 30px;
-  background:var(--surf2);border:1px solid var(--brd2);
-  border-radius:8px;color:var(--txt);
-  font-size:12px;font-weight:500;
-  font-family:'Inter',sans-serif;outline:none;transition:.15s;
-}
-.search-input:focus{border-color:var(--red);background:var(--surf3)}
-.search-input::placeholder{color:var(--txt3)}
-
-.sel{
-  padding:8px 12px;background:var(--surf2);
-  border:1px solid var(--brd2);border-radius:8px;
-  color:var(--txt2);font-size:11px;font-weight:600;
-  font-family:'Inter',sans-serif;outline:none;cursor:pointer;
-  transition:.15s;
-}
-.sel:focus{border-color:var(--red)}
-
-.badge{
-  font-size:10px;font-weight:600;color:var(--txt3);
-  padding:4px 10px;background:var(--surf2);
-  border-radius:20px;border:1px solid var(--brd);
-  white-space:nowrap;
+    const rows = [];
+    for (let i = 3; i < data.length; i++) {
+      const r = data[i];
+      if (!r[0] && !r[5]) continue;
+      rows.push({
+        fila:               i + 1,
+        cliente:            String(r[0]  || '').trim(),
+        emision:            formatDate(r[1]),
+        vencimiento:        formatDate(r[2]),
+        tipo:               String(r[3]  || '').trim(),
+        tipoLetra:          String(r[4]  || '').trim(),
+        nroCheque:          String(r[5]  || '').trim(),
+        fechaRechazo:       formatDate(r[6]),
+        mes:                String(r[7]  || '').trim(),
+        anio:               String(r[8]  || '').trim(),
+        motivo:             String(r[9]  || '').trim(),
+        importe:            parseNum(r[10]),
+        gastos:             parseNum(r[11]),
+        total:              parseNum(r[12]),
+        detalle:            String(r[13] || '').trim(),
+        aviso:              formatDate(r[14]),
+        tipoCancelacion:    String(r[15] || '').trim(),
+        cancelacion:        formatDate(r[16]),
+        importeCancelacion: parseNum(r[17]),
+        pendiente:          parseNum(r[18]),
+        envio:              String(r[19] || '').trim(),
+        cacDev:             String(r[20] || '').trim(),
+        diasMora:           parseNum(r[21]),
+      });
+    }
+    return { ok: true, data: rows, kpis: getKPIs(rows), total: rows.length };
+  } catch(err) {
+    return { ok: false, error: err.message };
+  }
 }
 
-.btn-outline{
-  padding:7px 14px;background:transparent;
-  border:1px solid var(--brd2);border-radius:8px;
-  color:var(--txt3);font-size:10px;font-weight:700;
-  letter-spacing:.08em;text-transform:uppercase;
-  cursor:pointer;display:flex;align-items:center;gap:6px;
-  transition:.15s;font-family:'Inter',sans-serif;
-}
-.btn-outline:hover{border-color:var(--txt3);color:var(--txt)}
-.btn-outline svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+// ─── LEER CANCELADOS ─────────────────────────────────────────
+function getCancelados() {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_CANCELADOS);
+    if (!sheet) return { ok: true, data: [] };
 
-/* ── TABLE ─────────────────────────────────────── */
-.tbl-wrap{
-  background:var(--surf);border:1px solid var(--brd);
-  border-radius:10px;overflow:hidden;
-}
-.tbl-scroll{overflow-x:auto}
-table{width:100%;border-collapse:collapse}
-thead tr{background:var(--surf2);border-bottom:1px solid var(--brd)}
-th{
-  padding:10px 14px;text-align:left;
-  font-size:9px;font-weight:700;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--txt3);
-  white-space:nowrap;cursor:pointer;user-select:none;
-  transition:.15s;
-}
-th:hover{color:var(--txt2)}
-th.asc::after{content:' ↑';color:var(--red)}
-th.desc::after{content:' ↓';color:var(--red)}
-tbody tr{
-  border-bottom:1px solid rgba(255,255,255,.03);
-  transition:.1s;
-}
-tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:rgba(255,255,255,.02)}
-td{padding:11px 14px;vertical-align:middle}
+    const data = sheet.getDataRange().getValues();
+    if (data.length < 4) return { ok: true, data: [] };
 
-.tc-name{
-  font-weight:600;color:#fff;
-  max-width:160px;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap;
-}
-.tc-mono{
-  font-family:'JetBrains Mono',monospace;
-  font-size:11px;font-weight:500;
-}
-.tc-cheque{color:var(--red)}
-.tc-fecha{color:var(--txt2)}
-.tc-monto{text-align:right;color:var(--txt2)}
-.tc-monto.highlight{color:#fff;font-weight:600}
-.tc-pend{text-align:right;font-weight:700}
-.tc-pend.debt{color:var(--red)}
-.tc-pend.paid{color:var(--green-lt)}
-.tc-mora{text-align:right}
-.tc-detail{
-  font-size:11px;color:var(--txt3);
-  max-width:120px;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap;
-}
-.tc-act{text-align:right;width:50px}
-
-/* TAGS */
-.tag{
-  display:inline-flex;align-items:center;
-  padding:2px 7px;border-radius:4px;
-  font-size:9px;font-weight:700;letter-spacing:.06em;
-  text-transform:uppercase;white-space:nowrap;
-}
-.tag-red{background:rgba(212,0,10,.1);color:#f87171;border:1px solid rgba(212,0,10,.2)}
-.tag-blue{background:rgba(59,130,246,.1);color:#93c5fd;border:1px solid rgba(59,130,246,.15)}
-.tag-gold{background:rgba(217,119,6,.1);color:#fcd34d;border:1px solid rgba(217,119,6,.15)}
-
-/* ACTION BTN */
-.act-btn{
-  width:28px;height:28px;border:none;background:transparent;
-  color:var(--txt3);cursor:pointer;border-radius:6px;
-  display:inline-flex;align-items:center;justify-content:center;
-  transition:.15s;
-}
-.act-btn:hover{background:var(--surf3);color:#fff}
-.act-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-
-/* ── EMPTY ─────────────────────────────────────── */
-.empty{
-  padding:60px 20px;text-align:center;color:var(--txt3);
-}
-.empty svg{width:32px;height:32px;margin:0 auto 10px;display:block;stroke:currentColor;fill:none;stroke-width:1.5;opacity:.25}
-.empty p{font-size:13px;font-weight:600}
-.empty span{font-size:11px;display:block;margin-top:3px;opacity:.5}
-
-/* ── LOADING ───────────────────────────────────── */
-#loading{
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  min-height:340px;gap:16px;color:var(--txt3);
-}
-.spinner{
-  width:32px;height:32px;
-  border:2px solid var(--brd2);
-  border-top-color:var(--red);
-  border-radius:50%;
-  animation:spin .6s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-txt{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:16px;letter-spacing:.2em;color:var(--txt3);
+    const rows = [];
+    for (let i = 3; i < data.length; i++) {
+      const r = data[i];
+      if (!r[0] && !r[5]) continue;
+      rows.push({
+        fila:               i + 1,
+        cliente:            String(r[0]  || '').trim(),
+        emision:            formatDate(r[1]),
+        vencimiento:        formatDate(r[2]),
+        tipo:               String(r[3]  || '').trim(),
+        nroCheque:          String(r[5]  || '').trim(),
+        fechaRechazo:       formatDate(r[6]),
+        mes:                String(r[7]  || '').trim(),
+        anio:               String(r[8]  || '').trim(),
+        motivo:             String(r[9]  || '').trim(),
+        importe:            parseNum(r[10]),
+        gastos:             parseNum(r[11]),
+        detalle:            String(r[13] || '').trim(),
+        cancelacion:        formatDate(r[16]),
+        importeCancelacion: parseNum(r[17]),
+      });
+    }
+    return { ok: true, data: rows, total: rows.length };
+  } catch(err) {
+    return { ok: false, error: err.message };
+  }
 }
 
-/* ── MODAL ─────────────────────────────────────── */
-.overlay{
-  position:fixed;inset:0;z-index:200;
-  background:rgba(0,0,0,.85);backdrop-filter:blur(6px);
-  display:flex;align-items:center;justify-content:center;padding:16px;
-}
-.modal{
-  background:var(--surf);border:1px solid var(--brd2);
-  border-radius:12px;width:100%;max-width:500px;
-  max-height:90vh;overflow-y:auto;
-  box-shadow:0 32px 80px rgba(0,0,0,.7);
-}
-.modal-hdr{
-  padding:20px 24px 18px;
-  border-bottom:1px solid var(--brd);
-  display:flex;align-items:flex-start;justify-content:space-between;
-}
-.modal-title{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:18px;letter-spacing:.1em;color:#fff;line-height:1;
-}
-.modal-sub{
-  font-size:10px;color:var(--txt3);font-weight:600;
-  letter-spacing:.1em;text-transform:uppercase;margin-top:4px;
-}
-.modal-x{
-  width:28px;height:28px;border:none;background:transparent;
-  color:var(--txt3);cursor:pointer;border-radius:6px;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.modal-x:hover{background:var(--surf2);color:#fff}
-.modal-x svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
-.modal-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px}
-.modal-ftr{
-  padding:16px 24px;border-top:1px solid var(--brd);
-  display:flex;justify-content:flex-end;gap:8px;
+// ─── ACTUALIZAR FILA ─────────────────────────────────────────
+function actualizarFila(fila, campos) {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_RECHAZADOS);
+    if (!sheet) return { ok: false, error: 'Hoja RECHAZADOS no encontrada' };
+
+    const colMap = {
+      detalle:            14,
+      aviso:              15,
+      tipoCancelacion:    16,
+      cancelacion:        17,
+      importeCancelacion: 18,
+      pendiente:          19,
+      envio:              20,
+      cacDev:             21,
+    };
+
+    Object.entries(campos).forEach(([key, val]) => {
+      if (colMap[key]) sheet.getRange(fila, colMap[key]).setValue(val);
+    });
+
+    return { ok: true, fila };
+  } catch(err) {
+    return { ok: false, error: err.message };
+  }
 }
 
-/* FIELDS */
-.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.field label{
-  display:block;font-size:9px;font-weight:700;
-  letter-spacing:.14em;text-transform:uppercase;
-  color:var(--txt3);margin-bottom:5px;
-}
-.field input,.field select{
-  width:100%;padding:9px 12px;
-  background:var(--surf2);border:1px solid var(--brd2);
-  border-radius:7px;color:#fff;font-size:12px;font-weight:500;
-  font-family:'Inter',sans-serif;outline:none;transition:.15s;
-}
-.field input:focus,.field select:focus{border-color:var(--red);background:var(--surf3)}
-.field input::placeholder{color:var(--txt3)}
-.field input[readonly]{opacity:.45;cursor:not-allowed}
+// ─── IMPORTAR RECHAZADOS ──────────────────────────────────────
+// Recibe array de filas crudas desde el xlsx (SheetJS, header:1)
+// Columnas esperadas: igual que la planilla (fila 3 = headers, datos desde fila 4)
+// A=Cliente, B=Emisión, C=Vto, D=TIPO, E=Tipo, F=N°Cheque,
+// G=FechaRechazo, H=MES, I=AÑO, J=MOTIVO, K=Importe, L=Gastos,
+// M=Total, N=Detalle, O=Aviso, P=TipoCan, Q=Cancelacion,
+// R=ImporteCan, S=Pendiente, T=Envio, U=CAC/DEV, V=DiaMora
+function importarRechazados(rows) {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_RECHAZADOS);
+    if (!sheet) return { ok: false, error: 'Hoja RECHAZADOS no encontrada' };
 
-.saldo-box{
-  background:var(--surf2);border:1px solid var(--brd);
-  border-radius:8px;padding:14px 16px;
-  display:flex;align-items:center;justify-content:space-between;
-}
-.saldo-lbl{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--txt3)}
-.saldo-val{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:28px;letter-spacing:.04em;line-height:1;
-}
-.saldo-val.debt{color:var(--red)}
-.saldo-val.paid{color:var(--green-lt)}
+    // Encontrar primera fila vacía (después de headers en fila 3)
+    const lastRow = sheet.getLastRow();
+    let startRow  = lastRow + 1;
 
-.btn-cancel{
-  padding:9px 18px;background:transparent;
-  border:1px solid var(--brd2);border-radius:8px;
-  color:var(--txt2);font-size:11px;font-weight:600;
-  font-family:'Inter',sans-serif;cursor:pointer;transition:.15s;
-}
-.btn-cancel:hover{border-color:var(--txt3)}
-.btn-save{
-  padding:9px 22px;background:var(--red);border:none;
-  border-radius:8px;color:#fff;font-size:11px;font-weight:700;
-  letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
-  display:flex;align-items:center;gap:7px;transition:.15s;
-  font-family:'Inter',sans-serif;
-}
-.btn-save:hover{background:var(--red2)}
-.btn-save:disabled{opacity:.4;cursor:not-allowed}
-.btn-save svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+    // Verificar que no hay duplicados por N° Cheque
+    const existing = sheet.getRange(4, 6, Math.max(lastRow - 3, 1), 1).getValues().flat().map(String);
+    const duplicados = [];
+    const nuevos = rows.filter(r => {
+      const nro = String(r[5] || '').trim();
+      if (existing.includes(nro) && nro) {
+        duplicados.push(nro);
+        return false;
+      }
+      return true;
+    });
 
-/* ── TOASTS ────────────────────────────────────── */
-#toasts{position:fixed;top:18px;right:18px;z-index:999;display:flex;flex-direction:column;gap:8px}
-.toast{
-  padding:10px 16px;border-radius:8px;
-  font-size:12px;font-weight:600;max-width:300px;
-  display:flex;align-items:center;gap:8px;
-  animation:tin .2s ease;
-}
-@keyframes tin{from{transform:translateX(105%);opacity:0}to{transform:none;opacity:1}}
-.toast.success{background:#052e16;border:1px solid rgba(74,222,128,.2);color:#86efac}
-.toast.error{background:#180000;border:1px solid rgba(212,0,10,.3);color:#f87171}
-.toast.info{background:var(--surf);border:1px solid var(--brd2);color:var(--txt2)}
+    if (nuevos.length === 0) {
+      return { ok: false, error: 'Todos los cheques ya existen en la planilla. Duplicados: ' + duplicados.join(', ') };
+    }
 
-/* ── FOOTER ────────────────────────────────────── */
-footer{
-  border-top:1px solid var(--brd);
-  padding:12px 28px;
-  display:flex;align-items:center;justify-content:space-between;
-}
-.ftr-left{
-  font-size:9px;font-weight:600;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--txt3);
-}
-.ftr-right{
-  font-family:'JetBrains Mono',monospace;
-  font-size:9px;color:var(--txt3);
-}
-</style>
-</head>
-<body>
-<div id="app">
-
-<!-- HEADER -->
-<header>
-  <div class="hdr">
-    <div class="brand">
-      <img class="brand-logo" src="https://moretti.com.ar/wp-content/uploads/2021/08/logo-moretti-1.png" alt="Moretti" onerror="this.style.display='none';document.getElementById('brand-fallback').style.display='flex'"/>
-      <div id="brand-fallback" style="display:none;align-items:center;justify-content:center;width:36px;height:36px;background:var(--red);font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;border-radius:4px">M</div>
-      <div class="brand-divider"></div>
-      <div class="brand-label">Tesorería <span>·</span> Cheques</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.0.1</div>
-    </div>
-    <div class="hdr-right">
-      <div class="sync-pill loading" id="syncPill">
-        <div class="sync-dot"></div>
-        <span id="syncTxt">Cargando</span>
-      </div>
-      <button class="icon-btn" onclick="loadAll()" title="Actualizar">
-        <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-      </button>
-      <button class="icon-btn" onclick="exportCSV()" title="Exportar CSV">
-        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      </button>
-    </div>
-  </div>
-</header>
-
-<!-- NAV -->
-<nav class="nav">
-  <div class="nav-inner">
-    <button class="tab active" id="tab-dashboard"  onclick="showTab('dashboard')">Dashboard</button>
-    <button class="tab"        id="tab-rechazados" onclick="showTab('rechazados')">Rechazados</button>
-    <button class="tab"        id="tab-cancelados" onclick="showTab('cancelados')">Cancelados</button>
-  </div>
-</nav>
-
-<!-- MAIN -->
-<main id="main">
-  <div id="loading">
-    <div class="spinner"></div>
-    <div class="loading-txt">Cargando datos</div>
-  </div>
-</main>
-
-<footer>
-  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.0.1</span></div>
-  <div class="ftr-right" id="ftrDate">Última modificación: 09/03/2026</div>
-</footer>
-</div>
-
-<!-- MODAL -->
-<div class="overlay" id="overlay" style="display:none" onclick="if(event.target===this)closeModal()">
-  <div class="modal" id="modalInner"></div>
-</div>
-<div id="toasts"></div>
-
-<script>
-const S={rechazados:[],cancelados:[],kpis:null,filtered:[],tab:'dashboard',q:'',mot:'',anio:'',cli:'',sortF:'',sortD:'desc'};
-const API='https://script.google.com/macros/s/AKfycbwpf9Hvudj-Z95KcygAUO9EkrFuUwkJ8cexlxWHECcV58J9_-Q_nv4Ty2FGqpKQ19DPJg/exec';
-
-window.onload=()=>{
-  const d=new Date();
-  const el=document.getElementById('ftrDate');
-  if(el)el.textContent=d.toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  loadAll();
-};
-
-async function loadAll(){
-  setSyncState('loading');
-  try{
-    const[r1,r2]=await Promise.all([
-      fetch(API+'?action=getRechazados').then(r=>r.json()),
-      fetch(API+'?action=getCancelados').then(r=>r.json()),
+    // Escribir filas nuevas
+    const dataToWrite = nuevos.map(r => [
+      r[0]  || '',  // A Cliente
+      r[1]  || '',  // B Emisión
+      r[2]  || '',  // C Vencimiento
+      r[3]  || '',  // D TIPO
+      r[4]  || '',  // E Tipo letra
+      r[5]  || '',  // F N° Cheque
+      r[6]  || '',  // G Fecha Rechazo
+      r[7]  || '',  // H MES
+      r[8]  || '',  // I AÑO
+      r[9]  || '',  // J MOTIVO
+      parseNum(r[10]),  // K Importe
+      parseNum(r[11]),  // L Gastos
+      parseNum(r[12]),  // M Total
+      r[13] || '',  // N Detalle
+      r[14] || '',  // O Aviso
+      r[15] || '',  // P Tipo Cancelación
+      r[16] || '',  // Q Cancelación
+      parseNum(r[17]),  // R Importe Cancelación
+      parseNum(r[18]),  // S Pendiente
+      r[19] || '',  // T Envío
+      r[20] || '',  // U CAC/DEV
+      parseNum(r[21]),  // V Días Mora
     ]);
-    if(!r1.ok)throw new Error(r1.error);
-    S.rechazados=r1.data; S.kpis=r1.kpis;
-    if(r2.ok)S.cancelados=r2.data;
-    setSyncState('ok');
-    render();
-    toast('✓ '+S.rechazados.length+' rechazados · '+S.cancelados.length+' cancelados','success');
-  }catch(e){setSyncState('error');toast('Error: '+e.message,'error');}
+
+    sheet.getRange(startRow, 1, dataToWrite.length, 22).setValues(dataToWrite);
+
+    // Notificación por email si está configurado
+    const cfg = getConfig();
+    if (cfg.mailTo && cfg.onImport) {
+      enviarMailImportacion(cfg, nuevos.length, duplicados.length);
+    }
+
+    return {
+      ok: true,
+      importados: nuevos.length,
+      duplicados: duplicados.length,
+      filaInicio: startRow,
+      filaFin: startRow + nuevos.length - 1,
+    };
+  } catch(err) {
+    return { ok: false, error: err.message };
+  }
 }
 
-function showTab(t){
-  S.tab=t;S.q='';S.mot='';S.anio='';S.cli='';
-  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
-  document.getElementById('tab-'+t).classList.add('active');
-  render();
-}
-function render(){
-  if(S.tab==='dashboard')renderDashboard();
-  else if(S.tab==='rechazados')renderRechazados();
-  else renderCancelados();
-}
+// ─── CONFIGURACIÓN ───────────────────────────────────────────
+function getConfig() {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet   = ss.getSheetByName(SHEET_CONFIG);
 
-// ── DASHBOARD ────────────────────────────────────
-function renderDashboard(){
-  const k=S.kpis;if(!k)return;
-  const mots=Object.entries(k.porMotivo).sort((a,b)=>b[1].importe-a[1].importe);
-  const maxM=mots[0]?.[1].importe||1;
-  const maxC=k.topClientes[0]?.pendiente||1;
+    if (!sheet) return defaultConfig();
 
-  document.getElementById('main').innerHTML=`
-  <div class="section-header">
-    <div class="section-title">Panel General</div>
-    <div class="section-sub">Cheques rechazados 2024 — 2026</div>
-  </div>
-  <div class="kpi-grid">
-    <div class="kpi"><div class="kpi-label">Total Pendiente</div><div class="kpi-val danger">${fmt(k.totalPendiente)}</div><div class="kpi-sub">${k.cantidadActivos} cheques activos</div></div>
-    <div class="kpi"><div class="kpi-label">Importe Total</div><div class="kpi-val">${fmt(k.totalImporte)}</div><div class="kpi-sub">${k.cantidadTotal} cheques registrados</div></div>
-    <div class="kpi"><div class="kpi-label">Gastos Bancarios</div><div class="kpi-val warn">${fmt(k.totalGastos)}</div><div class="kpi-sub">Cargos acumulados</div></div>
-    <div class="kpi"><div class="kpi-label">Mora Promedio</div><div class="kpi-val ${k.moraProm>90?'danger':k.moraProm>45?'warn':'good'}">${k.moraProm>0?k.moraProm:'—'}</div><div class="kpi-sub">días promedio</div></div>
-    <div class="kpi"><div class="kpi-label">Cancelados</div><div class="kpi-val good">${S.cancelados.length}</div><div class="kpi-sub">cheques recuperados</div></div>
-  </div>
-  <div class="charts-grid">
-    <div class="card">
-      <div class="card-title">Pendiente por Motivo</div>
-      ${mots.map(([m,d])=>`<div class="bar-row">
-        <div class="bar-lbl" title="${m}">${m||'Sin motivo'}</div>
-        <div class="bar-track"><div class="bar-fill" style="width:${Math.round(d.importe/maxM*100)}%"></div></div>
-        <div class="bar-val">${fmtK(d.importe)}</div>
-      </div>`).join('')}
-    </div>
-    <div class="card">
-      <div class="card-title">Top Clientes por Deuda</div>
-      ${k.topClientes.map((c,i)=>`<div class="bar-row">
-        <div class="bar-lbl" title="${c.nombre}">${c.nombre}</div>
-        <div class="bar-track"><div class="bar-fill ${i>0?'gold':''}" style="width:${Math.round(c.pendiente/maxC*100)}%"></div></div>
-        <div class="bar-val">${fmtK(c.pendiente)}</div>
-      </div>`).join('')}
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title">Mayor Mora — Top 10</div>
-    ${miniTbl(S.rechazados.filter(r=>r.pendiente>0).sort((a,b)=>b.diasMora-a.diasMora).slice(0,10))}
-  </div>`;
+    const data = sheet.getDataRange().getValues();
+    const cfg  = defaultConfig();
+    data.forEach(row => {
+      if (row[0] && row[1] !== undefined) cfg[row[0]] = row[1];
+    });
+    return cfg;
+  } catch(e) {
+    return defaultConfig();
+  }
 }
 
-function miniTbl(rows){
-  if(!rows.length)return'<div class="empty"><p>Sin datos</p></div>';
-  return`<div class="tbl-scroll"><table>
-    <thead><tr><th>Cliente</th><th>N° Cheque</th><th>Rechazo</th><th>Motivo</th><th style="text-align:right">Pendiente</th><th style="text-align:right">Mora</th></tr></thead>
-    <tbody>${rows.map(r=>`<tr>
-      <td class="tc-name">${r.cliente}</td>
-      <td class="tc-mono tc-cheque">${r.nroCheque}</td>
-      <td class="tc-mono tc-fecha">${r.fechaRechazo}</td>
-      <td><span class="tag tag-red">${r.motivo||'—'}</span></td>
-      <td class="tc-pend tc-mono ${r.pendiente>0?'debt':'paid'}">${fmt(r.pendiente)}</td>
-      <td class="tc-mora tc-mono" style="color:${r.diasMora>90?'var(--red)':r.diasMora>45?'var(--amber-lt)':'var(--txt2)'}">${r.diasMora||'—'}</td>
-    </tr>`).join('')}</tbody></table></div>`;
-}
-
-// ── RECHAZADOS ───────────────────────────────────
-function renderRechazados(){
-  applyFilters();
-  const mots=[...new Set(S.rechazados.map(r=>r.motivo).filter(Boolean))].sort();
-  const anios=[...new Set(S.rechazados.map(r=>r.anio).filter(Boolean))].sort().reverse();
-  const clis=[...new Set(S.rechazados.map(r=>r.cliente).filter(Boolean))].sort();
-
-  document.getElementById('main').innerHTML=`
-  <div class="section-header">
-    <div class="section-title">Rechazados</div>
-    <div class="section-sub">${S.rechazados.length} registros totales</div>
-  </div>
-  <div class="toolbar">
-    <div class="search-wrap">
-      <svg class="search-ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input class="search-input" id="sInput" placeholder="Buscar cliente, cheque, motivo..." value="${S.q}" oninput="onSearch(this.value)"/>
-    </div>
-    <select class="sel" onchange="onFiltro('mot',this.value)">
-      <option value="">Todos los motivos</option>
-      ${mots.map(m=>`<option value="${m}" ${S.mot===m?'selected':''}>${m}</option>`).join('')}
-    </select>
-    <select class="sel" onchange="onFiltro('anio',this.value)">
-      <option value="">Todos los años</option>
-      ${anios.map(a=>`<option value="${a}" ${S.anio===a?'selected':''}>${a}</option>`).join('')}
-    </select>
-    <select class="sel" style="max-width:175px" onchange="onFiltro('cli',this.value)">
-      <option value="">Todos los clientes</option>
-      ${clis.map(c=>`<option value="${c}" ${S.cli===c?'selected':''}>${c}</option>`).join('')}
-    </select>
-    <span class="badge" id="cBadge">${S.filtered.length} / ${S.rechazados.length}</span>
-    <button class="btn-outline" onclick="exportCSV()">
-      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Exportar
-    </button>
-  </div>
-  <div class="tbl-wrap" id="tWrap">${renderTabla(S.filtered)}</div>`;
-}
-
-function renderTabla(rows){
-  if(!rows.length)return`<div class="empty"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>Sin resultados</p><span>Probá con otro filtro</span></div>`;
-  const sc=f=>S.sortF===f?S.sortD:'';
-  return`<div class="tbl-scroll"><table>
-    <thead><tr>
-      <th onclick="sortBy('cliente')" class="${sc('cliente')}">Cliente</th>
-      <th onclick="sortBy('nroCheque')" class="${sc('nroCheque')}">N° Cheque</th>
-      <th>Tipo</th>
-      <th onclick="sortBy('fechaRechazo')" class="${sc('fechaRechazo')}">Rechazo</th>
-      <th>Vencimiento</th>
-      <th>Motivo</th>
-      <th onclick="sortBy('importe')" class="${sc('importe')}" style="text-align:right">Importe</th>
-      <th style="text-align:right">Gastos</th>
-      <th onclick="sortBy('pendiente')" class="${sc('pendiente')}" style="text-align:right">Pendiente</th>
-      <th onclick="sortBy('diasMora')" class="${sc('diasMora')}" style="text-align:right">Mora</th>
-      <th>Detalle</th>
-      <th></th>
-    </tr></thead>
-    <tbody>${rows.map(r=>`<tr>
-      <td class="tc-name" title="${r.cliente}">${r.cliente}</td>
-      <td class="tc-mono tc-cheque">${r.nroCheque}</td>
-      <td><span class="tag ${r.tipo==='Electronico'?'tag-blue':'tag-gold'}">${r.tipo}</span></td>
-      <td class="tc-mono tc-fecha">${r.fechaRechazo}</td>
-      <td class="tc-mono tc-fecha">${r.vencimiento}</td>
-      <td><span class="tag tag-red">${r.motivo||'—'}</span></td>
-      <td class="tc-monto tc-mono">${fmt(r.importe)}</td>
-      <td class="tc-monto tc-mono" style="color:var(--amber-lt)">${r.gastos?fmt(r.gastos):'—'}</td>
-      <td class="tc-pend tc-mono ${r.pendiente>0?'debt':'paid'}">${fmt(r.pendiente)}</td>
-      <td class="tc-mora tc-mono" style="color:${r.diasMora>90?'var(--red)':r.diasMora>45?'var(--amber-lt)':'var(--txt2)'}">${r.diasMora||'—'}</td>
-      <td class="tc-detail" title="${r.detalle}">${r.detalle||'—'}</td>
-      <td class="tc-act"><button class="act-btn" onclick='openModal(${JSON.stringify(r).replace(/\\/g,"\\\\").replace(/'/g,"\\'")})'><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
-    </tr>`).join('')}</tbody></table></div>`;
-}
-
-// ── CANCELADOS ───────────────────────────────────
-function renderCancelados(){
-  document.getElementById('main').innerHTML=`
-  <div class="section-header">
-    <div class="section-title">Cancelados</div>
-    <div class="section-sub">${S.cancelados.length} cheques recuperados</div>
-  </div>
-  <div class="tbl-wrap">
-    ${!S.cancelados.length?'<div class="empty"><p>Sin datos</p></div>':`
-    <div class="tbl-scroll"><table>
-      <thead><tr><th>Cliente</th><th>N° Cheque</th><th>Tipo</th><th>Rechazo</th><th>Motivo</th><th style="text-align:right">Importe</th><th>Cancelación</th><th style="text-align:right">Importe Canc.</th></tr></thead>
-      <tbody>${S.cancelados.map(r=>`<tr>
-        <td class="tc-name">${r.cliente}</td>
-        <td class="tc-mono tc-cheque">${r.nroCheque}</td>
-        <td><span class="tag ${r.tipo==='Electronico'?'tag-blue':'tag-gold'}">${r.tipo}</span></td>
-        <td class="tc-mono tc-fecha">${r.fechaRechazo}</td>
-        <td><span class="tag tag-red">${r.motivo||'—'}</span></td>
-        <td class="tc-monto tc-mono">${fmt(r.importe)}</td>
-        <td class="tc-mono tc-fecha">${r.cancelacion||'—'}</td>
-        <td class="tc-monto tc-mono" style="color:var(--green-lt)">${r.importeCancelacion?fmt(r.importeCancelacion):'—'}</td>
-      </tr>`).join('')}</tbody></table></div>`}
-  </div>`;
-}
-
-// ── FILTROS ──────────────────────────────────────
-function applyFilters(){
-  let rows=S.rechazados;
-  if(S.q){const q=S.q.toLowerCase();rows=rows.filter(r=>[r.cliente,r.nroCheque,r.motivo,r.detalle].some(f=>f?.toLowerCase().includes(q)));}
-  if(S.mot)rows=rows.filter(r=>r.motivo===S.mot);
-  if(S.anio)rows=rows.filter(r=>r.anio===S.anio);
-  if(S.cli)rows=rows.filter(r=>r.cliente===S.cli);
-  if(S.sortF){rows=[...rows].sort((a,b)=>{const va=a[S.sortF],vb=b[S.sortF];const c=typeof va==='number'?va-vb:String(va||'').localeCompare(String(vb||''));return S.sortD==='asc'?c:-c;});}
-  S.filtered=rows;
-}
-function refreshTbl(){applyFilters();const w=document.getElementById('tWrap');if(w){w.innerHTML=renderTabla(S.filtered);document.getElementById('cBadge').textContent=S.filtered.length+' / '+S.rechazados.length;}}
-function onSearch(v){S.q=v;refreshTbl();}
-function onFiltro(k,v){S[k]=v;refreshTbl();}
-function sortBy(f){S.sortD=S.sortF===f&&S.sortD==='desc'?'asc':'desc';S.sortF=f;refreshTbl();}
-
-// ── MODAL ────────────────────────────────────────
-function openModal(row){
-  const saldo=row.importe+row.gastos-(row.importeCancelacion||0);
-  const opts=v=>['Deposito Galicia','Deposito Nacion','Deposito Santander','Pago a proveedores','Negociado Galicia','Efectivo','Transferencia','En gestión'].map(o=>`<option value="${o}" ${v===o?'selected':''}>${o}</option>`).join('');
-  document.getElementById('modalInner').innerHTML=`
-    <div class="modal-hdr">
-      <div><div class="modal-title">Actualizar Registro</div><div class="modal-sub">Cheque N° ${row.nroCheque} · ${row.cliente}</div></div>
-      <button class="modal-x" onclick="closeModal()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
-    <div class="modal-body">
-      <div class="frow">
-        <div class="field"><label>Importe Original</label><input value="${fmt(row.importe)}" readonly/></div>
-        <div class="field"><label>Gastos Bancarios</label><input value="${fmt(row.gastos)}" readonly/></div>
-      </div>
-      <div class="frow">
-        <div class="field"><label>Tipo Cancelación</label><select id="fTipo"><option value="">— Sin cancelación —</option>${opts(row.tipoCancelacion)}</select></div>
-        <div class="field"><label>Importe Cancelación</label><input type="number" id="fImporte" step="0.01" value="${row.importeCancelacion||''}" placeholder="0.00" oninput="updSaldo(${row.importe},${row.gastos})"/></div>
-      </div>
-      <div class="frow">
-        <div class="field"><label>Fecha Cancelación</label><input type="date" id="fFechaCan" value="${toDate(row.cancelacion)}"/></div>
-        <div class="field"><label>Fecha Aviso</label><input type="date" id="fAviso" value="${toDate(row.aviso)}"/></div>
-      </div>
-      <div class="field"><label>Detalle / Acción</label><select id="fDetalle"><option value="">— Sin detalle —</option>${opts(row.detalle)}</select></div>
-      <div class="frow">
-        <div class="field"><label>Envío</label><input type="text" id="fEnvio" value="${row.envio||''}" placeholder="Enviado a..."/></div>
-        <div class="field"><label>CAC / DEV</label><input type="text" id="fCac" value="${row.cacDev||''}"/></div>
-      </div>
-      <div class="saldo-box">
-        <div class="saldo-lbl">Saldo Pendiente</div>
-        <div class="saldo-val ${saldo>0?'debt':'paid'}" id="saldoVal">${fmt(saldo)}</div>
-      </div>
-    </div>
-    <div class="modal-ftr">
-      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
-      <button class="btn-save" id="btnSave" onclick="saveRow(${row.fila},${row.importe},${row.gastos})">
-        <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Guardar
-      </button>
-    </div>`;
-  document.getElementById('overlay').style.display='flex';
-}
-
-function updSaldo(imp,gas){
-  const canc=parseFloat(document.getElementById('fImporte').value)||0;
-  const s=imp+gas-canc;
-  const el=document.getElementById('saldoVal');
-  if(el){el.textContent=fmt(s);el.className='saldo-val '+(s>0?'debt':'paid');}
-}
-
-async function saveRow(fila,imp,gas){
-  const btn=document.getElementById('btnSave');
-  btn.disabled=true;btn.textContent='Guardando...';
-  const canc=parseFloat(document.getElementById('fImporte').value)||0;
-  const campos={
-    tipoCancelacion:document.getElementById('fTipo').value,
-    importeCancelacion:canc,
-    cancelacion:fromDate(document.getElementById('fFechaCan').value),
-    aviso:fromDate(document.getElementById('fAviso').value),
-    detalle:document.getElementById('fDetalle').value,
-    envio:document.getElementById('fEnvio').value,
-    cacDev:document.getElementById('fCac').value,
-    pendiente:imp+gas-canc,
+function defaultConfig() {
+  return {
+    mailTo:      '',
+    mailCC:      '',
+    mailSubject: 'Nuevo cheque rechazado — Moretti S.A.',
+    onNew:       true,
+    onImport:    false,
   };
-  try{
-    const res=await fetch(API,{method:'POST',body:JSON.stringify({action:'actualizarFila',fila,campos})});
-    const r=await res.json();
-    if(!r.ok){toast('Error: '+r.error,'error');btn.disabled=false;btn.textContent='Guardar';return;}
-    const idx=S.rechazados.findIndex(r=>r.fila===fila);
-    if(idx>=0)Object.assign(S.rechazados[idx],campos);
-    S.kpis=recalcKPIs(S.rechazados);
-    closeModal();toast('✓ Guardado','success');render();
-  }catch(e){toast('Error: '+e.message,'error');btn.disabled=false;btn.textContent='Guardar';}
-}
-function closeModal(){document.getElementById('overlay').style.display='none';}
-
-// ── KPIs LOCAL ────────────────────────────────────
-function recalcKPIs(rows){
-  const act=rows.filter(r=>r.pendiente>0);
-  const pend=act.reduce((s,r)=>s+r.pendiente,0);
-  const imp=rows.reduce((s,r)=>s+r.importe,0);
-  const gas=rows.reduce((s,r)=>s+r.gastos,0);
-  const mora=act.length?act.reduce((s,r)=>s+(r.diasMora||0),0)/act.length:0;
-  const porMotivo={};rows.forEach(r=>{if(!porMotivo[r.motivo])porMotivo[r.motivo]={cantidad:0,importe:0};porMotivo[r.motivo].cantidad++;porMotivo[r.motivo].importe+=r.pendiente;});
-  const porCliente={};rows.forEach(r=>{if(!r.cliente)return;if(!porCliente[r.cliente])porCliente[r.cliente]={cantidad:0,pendiente:0};porCliente[r.cliente].cantidad++;porCliente[r.cliente].pendiente+=r.pendiente;});
-  const topClientes=Object.entries(porCliente).map(([nombre,d])=>({nombre,...d})).sort((a,b)=>b.pendiente-a.pendiente).slice(0,8);
-  return{totalPendiente:pend,totalImporte:imp,totalGastos:gas,cantidadActivos:act.length,cantidadTotal:rows.length,moraProm:Math.round(mora),porMotivo,topClientes};
 }
 
-// ── CSV ───────────────────────────────────────────
-function exportCSV(){
-  const rows=S.tab==='cancelados'?S.cancelados:S.filtered;
-  if(!rows.length){toast('Sin datos','info');return;}
-  const h=['Cliente','N° Cheque','Tipo','Fecha Rechazo','Vencimiento','Motivo','Importe','Gastos','Pendiente','Días Mora','Detalle'];
-  const csv=[h.join(','),...rows.map(r=>['"'+r.cliente+'"',r.nroCheque,r.tipo,r.fechaRechazo,r.vencimiento,r.motivo,r.importe,r.gastos,r.pendiente,r.diasMora,'"'+(r.detalle||'')+'"'].join(','))].join('\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
-  a.download='cheques_moretti_'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click();toast('CSV exportado','success');
+function guardarConfig(config) {
+  try {
+    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet   = ss.getSheetByName(SHEET_CONFIG);
+
+    if (!sheet) {
+      sheet = ss.insertSheet(SHEET_CONFIG);
+      sheet.getRange('A1').setValue('clave');
+      sheet.getRange('B1').setValue('valor');
+    }
+
+    // Limpiar y reescribir
+    const lastRow = sheet.getLastRow();
+    if (lastRow > 1) sheet.getRange(2, 1, lastRow - 1, 2).clearContent();
+
+    const rows = Object.entries(config).map(([k, v]) => [k, v]);
+    if (rows.length > 0) sheet.getRange(2, 1, rows.length, 2).setValues(rows);
+
+    return { ok: true };
+  } catch(err) {
+    return { ok: false, error: err.message };
+  }
 }
 
-// ── HELPERS ───────────────────────────────────────
-function fmt(n){if(!n&&n!==0)return'—';return'$'+Number(n).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fmtK(n){if(!n)return'—';if(n>=1000000)return'$'+(n/1000000).toFixed(1)+'M';if(n>=1000)return'$'+(n/1000).toFixed(0)+'k';return'$'+n.toFixed(0);}
-function toDate(d){if(!d)return'';const p=d.split('/');return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:'';}
-function fromDate(d){if(!d)return'';const p=d.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:'';}
-function setSyncState(s){
-  const el=document.getElementById('syncPill'),t=document.getElementById('syncTxt');
-  if(!el)return;
-  el.className='sync-pill '+s;
-  t.textContent=s==='ok'?'Sincronizado':s==='loading'?'Cargando':'Error';
+// ─── EMAIL ───────────────────────────────────────────────────
+function enviarMailNuevoCheque(row) {
+  try {
+    const cfg = getConfig();
+    if (!cfg.mailTo || !cfg.onNew) return;
+
+    const asunto = cfg.mailSubject || 'Nuevo cheque rechazado — Moretti S.A.';
+    const cuerpo = `
+Moretti S.A. — Sistema de Tesorería
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Se registró un nuevo cheque rechazado:
+
+  Cliente:       ${row.cliente}
+  N° Cheque:     ${row.nroCheque}
+  Tipo:          ${row.tipo}
+  Fecha Rechazo: ${row.fechaRechazo}
+  Motivo:        ${row.motivo}
+  Importe:       $${Number(row.importe).toLocaleString('es-AR', {minimumFractionDigits:2})}
+  Gastos:        $${Number(row.gastos).toLocaleString('es-AR', {minimumFractionDigits:2})}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Este es un mensaje automático del Sistema de Tesorería Moretti S.A.
+    `.trim();
+
+    const opts = {};
+    if (cfg.mailCC) opts.cc = cfg.mailCC;
+
+    MailApp.sendEmail(cfg.mailTo, asunto, cuerpo, opts);
+  } catch(e) {
+    Logger.log('Error enviando mail: ' + e.message);
+  }
 }
-function toast(msg,type='info'){
-  const c=document.getElementById('toasts'),t=document.createElement('div');
-  t.className='toast '+type;t.textContent=msg;c.appendChild(t);
-  setTimeout(()=>t.remove(),3500);
+
+function enviarMailImportacion(cfg, importados, duplicados) {
+  try {
+    const asunto = 'Importación masiva — ' + importados + ' cheques · Moretti S.A.';
+    const cuerpo = `
+Moretti S.A. — Sistema de Tesorería
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Se realizó una importación masiva de cheques rechazados:
+
+  Importados:  ${importados} registros nuevos
+  Duplicados:  ${duplicados} omitidos (ya existían)
+  Fecha:       ${Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Este es un mensaje automático del Sistema de Tesorería Moretti S.A.
+    `.trim();
+
+    const opts = {};
+    if (cfg.mailCC) opts.cc = cfg.mailCC;
+
+    MailApp.sendEmail(cfg.mailTo, asunto, cuerpo, opts);
+  } catch(e) {
+    Logger.log('Error enviando mail importación: ' + e.message);
+  }
 }
-</script>
-</body>
-</html>
+
+// ─── KPIs ─────────────────────────────────────────────────────
+function getKPIs(rows) {
+  const activos        = rows.filter(r => r.pendiente > 0);
+  const totalPendiente = activos.reduce((s, r) => s + r.pendiente, 0);
+  const totalImporte   = rows.reduce((s, r) => s + r.importe, 0);
+  const totalGastos    = rows.reduce((s, r) => s + r.gastos, 0);
+  const moraProm       = activos.length
+    ? activos.reduce((s, r) => s + (r.diasMora || 0), 0) / activos.length : 0;
+
+  const porMotivo = {};
+  rows.forEach(r => {
+    if (!porMotivo[r.motivo]) porMotivo[r.motivo] = { cantidad: 0, importe: 0 };
+    porMotivo[r.motivo].cantidad++;
+    porMotivo[r.motivo].importe += r.pendiente;
+  });
+
+  const porCliente = {};
+  rows.forEach(r => {
+    if (!r.cliente) return;
+    if (!porCliente[r.cliente]) porCliente[r.cliente] = { cantidad: 0, pendiente: 0 };
+    porCliente[r.cliente].cantidad++;
+    porCliente[r.cliente].pendiente += r.pendiente;
+  });
+  const topClientes = Object.entries(porCliente)
+    .map(([nombre, d]) => ({ nombre, ...d }))
+    .sort((a, b) => b.pendiente - a.pendiente)
+    .slice(0, 8);
+
+  return {
+    totalPendiente,
+    totalImporte,
+    totalGastos,
+    cantidadActivos: activos.length,
+    cantidadTotal:   rows.length,
+    moraProm:        Math.round(moraProm),
+    porMotivo,
+    topClientes,
+  };
+}
+
+// ─── TRIGGER AUTOMÁTICO (configurar manualmente) ─────────────
+// Para activar el mail automático cuando alguien carga un cheque nuevo:
+// 1. Ir a Apps Script → Triggers (ícono del reloj)
+// 2. Agregar trigger: onEdit → hoja RECHAZADOS
+// 3. Esta función detecta si se editó col A (Cliente) en fila nueva
+function onEditTrigger(e) {
+  try {
+    const sheet = e.source.getActiveSheet();
+    if (sheet.getName() !== SHEET_RECHAZADOS) return;
+    if (e.range.getColumn() !== 1) return;         // Solo col A = Cliente
+    if (e.range.getRow() < 4) return;              // Ignorar headers
+
+    const row = sheet.getRange(e.range.getRow(), 1, 1, 22).getValues()[0];
+    if (!row[0] || !row[5]) return;                // Necesita cliente y cheque
+
+    const cfg = getConfig();
+    if (!cfg.mailTo || !cfg.onNew) return;
+
+    enviarMailNuevoCheque({
+      cliente:      String(row[0]),
+      nroCheque:    String(row[5]),
+      tipo:         String(row[3]),
+      fechaRechazo: formatDate(row[6]),
+      motivo:       String(row[9]),
+      importe:      parseNum(row[10]),
+      gastos:       parseNum(row[11]),
+    });
+  } catch(e) {
+    Logger.log('onEditTrigger error: ' + e.message);
+  }
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────
+function parseNum(v) {
+  if (v === '' || v === null || v === undefined) return 0;
+  if (typeof v === 'number') return v;
+  return parseFloat(String(v).replace(/[^0-9.-]/g, '')) || 0;
+}
+
+function formatDate(v) {
+  if (!v) return '';
+  if (v instanceof Date) {
+    return Utilities.formatDate(v, 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy');
+  }
+  return String(v).trim();
+}
