@@ -1149,6 +1149,47 @@ function renderConfig(){
       </div>
     </div>
 
+    <!-- URL MOBILE -->
+    <div class="card" style="grid-column:1/-1;border:1px solid rgba(212,0,10,.2);background:rgba(212,0,10,.04)">
+      <div class="card-title" style="color:var(--red)">URL Mobile · Escaneo desde Celular</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#fff;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;padding:12px 14px;word-break:break-all">
+            https://marcevsanti-ux.github.io/Tesorer-a-Moretti/mobile.html
+          </div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:8px">
+            Abrí esta URL desde el celu, fotografiá el comprobante y la IA carga los datos automáticamente.
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+          <a href="https://marcevsanti-ux.github.io/Tesorer-a-Moretti/mobile.html" target="_blank"
+            style="display:flex;align-items:center;gap:7px;padding:10px 16px;background:var(--red);border-radius:8px;text-decoration:none;color:#fff;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">
+            <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Abrir
+          </a>
+          <button onclick="copyMobileURL()" style="display:flex;align-items:center;gap:7px;padding:9px 16px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;color:var(--txt2);font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;font-family:'Inter',sans-serif" id="copyBtn">
+            <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copiar
+          </button>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--brd)">
+        <div id="qrWrap" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <div id="qrCode" style="width:100px;height:100px;background:var(--surf2);border:1px solid var(--brd);border-radius:8px;display:flex;align-items:center;justify-content:center">
+            <div class="spinner" style="width:20px;height:20px;border-width:2px"></div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:4px">Escaneá con la cámara del celu</div>
+            <div style="font-size:11px;color:var(--txt3)">Apuntá la cámara al QR para abrir la app mobile directamente</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:none">
+      </div>
+    </div>
+
   </div>
 
   <div style="display:flex;justify-content:flex-end;max-width:900px;margin-top:16px">
@@ -1428,6 +1469,33 @@ async function guardarNuevoCheque(){
     toast('Error: '+e.message,'error');
     btn.disabled=false;btn.textContent='Guardar';
   }
+}
+
+// ── QR & MOBILE URL ──────────────────────────────
+const MOBILE_URL='https://marcevsanti-ux.github.io/Tesorer-a-Moretti/mobile.html';
+
+function copyMobileURL(){
+  navigator.clipboard.writeText(MOBILE_URL).then(()=>{
+    const btn=document.getElementById('copyBtn');
+    if(btn){btn.innerHTML='<svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> ¡Copiado!';}
+    setTimeout(()=>{if(btn)btn.innerHTML='<svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar';},2000);
+    toast('URL copiada','success');
+  }).catch(()=>toast('No se pudo copiar','info'));
+}
+
+function renderQR(){
+  const wrap=document.getElementById('qrCode');
+  if(!wrap)return;
+  // Use QR server API
+  const encoded=encodeURIComponent(MOBILE_URL);
+  wrap.innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encoded}&bgcolor=1C1C1C&color=EFEFEF&margin=5" style="width:100px;height:100px;border-radius:6px" alt="QR Mobile"/>`;
+}
+
+// Hook into renderConfig to generate QR
+const _origRenderConfig=renderConfig;
+function renderConfig(){
+  _origRenderConfig();
+  setTimeout(renderQR,100);
 }
 
 </script>
