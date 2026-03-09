@@ -126,14 +126,34 @@ main{flex:1;max-width:1600px;width:100%;margin:0 auto;padding:28px}
 
 /* ── SECTION HEADER ────────────────────────────── */
 .section-header{
-  display:flex;align-items:baseline;gap:12px;
-  margin-bottom:20px;
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:20px;flex-wrap:wrap;
 }
 .section-title{
   font-family:'Bebas Neue',sans-serif;
   font-size:22px;letter-spacing:.1em;color:#fff;
 }
 .section-sub{font-size:10px;font-weight:600;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase}
+.btn-new{
+  display:flex;align-items:center;gap:7px;
+  padding:8px 16px;background:var(--red);border:none;
+  border-radius:8px;color:#fff;font-size:11px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
+  font-family:'Inter',sans-serif;transition:.15s;margin-left:auto;
+}
+.btn-new:hover{background:var(--red2)}
+.btn-new svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5}
+.nc-tabs{display:flex;gap:0;border-bottom:1px solid var(--brd);margin-bottom:20px}
+.nc-tab{padding:9px 16px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;transition:.15s;font-family:'Inter',sans-serif;}
+.nc-tab.active{color:#fff;border-bottom-color:var(--red)}
+.ai-drop{border:2px dashed var(--brd2);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:.2s;position:relative;}
+.ai-drop:hover,.ai-drop.drag{border-color:var(--red);background:rgba(212,0,10,.04)}
+.ai-drop input[type=file]{display:none}
+.ai-drop svg{width:32px;height:32px;stroke:var(--txt3);fill:none;stroke-width:1.5;margin:0 auto 10px;display:block}
+.ai-result{background:rgba(212,0,10,.06);border:1px solid rgba(212,0,10,.2);border-radius:8px;padding:14px 16px;margin-bottom:16px;}
+.ai-result-title{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.ai-scanning{display:flex;align-items:center;gap:12px;padding:20px;color:var(--txt2);font-size:12px;font-weight:600;}
+.ai-scanning .spinner{width:18px;height:18px;border-width:2px;flex-shrink:0}
 
 /* ── KPI GRID ──────────────────────────────────── */
 .kpi-grid{
@@ -647,6 +667,7 @@ function renderRechazados(){
   <div class="section-header">
     <div class="section-title">Rechazados</div>
     <div class="section-sub">${S.rechazados.length} registros totales</div>
+    <button class="btn-new" onclick="openNuevoCheque('rechazados')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nuevo Cheque</button>
   </div>
   <div class="toolbar">
     <div class="search-wrap">
@@ -714,6 +735,7 @@ function renderCancelados(){
   <div class="section-header">
     <div class="section-title">Cancelados</div>
     <div class="section-sub">${S.cancelados.length} cheques recuperados</div>
+    <button class="btn-new" onclick="openNuevoCheque('cancelados')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nuevo Cheque</button>
   </div>
   <div class="tbl-wrap">
     ${!S.cancelados.length?'<div class="empty"><p>Sin datos</p></div>':`
@@ -1170,6 +1192,244 @@ function toast(msg,type='info'){
   t.className='toast '+type;t.textContent=msg;c.appendChild(t);
   setTimeout(()=>t.remove(),3500);
 }
+
+// ── NUEVO CHEQUE (manual + IA) ───────────────────
+const MOTIVOS=['SIN FONDOS','CTA CERRADA','CUENTA EMBARGADA','MAL CONFECCIONADO','CUENTA CONCURSADA','VENCIDO','MAL ENDOSADO','CUENTA INEXISTENTE'];
+const ACCIONES=['Deposito Galicia','Deposito Nacion','Deposito Santander','Deposito Frances','Negociado Galicia','Negociado Nacion','Negociado Santander','Pago a proveedores','Efectivo','Transferencia','En gestión'];
+
+function openNuevoCheque(destino){
+  const d=destino||'rechazados';
+  document.getElementById('modalInner').innerHTML=`
+    <div class="modal-hdr">
+      <div><div class="modal-title">Nuevo Cheque Rechazado</div><div class="modal-sub">Carga en ${d.toUpperCase()}</div></div>
+      <button class="modal-x" onclick="closeModal()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div style="padding:0 24px">
+      <div class="nc-tabs">
+        <button class="nc-tab active" id="nct-ai" onclick="ncTab('ai')">
+          ✦ Escanear con IA
+        </button>
+        <button class="nc-tab" id="nct-manual" onclick="ncTab('manual')">
+          Carga manual
+        </button>
+      </div>
+    </div>
+    <div id="ncBody" style="padding:0 24px 24px"></div>`;
+  document.getElementById('overlay').style.display='flex';
+  ncTab('ai',d);
+}
+
+function ncTab(tab, destino){
+  document.querySelectorAll('.nc-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('nct-'+tab).classList.add('active');
+  const dest=destino||document.getElementById('ncDestino')?.value||'rechazados';
+  if(tab==='ai') renderNcAI(dest);
+  else renderNcManual(dest,{});
+}
+
+// ── IA TAB ──────────────────────────────────────
+function renderNcAI(destino){
+  document.getElementById('ncBody').innerHTML=`
+    <input type="hidden" id="ncDestino" value="${destino}"/>
+    <div class="ai-drop" id="aiDrop"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="aiHandleDrop(event)"
+      onclick="document.getElementById('aiFile').click()">
+      <input type="file" id="aiFile" accept="image/*,.pdf" onchange="aiHandleFile(this.files[0])"/>
+      <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <div style="font-size:13px;font-weight:600;color:var(--txt2)">Fotografiá o subí el comprobante del banco</div>
+      <div style="font-size:11px;color:var(--txt3);margin-top:6px">JPG, PNG o PDF · El sistema lee los datos automáticamente</div>
+    </div>
+    <div id="aiStatus"></div>`;
+}
+
+function aiHandleDrop(e){
+  e.preventDefault();
+  document.getElementById('aiDrop').classList.remove('drag');
+  const f=e.dataTransfer.files[0];
+  if(f)aiHandleFile(f);
+}
+
+async function aiHandleFile(file){
+  if(!file)return;
+  const status=document.getElementById('aiStatus');
+  status.innerHTML=`<div class="ai-scanning"><div class="spinner"></div><span>Analizando comprobante con IA...</span></div>`;
+
+  try{
+    // Convert to base64
+    const base64=await new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=()=>res(r.result.split(',')[1]);
+      r.onerror=rej;
+      r.readAsDataURL(file);
+    });
+
+    const isPDF=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
+    const mediaType=isPDF?'application/pdf':file.type||'image/jpeg';
+
+    const response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{
+          role:'user',
+          content:[
+            {
+              type: isPDF?'document':'image',
+              source:{type:'base64',media_type:mediaType,data:base64}
+            },
+            {
+              type:'text',
+              text:`Sos un asistente de tesorería argentina. Analizá este comprobante de cheque rechazado y extraé los datos en formato JSON puro, sin markdown ni texto adicional.
+
+Devolvé exactamente este JSON:
+{
+  "cliente": "nombre del emisor del cheque",
+  "nroCheque": "número de cheque",
+  "tipo": "Electronico o Fisico",
+  "emision": "dd/mm/yyyy",
+  "vencimiento": "dd/mm/yyyy",
+  "fechaRechazo": "dd/mm/yyyy",
+  "motivo": "uno de: SIN FONDOS, CTA CERRADA, CUENTA EMBARGADA, MAL CONFECCIONADO, CUENTA CONCURSADA, VENCIDO, MAL ENDOSADO, CUENTA INEXISTENTE",
+  "importe": número sin símbolos,
+  "mes": "mes en mayúsculas en español",
+  "anio": "año como string"
+}
+
+Si algún campo no está visible, usá cadena vacía o 0. Devolvé solo el JSON.`
+            }
+          ]
+        }]
+      })
+    });
+
+    const data=await response.json();
+    if(data.error)throw new Error(data.error.message);
+
+    const txt=data.content.map(c=>c.text||'').join('');
+    const clean=txt.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(clean);
+
+    const dest=document.getElementById('ncDestino')?.value||'rechazados';
+    status.innerHTML=`
+      <div class="ai-result">
+        <div class="ai-result-title">
+          <svg style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          IA identificó los datos — revisá y confirmá
+        </div>
+      </div>`;
+    renderNcManual(dest, parsed, true);
+  }catch(e){
+    status.innerHTML=`<div style="color:#f87171;font-size:12px;padding:12px 0">⚠ Error al leer: ${e.message}. Cargalo manualmente.</div>`;
+    const dest=document.getElementById('ncDestino')?.value||'rechazados';
+    renderNcManual(dest,{});
+  }
+}
+
+// ── MANUAL FORM ──────────────────────────────────
+function renderNcManual(destino, d, afterAI){
+  const wrap=afterAI?document.createElement('div'):document.getElementById('ncBody');
+  const motOpts=MOTIVOS.map(m=>`<option value="${m}" ${d.motivo===m?'selected':''}>${m}</option>`).join('');
+  const accOpts=ACCIONES.map(a=>`<option value="${a}" ${d.detalle===a?'selected':''}>${a}</option>`).join('');
+
+  const html=`
+    <input type="hidden" id="ncDestino" value="${destino}"/>
+    <div class="frow" style="${afterAI?'':'margin-top:0'}">
+      <div class="field" style="grid-column:1/-1"><label>Cliente / Emisor</label><input type="text" id="nCliente" value="${d.cliente||''}" placeholder="Nombre del emisor"/></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>N° Cheque</label><input type="text" id="nNroCheque" value="${d.nroCheque||''}" placeholder="28326020"/></div>
+      <div class="field"><label>Tipo</label><select id="nTipo"><option value="Electronico" ${d.tipo==='Electronico'?'selected':''}>Electrónico</option><option value="Fisico" ${d.tipo==='Fisico'?'selected':''}>Físico</option></select></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Fecha Emisión</label><input type="date" id="nEmision" value="${toDate(d.emision||'')}"/></div>
+      <div class="field"><label>Fecha Vencimiento</label><input type="date" id="nVencimiento" value="${toDate(d.vencimiento||'')}"/></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Fecha de Rechazo</label><input type="date" id="nFechaRechazo" value="${toDate(d.fechaRechazo||'')}"/></div>
+      <div class="field"><label>Motivo</label><select id="nMotivo"><option value="">— Seleccionar —</option>${motOpts}</select></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Importe</label><input type="number" id="nImporte" step="0.01" value="${d.importe||''}" placeholder="0.00"/></div>
+      <div class="field"><label>Gastos Bancarios</label><input type="number" id="nGastos" step="0.01" value="${d.gastos||''}" placeholder="0.00"/></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Detalle / Acción</label><select id="nDetalle"><option value="">— Sin acción —</option>${accOpts}</select></div>
+      <div class="field"><label>Envío</label><input type="text" id="nEnvio" value="${d.envio||''}" placeholder="Enviado a..."/></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--brd)">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="guardarNuevoCheque()">
+        <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+        Guardar en ${destino==='cancelados'?'CANCELADOS':'RECHAZADOS'}
+      </button>
+    </div>`;
+
+  if(afterAI){
+    wrap.innerHTML=html;
+    document.getElementById('aiStatus').appendChild(wrap);
+  } else {
+    wrap.innerHTML=`<input type="hidden" id="ncDestino" value="${destino}"/>`+html;
+  }
+}
+
+async function guardarNuevoCheque(){
+  const destino=document.getElementById('ncDestino')?.value||'rechazados';
+  const cliente=document.getElementById('nCliente')?.value?.trim();
+  const nroCheque=document.getElementById('nNroCheque')?.value?.trim();
+  const importe=parseFloat(document.getElementById('nImporte')?.value||0);
+
+  if(!cliente){toast('El cliente es obligatorio','error');return;}
+  if(!nroCheque){toast('El N° de cheque es obligatorio','error');return;}
+  if(!importe||importe<=0){toast('El importe debe ser mayor a 0','error');return;}
+
+  const btn=event.target.closest('button');
+  btn.disabled=true;btn.textContent='Guardando...';
+
+  const fechaRec=fromDate(document.getElementById('nFechaRechazo')?.value||'');
+  const gastos=parseFloat(document.getElementById('nGastos')?.value||0);
+  const total=importe+gastos;
+
+  // Calcular mes y año desde fecha rechazo
+  const meses=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  let mes='',anio='';
+  const fRec=document.getElementById('nFechaRechazo')?.value;
+  if(fRec){const dt=new Date(fRec);mes=meses[dt.getMonth()];anio=String(dt.getFullYear());}
+
+  const row={
+    cliente,
+    emision:     fromDate(document.getElementById('nEmision')?.value||''),
+    vencimiento: fromDate(document.getElementById('nVencimiento')?.value||''),
+    tipo:        document.getElementById('nTipo')?.value||'Electronico',
+    tipoLetra:   'V',
+    nroCheque,
+    fechaRechazo:fechaRec,
+    mes, anio,
+    motivo:      document.getElementById('nMotivo')?.value||'',
+    importe, gastos, total,
+    detalle:     document.getElementById('nDetalle')?.value||'',
+    envio:       document.getElementById('nEnvio')?.value||'',
+    pendiente:   total,
+  };
+
+  try{
+    const action=destino==='cancelados'?'agregarCancelado':'agregarRechazado';
+    const res=await fetch(API,{method:'POST',body:JSON.stringify({action,row})});
+    const r=await res.json();
+    if(!r.ok)throw new Error(r.error);
+    toast(`✓ Cheque ${nroCheque} guardado en ${destino.toUpperCase()}`,'success');
+    closeModal();
+    await loadAll();
+    showTab(destino);
+  }catch(e){
+    toast('Error: '+e.message,'error');
+    btn.disabled=false;btn.textContent='Guardar';
+  }
+}
+
 </script>
 </body>
 </html>
