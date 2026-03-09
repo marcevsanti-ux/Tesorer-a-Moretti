@@ -469,7 +469,7 @@ function updSaldo(imp, gas) {
   if(el){el.textContent=fmt(s);el.className='sv '+(s>0?'red':'green');}
 }
 
-function saveRow(fila, imp, gas) {
+async function saveRow(fila, imp, gas) {
   const btn = document.getElementById('btnSave');
   btn.disabled=true; btn.textContent='Guardando...';
   const canc = parseFloat(document.getElementById('fImporte').value)||0;
