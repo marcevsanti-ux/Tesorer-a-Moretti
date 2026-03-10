@@ -513,7 +513,7 @@ footer{
       <div id="brand-fallback" style="display:none;align-items:center;justify-content:center;width:36px;height:36px;background:var(--red);font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;border-radius:4px">M</div>
       <div class="brand-divider"></div>
       <div class="brand-label">Tesorería <span>·</span> Cheques</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.2.4</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.2.5</div>
     </div>
     <div class="hdr-right">
       <div class="sync-pill loading" id="syncPill">
@@ -550,7 +550,7 @@ footer{
 </main>
 
 <footer>
-  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.2.4</span></div>
+  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.2.5</span></div>
   <div class="ftr-right" id="ftrDate">Última modificación: 09/03/2026</div>
 </footer>
 </div>
@@ -713,6 +713,7 @@ function renderTabla(rows){
       <th onclick="sortBy('pendiente')" class="${sc('pendiente')}" style="text-align:right">Pendiente</th>
       <th onclick="sortBy('diasMora')" class="${sc('diasMora')}" style="text-align:right">Mora</th>
       <th>Detalle</th>
+      <th style="text-align:center">Evidencia</th>
       <th></th>
     </tr></thead>
     <tbody>${rows.map(r=>`<tr>
@@ -727,6 +728,7 @@ function renderTabla(rows){
       <td class="tc-pend tc-mono ${r.pendiente>0?'debt':'paid'}">${fmt(r.pendiente)}</td>
       <td class="tc-mora tc-mono" style="color:${r.diasMora>90?'var(--red)':r.diasMora>45?'var(--amber-lt)':'var(--txt2)'}">${r.diasMora||'—'}</td>
       <td class="tc-detail" title="${r.detalle}">${r.detalle||'—'}</td>
+      <td class="tc-act" style="text-align:center">${r.evidenciaUrl?`<a href="${r.evidenciaUrl}" target="_blank" title="Ver comprobante PDF" style="color:var(--red);text-decoration:none;font-size:18px" onclick="event.stopPropagation()">&#128196;</a>`:`<span style="color:var(--txt3);font-size:11px">—</span>`}</td>
       <td class="tc-act"><button class="act-btn" onclick='openModal(${JSON.stringify(r).replace(/\\/g,"\\\\").replace(/'/g,"\\'")})'><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
     </tr>`).join('')}</tbody></table></div>`;
 }
@@ -1121,7 +1123,7 @@ function renderConfig(){
       <div style="display:flex;flex-direction:column;gap:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
           <span style="font-size:12px;color:var(--txt2)">Versión</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.2.4</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.2.5</span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
           <span style="font-size:12px;color:var(--txt2)">Última actualización</span>
@@ -1248,6 +1250,9 @@ const MOTIVOS=['SIN FONDOS','CTA CERRADA','CUENTA EMBARGADA','MAL CONFECCIONADO'
 const ACCIONES=['Deposito Galicia','Deposito Nacion','Deposito Santander','Deposito Frances','Negociado Galicia','Negociado Nacion','Negociado Santander','Pago a proveedores','Efectivo','Transferencia','En gestión'];
 
 let _ncDest = 'rechazados';
+let _ncEvidenciaFile = null;
+let _ncEvidenciaBase64 = null;
+let _ncEvidenciaMime = null;
 
 function openNuevoCheque(destino){
   _ncDest = destino || 'rechazados';
@@ -1255,7 +1260,7 @@ function openNuevoCheque(destino){
     <div class="modal-hdr">
       <div>
         <div class="modal-title">Nuevo Cheque Rechazado</div>
-        <div class="modal-sub">Carga en ${_ncDest.toUpperCase()} <span style="background:var(--surf3);color:var(--txt3);font-size:9px;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;margin-left:6px">v1.2.4</span></div>
+        <div class="modal-sub">Carga en ${_ncDest.toUpperCase()} <span style="background:var(--surf3);color:var(--txt3);font-size:9px;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;margin-left:6px">v1.2.5</span></div>
       </div>
       <button class="modal-x" onclick="closeModal()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
@@ -1381,6 +1386,11 @@ Si el motivo dice FALTA DE FONDOS usa SIN FONDOS. Importe como numero sin simbol
         <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;flex-shrink:0" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         Datos le&#237;dos por IA &#8212; revis&#225; y guard&#225;
       </div>`;
+    // Guardar referencia del archivo para evidencia
+    _ncEvidenciaFile = file;
+    _ncEvidenciaBase64 = base64;
+    _ncEvidenciaMime = mimeType;
+
     renderNcManual(parsed, true);
 
   }catch(e){
@@ -1544,6 +1554,20 @@ async function guardarNuevoCheque(){
     if(!r.ok)throw new Error(r.error);
     closeModal();
     toast('&#10003; Cheque '+nroCheque+' guardado en '+_ncDest.toUpperCase(),'success');
+    // Subir evidencia PDF/imagen si existe
+    if(_ncEvidenciaBase64 && r.fila){
+      try{
+        await fetch(API,{method:'POST',body:JSON.stringify({
+          action:'agregarEvidencia',
+          fila:r.fila,
+          base64:_ncEvidenciaBase64,
+          mimeType:_ncEvidenciaMime||'application/pdf',
+          nombre:(_ncEvidenciaFile?.name)||'comprobante.pdf'
+        })});
+        toast('&#128206; Comprobante guardado en Drive','success');
+      }catch(ev){console.warn('Evidencia no subida:',ev);}
+      _ncEvidenciaBase64=null; _ncEvidenciaFile=null;
+    }
     await loadAll();
     showTab(_ncDest);
   }catch(e){
