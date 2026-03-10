@@ -485,43 +485,19 @@ async function handleCapture(file){
     const base64=await toBase64(file);
     const mediaType=isPDF?'application/pdf':(file.type||'image/jpeg');
 
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${localStorage.getItem('gemini_key')||''}`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        messages:[{
-          role:'user',
-          content:[
-            {
-              type:isPDF?'document':'image',
-              source:{type:'base64',media_type:mediaType,data:base64}
-            },
-            {
-              type:'text',
-              text:`Sos un asistente de tesorería argentina. Analizá este comprobante de cheque rechazado y extraé los datos. Devolvé SOLO un JSON sin markdown:
-{
-  "cliente": "nombre completo del emisor",
-  "nroCheque": "número",
-  "tipo": "Electronico o Fisico",
-  "emision": "dd/mm/yyyy",
-  "vencimiento": "dd/mm/yyyy",
-  "fechaRechazo": "dd/mm/yyyy",
-  "motivo": "uno de: SIN FONDOS, CTA CERRADA, CUENTA EMBARGADA, MAL CONFECCIONADO, CUENTA CONCURSADA, VENCIDO, MAL ENDOSADO, CUENTA INEXISTENTE",
-  "importe": número sin símbolos
-}
-Si no ves un campo, usá cadena vacía o 0.`
-            }
-          ]
-        }]
-      })
+      body:JSON.stringify({contents:[{parts:[
+        isPDF?{inlineData:{mimeType:'application/pdf',data:base64}}:{inlineData:{mimeType:mediaType,data:base64}},
+        {text:`Sos un asistente de tesorería argentina. Analizá este comprobante de cheque rechazado y extraé los datos. Devolvé SOLO un JSON sin markdown:\n{\n  "cliente": "nombre completo del emisor",\n  "nroCheque": "número",\n  "tipo": "Electronico o Fisico",\n  "emision": "dd/mm/yyyy",\n  "vencimiento": "dd/mm/yyyy",\n  "fechaRechazo": "dd/mm/yyyy",\n  "motivo": "uno de: SIN FONDOS, CTA CERRADA, CUENTA EMBARGADA, MAL CONFECCIONADO, CUENTA CONCURSADA, VENCIDO, MAL ENDOSADO, CUENTA INEXISTENTE",\n  "importe": número sin símbolos\n}\nSi no ves un campo, usá cadena vacía o 0.`}
+      ]}]})
     });
 
     const data=await res.json();
     if(data.error)throw new Error(data.error.message);
 
-    const txt=data.content.map(c=>c.text||'').join('');
+    const txt=data.candidates[0].content.parts.map(p=>p.text||'').join('');
     const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
 
     buildForm(parsed, true);
