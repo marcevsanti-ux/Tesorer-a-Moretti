@@ -513,7 +513,7 @@ footer{
       <div id="brand-fallback" style="display:none;align-items:center;justify-content:center;width:36px;height:36px;background:var(--red);font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;border-radius:4px">M</div>
       <div class="brand-divider"></div>
       <div class="brand-label">Tesorería <span>·</span> Cheques</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.1.1</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.1.2</div>
     </div>
     <div class="hdr-right">
       <div class="sync-pill loading" id="syncPill">
@@ -550,7 +550,7 @@ footer{
 </main>
 
 <footer>
-  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.1.1</span></div>
+  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.1.2</span></div>
   <div class="ftr-right" id="ftrDate">Última modificación: 09/03/2026</div>
 </footer>
 </div>
@@ -1058,7 +1058,7 @@ async function confirmarImport(rows){
 // ── CONFIGURACIÓN ─────────────────────────────────
 function renderConfig(){
   const cfg=S.config||{};
-  if(!cfg.apiKey) cfg.apiKey=localStorage.getItem('anthropic_key')||'';
+  if(!cfg.geminiKey) cfg.geminiKey=localStorage.getItem('gemini_key')||'';
   document.getElementById('main').innerHTML=`
   <div class="section-header">
     <div class="section-title">Configuración</div>
@@ -1068,11 +1068,13 @@ function renderConfig(){
 
     <!-- MAIL -->
     <div class="card" style="grid-column:1/-1">
-      <div class="card-title">&#10024; Inteligencia Artificial</div>
+      <div class="card-title">&#10024; Inteligencia Artificial · Gemini</div>
       <div class="field">
-        <label>API Key de Anthropic</label>
-        <input type="password" id="cfgApiKey" value="${cfg.apiKey||''}" placeholder="sk-ant-api03-..."/>
-        <div style="font-size:10px;color:var(--txt3);margin-top:5px">Requerida para escanear comprobantes con IA. Se guarda en tu browser.</div>
+        <label>API Key de Google Gemini <span style="color:var(--green-lt);font-size:9px;font-weight:700;margin-left:6px">GRATIS</span></label>
+        <input type="password" id="cfgGeminiKey" value="${cfg.geminiKey||localStorage.getItem('gemini_key')||''}" placeholder="AIza..."/>
+        <div style="font-size:10px;color:var(--txt3);margin-top:5px">
+          Gratis en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--red)">aistudio.google.com/app/apikey</a> &#8212; 1500 lecturas/d&#237;a.
+        </div>
       </div>
     </div>
 
@@ -1120,7 +1122,7 @@ function renderConfig(){
       <div style="display:flex;flex-direction:column;gap:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
           <span style="font-size:12px;color:var(--txt2)">Versión</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.1.1</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.1.2</span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
           <span style="font-size:12px;color:var(--txt2)">Última actualización</span>
@@ -1218,10 +1220,10 @@ async function guardarConfig(){
     mailSubject:document.getElementById('cfgMailSubject').value,
     onNew:     document.getElementById('cfgOnNew').checked,
     onImport:  document.getElementById('cfgOnImport').checked,
-    apiKey:    document.getElementById('cfgApiKey')?.value||'',
+    geminiKey: document.getElementById('cfgGeminiKey')?.value||'',
   };
   // Save API key to localStorage for IA scanning
-  if(cfg.apiKey) localStorage.setItem('anthropic_key', cfg.apiKey);
+  if(cfg.geminiKey) localStorage.setItem('gemini_key', cfg.geminiKey);
   try{
     const res=await fetch(API,{method:'POST',body:JSON.stringify({action:'guardarConfig',config:cfg})});
     const r=await res.json();
@@ -1260,7 +1262,7 @@ function openNuevoCheque(destino){
     <div class="modal-hdr">
       <div>
         <div class="modal-title">Nuevo Cheque Rechazado</div>
-        <div class="modal-sub">Carga en ${_ncDest.toUpperCase()} <span style="background:var(--surf3);color:var(--txt3);font-size:9px;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;margin-left:6px">v1.1.1</span></div>
+        <div class="modal-sub">Carga en ${_ncDest.toUpperCase()} <span style="background:var(--surf3);color:var(--txt3);font-size:9px;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;margin-left:6px">v1.1.2</span></div>
       </div>
       <button class="modal-x" onclick="closeModal()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
@@ -1331,21 +1333,21 @@ async function ncAiHandleFile(file){
 
   const isPDF=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
 
-  status.innerHTML=`
-    <div class="ai-scanning" style="margin-top:16px">
-      <div class="spinner" style="width:20px;height:20px;border-width:2px;flex-shrink:0"></div>
-      <span>La IA está leyendo el comprobante...</span>
-    </div>`;
-
-  // Check API key
-  const apiKey=S.config?.apiKey||localStorage.getItem('anthropic_key')||'';
+  // Check Gemini API key
+  const apiKey=S.config?.geminiKey||localStorage.getItem('gemini_key')||'';
   if(!apiKey){
     status.innerHTML=`<div style="margin-top:14px;padding:14px;background:rgba(212,0,10,.08);border:1px solid rgba(212,0,10,.2);border-radius:8px;font-size:12px;color:#f87171">
-      &#9888; Falta la API Key de Anthropic.<br/>
-      <span style="color:var(--txt2)">Andá a <strong>Configuraci&#243;n</strong> y cargala para usar el escaneo con IA.</span>
+      &#9888; Falta la API Key de Gemini.<br/>
+      <span style="color:var(--txt2)">And&#225; a <strong>Configuraci&#243;n</strong> y carg&#225;la. Es gratis en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--red)">aistudio.google.com</a></span>
     </div>`;
     return;
   }
+
+  status.innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-top:16px;padding:16px;background:var(--surf2);border-radius:8px">
+      <div class="spinner" style="width:20px;height:20px;border-width:2px;flex-shrink:0"></div>
+      <span style="font-size:12px;color:var(--txt2)">La IA est&#225; leyendo el comprobante...</span>
+    </div>`;
 
   try{
     const base64=await new Promise((res,rej)=>{
@@ -1355,224 +1357,44 @@ async function ncAiHandleFile(file){
       r.readAsDataURL(file);
     });
 
-    const mediaType=isPDF?'application/pdf':(file.type||'image/jpeg');
+    const mimeType=isPDF?'application/pdf':(file.type||'image/jpeg');
+    const prompt=`Sos un asistente de tesoreria argentina. Analiza este comprobante bancario de cheque rechazado.
+Devuelve UNICAMENTE un objeto JSON valido, sin markdown, sin texto adicional:
+{"cliente":"nombre completo del emisor","nroCheque":"numero","tipo":"Electronico","emision":"dd/mm/yyyy","vencimiento":"dd/mm/yyyy","fechaRechazo":"dd/mm/yyyy","motivo":"SIN FONDOS","importe":391523}
+Motivos validos: SIN FONDOS, CTA CERRADA, CUENTA EMBARGADA, MAL CONFECCIONADO, CUENTA CONCURSADA, VENCIDO, MAL ENDOSADO, CUENTA INEXISTENTE.
+Si el motivo dice FALTA DE FONDOS usa SIN FONDOS. Importe como numero sin simbolos.`;
 
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{
       method:'POST',
-      headers:{
-          'Content-Type':'application/json',
-          'x-api-key': (S.config?.apiKey||localStorage.getItem('anthropic_key')||''),
-          'anthropic-version':'2023-06-01',
-          'anthropic-dangerous-direct-browser-access':'true'
-        },
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        messages:[{
-          role:'user',
-          content:[
-            {
-              type: isPDF?'document':'image',
-              source:{type:'base64',media_type:mediaType,data:base64}
-            },
-            {
-              type:'text',
-              text:`Sos un asistente de tesorería argentina. Analizá este comprobante bancario de cheque rechazado.
-Devolvé ÚNICAMENTE un objeto JSON válido, sin markdown, sin texto adicional, sin explicaciones:
-{"cliente":"nombre completo del emisor","nroCheque":"número de cheque","tipo":"Electronico","emision":"dd/mm/yyyy","vencimiento":"dd/mm/yyyy","fechaRechazo":"dd/mm/yyyy","motivo":"SIN FONDOS","importe":391523}
-Motivos válidos: SIN FONDOS, CTA CERRADA, CUENTA EMBARGADA, MAL CONFECCIONADO, CUENTA CONCURSADA, VENCIDO, MAL ENDOSADO, CUENTA INEXISTENTE.
-Si el motivo es FALTA DE FONDOS usá SIN FONDOS. Importe como número sin símbolos ni puntos de miles.`
-            }
-          ]
-        }]
+        contents:[{parts:[
+          {inline_data:{mime_type:mimeType,data:base64}},
+          {text:prompt}
+        ]}]
       })
     });
 
     const data=await resp.json();
     if(data.error) throw new Error(data.error.message);
 
-    const txt=(data.content||[]).map(c=>c.text||'').join('').trim();
-    // Extract JSON even if there's surrounding text
+    const txt=(data.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
     const match=txt.match(/\{[\s\S]*\}/);
-    if(!match) throw new Error('No se encontró JSON en la respuesta');
+    if(!match) throw new Error('No se encontro JSON en la respuesta');
     const parsed=JSON.parse(match[0]);
 
     status.innerHTML=`
-      <div class="ai-result" style="margin-top:14px">
-        <div class="ai-result-title">
-          <svg style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-          IA detectó los datos — revisá y guardá
-        </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 14px;background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.15);border-radius:8px;font-size:12px;color:#86efac">
+        <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;flex-shrink:0" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Datos le&#237;dos por IA &#8212; revis&#225; y guard&#225;
       </div>`;
     renderNcManual(parsed, true);
 
   }catch(e){
     status.innerHTML=`
       <div style="margin-top:14px;padding:12px 14px;background:rgba(212,0,10,.06);border:1px solid rgba(212,0,10,.2);border-radius:8px;font-size:12px;color:#f87171">
-        ⚠ No pude leer el comprobante: ${e.message}<br/>
-        <span style="color:var(--txt3)">Podés cargarlo manualmente.</span>
+        &#9888; ${e.message}<br/>
+        <span style="color:var(--txt3)">Pod&#233;s cargarlo manualmente.</span>
       </div>`;
-    // Do NOT auto-show form on error - let user click "Carga manual" tab
   }
 }
-
-// ── MANUAL FORM ──────────────────────────────────
-function renderNcManual(d, afterAI){
-  const motOpts=MOTIVOS.map(m=>`<option value="${m}" ${d.motivo===m?'selected':''}>${m}</option>`).join('');
-  const accOpts=ACCIONES.map(a=>`<option value="${a}" ${d.detalle===a?'selected':''}>${a}</option>`).join('');
-
-  const formHTML=`
-    <div style="margin-top:${afterAI?'0':'4px'}">
-      <div class="frow">
-        <div class="field" style="grid-column:1/-1">
-          <label>Cliente / Emisor</label>
-          <input type="text" id="nCliente" value="${esc(d.cliente||'')}" placeholder="Nombre del emisor" autocomplete="off"/>
-        </div>
-      </div>
-      <div class="frow">
-        <div class="field"><label>N° Cheque</label><input type="text" id="nNroCheque" value="${esc(d.nroCheque||'')}" placeholder="Ej: 12345678"/></div>
-        <div class="field"><label>Tipo</label><select id="nTipo">
-          <option value="Electronico" ${(!d.tipo||d.tipo==='Electronico')?'selected':''}>Electrónico</option>
-          <option value="Fisico" ${d.tipo==='Fisico'?'selected':''}>Físico</option>
-        </select></div>
-      </div>
-      <div class="frow">
-        <div class="field"><label>Fecha Emisión</label><input type="date" id="nEmision" value="${toDate(d.emision||'')}"/></div>
-        <div class="field"><label>Vencimiento</label><input type="date" id="nVencimiento" value="${toDate(d.vencimiento||'')}"/></div>
-      </div>
-      <div class="frow">
-        <div class="field"><label>Fecha Rechazo</label><input type="date" id="nFechaRechazo" value="${toDate(d.fechaRechazo||'')}"/></div>
-        <div class="field"><label>Motivo</label><select id="nMotivo">
-          <option value="">— Seleccionar —</option>${motOpts}
-        </select></div>
-      </div>
-      <div class="frow">
-        <div class="field"><label>Importe $</label><input type="number" id="nImporte" step="0.01" value="${d.importe||''}" placeholder="0.00"/></div>
-        <div class="field"><label>Gastos banco $</label><input type="number" id="nGastos" step="0.01" value="${d.gastos||''}" placeholder="0.00"/></div>
-      </div>
-      <div class="frow">
-        <div class="field"><label>Detalle / Acción</label><select id="nDetalle"><option value="">— Sin acción —</option>${accOpts}</select></div>
-        <div class="field"><label>Envío</label><input type="text" id="nEnvio" value="${esc(d.envio||'')}" placeholder="Enviado a..."/></div>
-      </div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--brd)">
-        <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
-        <button class="btn-save" onclick="guardarNuevoCheque()">
-          <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
-          Guardar en ${_ncDest==='cancelados'?'CANCELADOS':'RECHAZADOS'}
-        </button>
-      </div>
-    </div>`;
-
-  if(afterAI){
-    // Append form below the AI result banner
-    const status=document.getElementById('ncAiStatus');
-    if(status){
-      const div=document.createElement('div');
-      div.innerHTML=formHTML;
-      status.appendChild(div);
-    }
-  } else {
-    const nb=document.getElementById('ncBody');
-    if(nb) nb.innerHTML=formHTML;
-  }
-}
-
-async function guardarNuevoCheque(){
-  const cliente=document.getElementById('nCliente')?.value?.trim();
-  const nroCheque=document.getElementById('nNroCheque')?.value?.trim();
-  const importe=parseFloat(document.getElementById('nImporte')?.value||0);
-
-  if(!cliente){toast('El cliente es obligatorio','error');return;}
-  if(!nroCheque){toast('El N° de cheque es obligatorio','error');return;}
-  if(!importe||importe<=0){toast('El importe debe ser mayor a 0','error');return;}
-
-  const btn=event.target.closest('button');
-  btn.disabled=true; btn.textContent='Guardando...';
-
-  const fechaRec=document.getElementById('nFechaRechazo')?.value||'';
-  const gastos=parseFloat(document.getElementById('nGastos')?.value||0)||0;
-  const total=importe+gastos;
-  const meses=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-  let mes='',anio='';
-  if(fechaRec){const dt=new Date(fechaRec);mes=meses[dt.getMonth()];anio=String(dt.getFullYear());}
-
-  const row={
-    cliente, nroCheque,
-    emision:     fromDate(document.getElementById('nEmision')?.value||''),
-    vencimiento: fromDate(document.getElementById('nVencimiento')?.value||''),
-    tipo:        document.getElementById('nTipo')?.value||'Electronico',
-    tipoLetra:   'V',
-    fechaRechazo:fromDate(fechaRec),
-    mes, anio,
-    motivo:      document.getElementById('nMotivo')?.value||'',
-    importe, gastos, total,
-    detalle:     document.getElementById('nDetalle')?.value||'',
-    envio:       document.getElementById('nEnvio')?.value||'',
-    pendiente:   _ncDest==='cancelados'?0:total,
-  };
-
-  try{
-    const action=_ncDest==='cancelados'?'agregarCancelado':'agregarRechazado';
-    const res=await fetch(API,{method:'POST',body:JSON.stringify({action,row})});
-    const r=await res.json();
-    if(!r.ok) throw new Error(r.error);
-    closeModal();
-    toast(`✓ Cheque ${nroCheque} guardado en ${_ncDest.toUpperCase()}`,'success');
-    await loadAll();
-    showTab(_ncDest);
-  }catch(e){
-    toast('Error: '+e.message,'error');
-    btn.disabled=false; btn.textContent='Guardar';
-  }
-}
-
-function esc(s){return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-// ── QR & MOBILE URL ─────────────────────────────
-const MOBILE_URL='https://marcevsanti-ux.github.io/Tesorer-a-Moretti/mobile.html';
-
-function copyMobileURL(){
-  navigator.clipboard.writeText(MOBILE_URL).then(()=>{
-    const btn=document.getElementById('copyBtn');
-    if(btn){btn.innerHTML='&#10003; Copiado!';}
-    setTimeout(()=>{if(btn)btn.innerHTML='Copiar';},2000);
-    toast('URL copiada al portapapeles','success');
-  }).catch(()=>toast('No se pudo copiar','info'));
-}
-
-function renderQR(){
-  const wrap=document.getElementById('qrCode');
-  if(!wrap) return;
-  if(typeof QRCode==='undefined'){
-    const s=document.createElement('script');
-    s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-    s.onload=()=>_drawQR(wrap);
-    s.onerror=()=>{wrap.innerHTML='<div style="font-size:10px;color:var(--txt3);padding:12px;text-align:center">Copiá la URL arriba</div>';};
-    document.head.appendChild(s);
-  } else {
-    _drawQR(wrap);
-  }
-}
-
-function _drawQR(wrap){
-  try{
-    wrap.innerHTML='<div id="qrCanvas" style="display:flex;align-items:center;justify-content:center"></div>';
-    new QRCode(document.getElementById('qrCanvas'),{
-      text:MOBILE_URL, width:100, height:100,
-      colorDark:'#FFFFFF', colorLight:'#1C1C1C',
-      correctLevel:QRCode.CorrectLevel.M
-    });
-    setTimeout(()=>{
-      const img=wrap.querySelector('img');
-      if(img){img.style.cssText='border-radius:6px;width:100px;height:100px;display:block';}
-      const canvas=wrap.querySelector('canvas');
-      if(canvas){canvas.style.cssText='border-radius:6px;width:100px;height:100px;';}
-    },150);
-  }catch(e){
-    wrap.innerHTML='<div style="font-size:10px;color:var(--txt3);padding:12px;text-align:center">Copiá la URL</div>';
-  }
-}
-
-
-</script>
-</body>
-</html>
