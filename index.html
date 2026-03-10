@@ -513,7 +513,7 @@ footer{
       <div id="brand-fallback" style="display:none;align-items:center;justify-content:center;width:36px;height:36px;background:var(--red);font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;border-radius:4px">M</div>
       <div class="brand-divider"></div>
       <div class="brand-label">Tesorería <span>·</span> Cheques</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.2.3</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.2.4</div>
     </div>
     <div class="hdr-right">
       <div class="sync-pill loading" id="syncPill">
@@ -550,7 +550,7 @@ footer{
 </main>
 
 <footer>
-  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.2.3</span></div>
+  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.2.4</span></div>
   <div class="ftr-right" id="ftrDate">Última modificación: 09/03/2026</div>
 </footer>
 </div>
@@ -1121,7 +1121,7 @@ function renderConfig(){
       <div style="display:flex;flex-direction:column;gap:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
           <span style="font-size:12px;color:var(--txt2)">Versión</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.2.3</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.2.4</span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
           <span style="font-size:12px;color:var(--txt2)">Última actualización</span>
@@ -1255,7 +1255,7 @@ function openNuevoCheque(destino){
     <div class="modal-hdr">
       <div>
         <div class="modal-title">Nuevo Cheque Rechazado</div>
-        <div class="modal-sub">Carga en ${_ncDest.toUpperCase()} <span style="background:var(--surf3);color:var(--txt3);font-size:9px;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;margin-left:6px">v1.2.3</span></div>
+        <div class="modal-sub">Carga en ${_ncDest.toUpperCase()} <span style="background:var(--surf3);color:var(--txt3);font-size:9px;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;margin-left:6px">v1.2.4</span></div>
       </div>
       <button class="modal-x" onclick="closeModal()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
@@ -1483,13 +1483,7 @@ function renderNcManual(d, afterAI){
         <div class="field"><label>Detalle / Acci&#243;n</label><select id="nDetalle"><option value="">&#8212; Sin acci&#243;n &#8212;</option>${accOpts}</select></div>
         <div class="field"><label>Env&#237;o</label><input type="text" id="nEnvio" value="${esc(d&&d.envio||'')}" placeholder="Enviado a..."/></div>
       </div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--brd)">
-        <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
-        <button class="btn-save" onclick="guardarNuevoCheque()">
-          <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
-          Guardar en ${_ncDest==='cancelados'?'CANCELADOS':'RECHAZADOS'}
-        </button>
-      </div>
+      <div style="height:80px"></div>
     </div>`;
 
   if(afterAI){
@@ -1499,6 +1493,21 @@ function renderNcManual(d, afterAI){
     const nb=document.getElementById('ncBody');
     if(nb) nb.innerHTML=formHTML;
   }
+  // Add/update sticky save footer
+  let ftr=document.getElementById('ncStickyFtr');
+  if(!ftr){
+    ftr=document.createElement('div');
+    ftr.id='ncStickyFtr';
+    ftr.style.cssText='position:sticky;bottom:0;background:var(--surf);border-top:1px solid var(--brd2);padding:14px 24px;display:flex;justify-content:flex-end;gap:8px;z-index:10;margin-top:8px';
+    const modal=document.querySelector('.modal');
+    if(modal) modal.appendChild(ftr);
+  }
+  ftr.innerHTML=`
+    <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+    <button class="btn-save" onclick="guardarNuevoCheque()">
+      <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+      Guardar en ${_ncDest==='cancelados'?'CANCELADOS':'RECHAZADOS'}
+    </button>`;
 }
 
 async function guardarNuevoCheque(){
