@@ -510,7 +510,7 @@ footer{
       <div id="brand-fallback" style="display:none;align-items:center;justify-content:center;width:36px;height:36px;background:var(--red);font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;border-radius:4px">M</div>
       <div class="brand-divider"></div>
       <div class="brand-label">Tesorería <span>·</span> Cheques</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.0.3</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.0.4</div>
     </div>
     <div class="hdr-right">
       <div class="sync-pill loading" id="syncPill">
@@ -547,7 +547,7 @@ footer{
 </main>
 
 <footer>
-  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.0.3</span></div>
+  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.0.4</span></div>
   <div class="ftr-right" id="ftrDate">Última modificación: 09/03/2026</div>
 </footer>
 </div>
@@ -1107,7 +1107,7 @@ function renderConfig(){
       <div style="display:flex;flex-direction:column;gap:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
           <span style="font-size:12px;color:var(--txt2)">Versión</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.0.3</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.0.4</span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
           <span style="font-size:12px;color:var(--txt2)">Última actualización</span>
@@ -1236,67 +1236,73 @@ function toast(msg,type='info'){
 const MOTIVOS=['SIN FONDOS','CTA CERRADA','CUENTA EMBARGADA','MAL CONFECCIONADO','CUENTA CONCURSADA','VENCIDO','MAL ENDOSADO','CUENTA INEXISTENTE'];
 const ACCIONES=['Deposito Galicia','Deposito Nacion','Deposito Santander','Deposito Frances','Negociado Galicia','Negociado Nacion','Negociado Santander','Pago a proveedores','Efectivo','Transferencia','En gestión'];
 
+let _ncDest = 'rechazados';
+
 function openNuevoCheque(destino){
-  const d=destino||'rechazados';
+  _ncDest = destino || 'rechazados';
   document.getElementById('modalInner').innerHTML=`
     <div class="modal-hdr">
-      <div><div class="modal-title">Nuevo Cheque Rechazado</div><div class="modal-sub">Carga en ${d.toUpperCase()}</div></div>
+      <div>
+        <div class="modal-title">Nuevo Cheque Rechazado</div>
+        <div class="modal-sub">Carga en ${_ncDest.toUpperCase()}</div>
+      </div>
       <button class="modal-x" onclick="closeModal()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div style="padding:0 24px">
       <div class="nc-tabs">
-        <button class="nc-tab active" id="nct-ai" onclick="ncTab('ai')">
-          ✦ Escanear con IA
-        </button>
-        <button class="nc-tab" id="nct-manual" onclick="ncTab('manual')">
-          Carga manual
-        </button>
+        <button class="nc-tab active" id="nct-ai"     onclick="ncSwitch('ai')">✦ Escanear con IA</button>
+        <button class="nc-tab"        id="nct-manual" onclick="ncSwitch('manual')">Carga manual</button>
       </div>
     </div>
-    <div id="ncBody" style="padding:0 24px 24px"></div>`;
+    <div id="ncBody" style="padding:0 24px 24px;max-height:60vh;overflow-y:auto"></div>`;
   document.getElementById('overlay').style.display='flex';
-  ncTab('ai',d);
+  ncSwitch('ai');
 }
 
-function ncTab(tab, destino){
+function ncSwitch(tab){
   document.querySelectorAll('.nc-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('nct-'+tab).classList.add('active');
-  const dest=destino||document.getElementById('ncDestino')?.value||'rechazados';
-  if(tab==='ai') renderNcAI(dest);
-  else renderNcManual(dest,{});
+  const btn=document.getElementById('nct-'+tab);
+  if(btn) btn.classList.add('active');
+  if(tab==='ai') renderNcAI();
+  else           renderNcManual({});
 }
 
 // ── IA TAB ──────────────────────────────────────
-function renderNcAI(destino){
+function renderNcAI(){
   document.getElementById('ncBody').innerHTML=`
-    <input type="hidden" id="ncDestino" value="${destino}"/>
     <div class="ai-drop" id="aiDrop"
-      ondragover="event.preventDefault();this.classList.add('drag')"
-      ondragleave="this.classList.remove('drag')"
-      ondrop="aiHandleDrop(event)"
-      onclick="document.getElementById('aiFile').click()">
-      <input type="file" id="aiFile" accept="image/*,.pdf" onchange="aiHandleFile(this.files[0])"/>
+      ondragover="event.preventDefault();this.style.borderColor='var(--red)'"
+      ondragleave="this.style.borderColor=''"
+      ondrop="ncAiDrop(event)"
+      onclick="document.getElementById('aiFileInput').click()">
+      <input type="file" id="aiFileInput" accept="image/*,.pdf" onchange="ncAiHandleFile(this.files[0])"/>
       <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-      <div style="font-size:13px;font-weight:600;color:var(--txt2)">Fotografiá o subí el comprobante del banco</div>
-      <div style="font-size:11px;color:var(--txt3);margin-top:6px">JPG, PNG o PDF · El sistema lee los datos automáticamente</div>
+      <div style="font-size:13px;font-weight:600;color:var(--txt2)">Subí el comprobante del banco</div>
+      <div style="font-size:11px;color:var(--txt3);margin-top:5px">JPG, PNG o PDF · La IA lee los datos automáticamente</div>
     </div>
-    <div id="aiStatus"></div>`;
+    <div id="ncAiStatus"></div>`;
 }
 
-function aiHandleDrop(e){
+function ncAiDrop(e){
   e.preventDefault();
-  document.getElementById('aiDrop').classList.remove('drag');
-  const f=e.dataTransfer.files[0];
-  if(f)aiHandleFile(f);
+  document.getElementById('aiDrop').style.borderColor='';
+  ncAiHandleFile(e.dataTransfer.files[0]);
 }
 
-async function aiHandleFile(file){
-  if(!file)return;
-  const status=document.getElementById('aiStatus');
-  status.innerHTML=`<div class="ai-scanning"><div class="spinner"></div><span>Analizando comprobante con IA...</span></div>`;
+async function ncAiHandleFile(file){
+  if(!file) return;
+  const status=document.getElementById('ncAiStatus');
+  if(!status) return;
+
+  const isPDF=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
+
+  status.innerHTML=`
+    <div class="ai-scanning" style="margin-top:16px">
+      <div class="spinner" style="width:20px;height:20px;border-width:2px;flex-shrink:0"></div>
+      <span>La IA está leyendo el comprobante...</span>
+    </div>`;
 
   try{
-    // Convert to base64
     const base64=await new Promise((res,rej)=>{
       const r=new FileReader();
       r.onload=()=>res(r.result.split(',')[1]);
@@ -1304,10 +1310,9 @@ async function aiHandleFile(file){
       r.readAsDataURL(file);
     });
 
-    const isPDF=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
-    const mediaType=isPDF?'application/pdf':file.type||'image/jpeg';
+    const mediaType=isPDF?'application/pdf':(file.type||'image/jpeg');
 
-    const response=await fetch('https://api.anthropic.com/v1/messages',{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -1322,101 +1327,106 @@ async function aiHandleFile(file){
             },
             {
               type:'text',
-              text:`Sos un asistente de tesorería argentina. Analizá este comprobante de cheque rechazado y extraé los datos en formato JSON puro, sin markdown ni texto adicional.
-
-Devolvé exactamente este JSON:
-{
-  "cliente": "nombre del emisor del cheque",
-  "nroCheque": "número de cheque",
-  "tipo": "Electronico o Fisico",
-  "emision": "dd/mm/yyyy",
-  "vencimiento": "dd/mm/yyyy",
-  "fechaRechazo": "dd/mm/yyyy",
-  "motivo": "uno de: SIN FONDOS, CTA CERRADA, CUENTA EMBARGADA, MAL CONFECCIONADO, CUENTA CONCURSADA, VENCIDO, MAL ENDOSADO, CUENTA INEXISTENTE",
-  "importe": número sin símbolos,
-  "mes": "mes en mayúsculas en español",
-  "anio": "año como string"
-}
-
-Si algún campo no está visible, usá cadena vacía o 0. Devolvé solo el JSON.`
+              text:`Sos un asistente de tesorería argentina. Analizá este comprobante bancario de cheque rechazado.
+Devolvé ÚNICAMENTE un objeto JSON válido, sin markdown, sin texto adicional, sin explicaciones:
+{"cliente":"nombre completo del emisor","nroCheque":"número de cheque","tipo":"Electronico","emision":"dd/mm/yyyy","vencimiento":"dd/mm/yyyy","fechaRechazo":"dd/mm/yyyy","motivo":"SIN FONDOS","importe":391523}
+Motivos válidos: SIN FONDOS, CTA CERRADA, CUENTA EMBARGADA, MAL CONFECCIONADO, CUENTA CONCURSADA, VENCIDO, MAL ENDOSADO, CUENTA INEXISTENTE.
+Si el motivo es FALTA DE FONDOS usá SIN FONDOS. Importe como número sin símbolos ni puntos de miles.`
             }
           ]
         }]
       })
     });
 
-    const data=await response.json();
-    if(data.error)throw new Error(data.error.message);
+    const data=await resp.json();
+    if(data.error) throw new Error(data.error.message);
 
-    const txt=data.content.map(c=>c.text||'').join('');
-    const clean=txt.replace(/```json|```/g,'').trim();
-    const parsed=JSON.parse(clean);
+    const txt=(data.content||[]).map(c=>c.text||'').join('').trim();
+    // Extract JSON even if there's surrounding text
+    const match=txt.match(/\{[\s\S]*\}/);
+    if(!match) throw new Error('No se encontró JSON en la respuesta');
+    const parsed=JSON.parse(match[0]);
 
-    const dest=document.getElementById('ncDestino')?.value||'rechazados';
     status.innerHTML=`
-      <div class="ai-result">
+      <div class="ai-result" style="margin-top:14px">
         <div class="ai-result-title">
-          <svg style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-          IA identificó los datos — revisá y confirmá
+          <svg style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          IA detectó los datos — revisá y guardá
         </div>
       </div>`;
-    renderNcManual(dest, parsed, true);
+    renderNcManual(parsed, true);
+
   }catch(e){
-    status.innerHTML=`<div style="color:#f87171;font-size:12px;padding:12px 0">⚠ Error al leer: ${e.message}. Cargalo manualmente.</div>`;
-    const dest=document.getElementById('ncDestino')?.value||'rechazados';
-    renderNcManual(dest,{});
+    status.innerHTML=`
+      <div style="margin-top:14px;padding:12px 14px;background:rgba(212,0,10,.06);border:1px solid rgba(212,0,10,.2);border-radius:8px;font-size:12px;color:#f87171">
+        ⚠ No pude leer el comprobante: ${e.message}<br/>
+        <span style="color:var(--txt3)">Podés cargarlo manualmente.</span>
+      </div>`;
+    renderNcManual({}, false);
   }
 }
 
 // ── MANUAL FORM ──────────────────────────────────
-function renderNcManual(destino, d, afterAI){
-  const wrap=afterAI?document.createElement('div'):document.getElementById('ncBody');
+function renderNcManual(d, afterAI){
   const motOpts=MOTIVOS.map(m=>`<option value="${m}" ${d.motivo===m?'selected':''}>${m}</option>`).join('');
   const accOpts=ACCIONES.map(a=>`<option value="${a}" ${d.detalle===a?'selected':''}>${a}</option>`).join('');
 
-  const html=`
-    <input type="hidden" id="ncDestino" value="${destino}"/>
-    <div class="frow" style="${afterAI?'':'margin-top:0'}">
-      <div class="field" style="grid-column:1/-1"><label>Cliente / Emisor</label><input type="text" id="nCliente" value="${d.cliente||''}" placeholder="Nombre del emisor"/></div>
-    </div>
-    <div class="frow">
-      <div class="field"><label>N° Cheque</label><input type="text" id="nNroCheque" value="${d.nroCheque||''}" placeholder="28326020"/></div>
-      <div class="field"><label>Tipo</label><select id="nTipo"><option value="Electronico" ${d.tipo==='Electronico'?'selected':''}>Electrónico</option><option value="Fisico" ${d.tipo==='Fisico'?'selected':''}>Físico</option></select></div>
-    </div>
-    <div class="frow">
-      <div class="field"><label>Fecha Emisión</label><input type="date" id="nEmision" value="${toDate(d.emision||'')}"/></div>
-      <div class="field"><label>Fecha Vencimiento</label><input type="date" id="nVencimiento" value="${toDate(d.vencimiento||'')}"/></div>
-    </div>
-    <div class="frow">
-      <div class="field"><label>Fecha de Rechazo</label><input type="date" id="nFechaRechazo" value="${toDate(d.fechaRechazo||'')}"/></div>
-      <div class="field"><label>Motivo</label><select id="nMotivo"><option value="">— Seleccionar —</option>${motOpts}</select></div>
-    </div>
-    <div class="frow">
-      <div class="field"><label>Importe</label><input type="number" id="nImporte" step="0.01" value="${d.importe||''}" placeholder="0.00"/></div>
-      <div class="field"><label>Gastos Bancarios</label><input type="number" id="nGastos" step="0.01" value="${d.gastos||''}" placeholder="0.00"/></div>
-    </div>
-    <div class="frow">
-      <div class="field"><label>Detalle / Acción</label><select id="nDetalle"><option value="">— Sin acción —</option>${accOpts}</select></div>
-      <div class="field"><label>Envío</label><input type="text" id="nEnvio" value="${d.envio||''}" placeholder="Enviado a..."/></div>
-    </div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--brd)">
-      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
-      <button class="btn-save" onclick="guardarNuevoCheque()">
-        <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
-        Guardar en ${destino==='cancelados'?'CANCELADOS':'RECHAZADOS'}
-      </button>
+  const formHTML=`
+    <div style="margin-top:${afterAI?'0':'4px'}">
+      <div class="frow">
+        <div class="field" style="grid-column:1/-1">
+          <label>Cliente / Emisor</label>
+          <input type="text" id="nCliente" value="${esc(d.cliente||'')}" placeholder="Nombre del emisor" autocomplete="off"/>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>N° Cheque</label><input type="text" id="nNroCheque" value="${esc(d.nroCheque||'')}" placeholder="28326020"/></div>
+        <div class="field"><label>Tipo</label><select id="nTipo">
+          <option value="Electronico" ${(!d.tipo||d.tipo==='Electronico')?'selected':''}>Electrónico</option>
+          <option value="Fisico" ${d.tipo==='Fisico'?'selected':''}>Físico</option>
+        </select></div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>Fecha Emisión</label><input type="date" id="nEmision" value="${toDate(d.emision||'')}"/></div>
+        <div class="field"><label>Vencimiento</label><input type="date" id="nVencimiento" value="${toDate(d.vencimiento||'')}"/></div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>Fecha Rechazo</label><input type="date" id="nFechaRechazo" value="${toDate(d.fechaRechazo||'')}"/></div>
+        <div class="field"><label>Motivo</label><select id="nMotivo">
+          <option value="">— Seleccionar —</option>${motOpts}
+        </select></div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>Importe $</label><input type="number" id="nImporte" step="0.01" value="${d.importe||''}" placeholder="0.00"/></div>
+        <div class="field"><label>Gastos banco $</label><input type="number" id="nGastos" step="0.01" value="${d.gastos||''}" placeholder="0.00"/></div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>Detalle / Acción</label><select id="nDetalle"><option value="">— Sin acción —</option>${accOpts}</select></div>
+        <div class="field"><label>Envío</label><input type="text" id="nEnvio" value="${esc(d.envio||'')}" placeholder="Enviado a..."/></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--brd)">
+        <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+        <button class="btn-save" onclick="guardarNuevoCheque()">
+          <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+          Guardar en ${_ncDest==='cancelados'?'CANCELADOS':'RECHAZADOS'}
+        </button>
+      </div>
     </div>`;
 
   if(afterAI){
-    wrap.innerHTML=html;
-    document.getElementById('aiStatus').appendChild(wrap);
+    // Append form below the AI result banner
+    const status=document.getElementById('ncAiStatus');
+    if(status){
+      const div=document.createElement('div');
+      div.innerHTML=formHTML;
+      status.appendChild(div);
+    }
   } else {
-    wrap.innerHTML=`<input type="hidden" id="ncDestino" value="${destino}"/>`+html;
+    document.getElementById('ncBody').innerHTML=formHTML;
   }
 }
 
 async function guardarNuevoCheque(){
-  const destino=document.getElementById('ncDestino')?.value||'rechazados';
   const cliente=document.getElementById('nCliente')?.value?.trim();
   const nroCheque=document.getElementById('nNroCheque')?.value?.trim();
   const importe=parseFloat(document.getElementById('nImporte')?.value||0);
@@ -1426,71 +1436,408 @@ async function guardarNuevoCheque(){
   if(!importe||importe<=0){toast('El importe debe ser mayor a 0','error');return;}
 
   const btn=event.target.closest('button');
-  btn.disabled=true;btn.textContent='Guardando...';
+  btn.disabled=true; btn.textContent='Guardando...';
 
-  const fechaRec=fromDate(document.getElementById('nFechaRechazo')?.value||'');
-  const gastos=parseFloat(document.getElementById('nGastos')?.value||0);
+  const fechaRec=document.getElementById('nFechaRechazo')?.value||'';
+  const gastos=parseFloat(document.getElementById('nGastos')?.value||0)||0;
   const total=importe+gastos;
-
-  // Calcular mes y año desde fecha rechazo
   const meses=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
   let mes='',anio='';
-  const fRec=document.getElementById('nFechaRechazo')?.value;
-  if(fRec){const dt=new Date(fRec);mes=meses[dt.getMonth()];anio=String(dt.getFullYear());}
+  if(fechaRec){const dt=new Date(fechaRec);mes=meses[dt.getMonth()];anio=String(dt.getFullYear());}
 
   const row={
-    cliente,
+    cliente, nroCheque,
     emision:     fromDate(document.getElementById('nEmision')?.value||''),
     vencimiento: fromDate(document.getElementById('nVencimiento')?.value||''),
     tipo:        document.getElementById('nTipo')?.value||'Electronico',
     tipoLetra:   'V',
-    nroCheque,
-    fechaRechazo:fechaRec,
+    fechaRechazo:fromDate(fechaRec),
     mes, anio,
     motivo:      document.getElementById('nMotivo')?.value||'',
     importe, gastos, total,
     detalle:     document.getElementById('nDetalle')?.value||'',
     envio:       document.getElementById('nEnvio')?.value||'',
-    pendiente:   total,
+    pendiente:   _ncDest==='cancelados'?0:total,
   };
 
   try{
-    const action=destino==='cancelados'?'agregarCancelado':'agregarRechazado';
+    const action=_ncDest==='cancelados'?'agregarCancelado':'agregarRechazado';
     const res=await fetch(API,{method:'POST',body:JSON.stringify({action,row})});
     const r=await res.json();
-    if(!r.ok)throw new Error(r.error);
-    toast(`✓ Cheque ${nroCheque} guardado en ${destino.toUpperCase()}`,'success');
+    if(!r.ok) throw new Error(r.error);
     closeModal();
+    toast(`✓ Cheque ${nroCheque} guardado en ${_ncDest.toUpperCase()}`,'success');
     await loadAll();
-    showTab(destino);
+    showTab(_ncDest);
   }catch(e){
     toast('Error: '+e.message,'error');
-    btn.disabled=false;btn.textContent='Guardar';
+    btn.disabled=false; btn.textContent='Guardar';
   }
 }
 
-// ── QR & MOBILE URL ──────────────────────────────
-const MOBILE_URL='https://marcevsanti-ux.github.io/Tesorer-a-Moretti/mobile.html';
+function esc(s){return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
-function copyMobileURL(){
-  navigator.clipboard.writeText(MOBILE_URL).then(()=>{
-    const btn=document.getElementById('copyBtn');
-    if(btn){btn.innerHTML='<svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> ¡Copiado!';}
-    setTimeout(()=>{if(btn)btn.innerHTML='<svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar';},2000);
-    toast('URL copiada','success');
-  }).catch(()=>toast('No se pudo copiar','info'));
+// ── IMPORTACIÓN ──────────────────────────────────
+function renderImportar(){
+  document.getElementById('main').innerHTML=`
+  <div class="section-header">
+    <div class="section-title">Importación</div>
+    <div class="section-sub">Subir archivo Excel con cheques rechazados</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+    <!-- DROP ZONE -->
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-title">Archivo Excel</div>
+      <div id="dropZone" style="border:2px dashed var(--brd2);border-radius:8px;padding:40px;text-align:center;cursor:pointer;transition:.2s;position:relative"
+        ondragover="event.preventDefault();this.style.borderColor='var(--red)'"
+        ondragleave="this.style.borderColor='var(--brd2)'"
+        ondrop="handleDrop(event)"
+        onclick="document.getElementById('fileInput').click()">
+        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this.files[0])"/>
+        <svg style="width:36px;height:36px;stroke:var(--txt3);fill:none;stroke-width:1.5;margin:0 auto 12px;display:block" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div style="font-size:13px;font-weight:600;color:var(--txt2)">Arrastrá el archivo o hacé click</div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:4px">Formato: .xlsx — misma estructura que la planilla actual</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREVIEW / VALIDACION -->
+  <div id="importPreview"></div>`;
 }
 
-function renderQR(){
-  const wrap=document.getElementById('qrCode');
-  if(!wrap)return;
-  // Use QR server API
-  const encoded=encodeURIComponent(MOBILE_URL);
-  wrap.innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encoded}&bgcolor=1C1C1C&color=EFEFEF&margin=5" style="width:100px;height:100px;border-radius:6px" alt="QR Mobile"/>`;
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('dropZone').style.borderColor='var(--brd2)';
+  const f=e.dataTransfer.files[0];
+  if(f)handleFile(f);
 }
 
+async function handleFile(file){
+  if(!file){return;}
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(!['xlsx','xls'].includes(ext)){toast('Solo se aceptan archivos .xlsx o .xls','error');return;}
+
+  const prev=document.getElementById('importPreview');
+  prev.innerHTML=`<div class="card"><div style="display:flex;align-items:center;gap:10px;color:var(--txt2)"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div><span style="font-size:12px;font-weight:600">Leyendo archivo...</span></div></div>`;
+
+  try{
+    const data=await file.arrayBuffer();
+    // Usar SheetJS
+    const XLSX=await loadSheetJS();
+    const wb=XLSX.read(data,{type:'array',cellDates:true});
+
+    // Buscar solapa RECHAZADOS
+    const sheetName=wb.SheetNames.find(n=>n.toUpperCase().includes('RECHAZADO'));
+    if(!sheetName){
+      prev.innerHTML=renderImportError('No se encontró una solapa llamada "RECHAZADOS" en el archivo.');
+      return;
+    }
+    const ws=wb.Sheets[sheetName];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,dateNF:'dd/mm/yyyy'});
+
+    // Headers en fila 3 (índice 2)
+    const headers=rows[2];
+    const required=['Cliente','Emisión','Vencimiento','TIPO','n ch','Fecha de Rechazo','MES','AÑO','MOTIVO','Importe'];
+    const missing=required.filter(r=>!headers.some(h=>String(h||'').toLowerCase().includes(r.toLowerCase())));
+
+    if(missing.length>0){
+      prev.innerHTML=renderImportError('Columnas faltantes: '+missing.join(', '));
+      return;
+    }
+
+    // Datos desde fila 4 (índice 3)
+    const dataRows=rows.slice(3).filter(r=>r[0]||r[5]);
+    const errors=[];
+    const valid=[];
+
+    dataRows.forEach((r,i)=>{
+      const fila=i+4;
+      const rowErrors=[];
+      if(!r[0])rowErrors.push('Cliente vacío');
+      if(!r[5])rowErrors.push('N° Cheque vacío');
+      if(!r[9])rowErrors.push('Motivo vacío');
+      const imp=parseFloat(String(r[10]||'').replace(/[^0-9.-]/g,''));
+      if(isNaN(imp)||imp<=0)rowErrors.push('Importe inválido');
+
+      if(rowErrors.length>0)errors.push({fila,cliente:r[0]||'—',cheque:r[5]||'—',errores:rowErrors});
+      else valid.push(r);
+    });
+
+    // Mostrar resultado
+    prev.innerHTML=`
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Resultado de Validación</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:${errors.length>0?'20px':'0'}">
+        <div style="text-align:center;padding:16px;background:var(--surf2);border-radius:8px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--green-lt)">${valid.length}</div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-top:4px">Registros válidos</div>
+        </div>
+        <div style="text-align:center;padding:16px;background:var(--surf2);border-radius:8px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:${errors.length>0?'var(--red)':'var(--green-lt)'}">${errors.length}</div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-top:4px">Con errores</div>
+        </div>
+        <div style="text-align:center;padding:16px;background:var(--surf2);border-radius:8px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:#fff">${dataRows.length}</div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-top:4px">Total en archivo</div>
+        </div>
+      </div>
+      ${errors.length>0?`
+      <div style="border-top:1px solid var(--brd);padding-top:16px;margin-top:4px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:10px">⚠ Filas con errores (no se importarán)</div>
+        <div style="max-height:180px;overflow-y:auto">
+        ${errors.map(e=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:rgba(212,0,10,.06);border-radius:6px;margin-bottom:4px;font-size:11px">
+            <span style="font-family:'JetBrains Mono',monospace;color:var(--txt3);font-size:10px">F${e.fila}</span>
+            <span style="font-weight:600;color:var(--txt2);flex:1">${e.cliente}</span>
+            <span style="color:var(--txt3)">${e.errores.join(' · ')}</span>
+          </div>`).join('')}
+        </div>
+      </div>`:''}
+    </div>
+
+    ${valid.length>0?`
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Vista Previa — Primeros 5 registros</div>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>Cliente</th><th>N° Cheque</th><th>Tipo</th><th>Rechazo</th><th>Motivo</th><th style="text-align:right">Importe</th></tr></thead>
+        <tbody>${valid.slice(0,5).map(r=>`<tr>
+          <td class="tc-name">${r[0]||'—'}</td>
+          <td class="tc-mono tc-cheque">${r[5]||'—'}</td>
+          <td><span class="tag tag-blue">${r[3]||'—'}</span></td>
+          <td class="tc-mono tc-fecha">${r[6]||'—'}</td>
+          <td><span class="tag tag-red">${r[9]||'—'}</span></td>
+          <td class="tc-monto tc-mono">$${parseFloat(String(r[10]||0).replace(/[^0-9.-]/g,'')).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px">
+      <button class="btn-cancel" onclick="renderImportar()">Cancelar</button>
+      <button class="btn-save" onclick="confirmarImport(${JSON.stringify(valid).replace(/"/g,'&quot;')})">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Importar ${valid.length} registros a Google Sheets
+      </button>
+    </div>`:''}`;
+
+  }catch(e){
+    prev.innerHTML=renderImportError('Error leyendo el archivo: '+e.message);
+  }
+}
+
+function renderImportError(msg){
+  return`<div class="card"><div style="display:flex;align-items:center;gap:10px;color:#f87171;padding:8px 0">
+    <svg style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span style="font-size:12px;font-weight:600">${msg}</span>
+  </div></div>`;
+}
+
+async function loadSheetJS(){
+  if(window.XLSX)return window.XLSX;
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=()=>res(window.XLSX);
+    s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+
+async function confirmarImport(rows){
+  const btn=event.target.closest('button');
+  btn.disabled=true;btn.textContent='Importando...';
+  try{
+    const res=await fetch(API,{
+      method:'POST',
+      body:JSON.stringify({action:'importarRechazados',rows}),
+    });
+    const r=await res.json();
+    if(!r.ok)throw new Error(r.error);
+    toast('✓ '+rows.length+' registros importados correctamente','success');
+    await loadAll();
+    showTab('rechazados');
+  }catch(e){
+    toast('Error al importar: '+e.message,'error');
+    btn.disabled=false;btn.textContent='Importar '+rows.length+' registros';
+  }
+}
+
+// ── CONFIGURACIÓN ─────────────────────────────────
+function renderConfig(){
+  const cfg=S.config||{};
+  document.getElementById('main').innerHTML=`
+  <div class="section-header">
+    <div class="section-title">Configuración</div>
+    <div class="section-sub">Notificaciones y ajustes del sistema</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:900px">
+
+    <!-- MAIL -->
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-title">Notificaciones por Email</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+        <div class="field">
+          <label>Email de destino (Administración)</label>
+          <input type="email" id="cfgMailTo" value="${cfg.mailTo||''}" placeholder="administracion@moretti.com.ar"/>
+        </div>
+        <div class="field">
+          <label>Email con copia (CC)</label>
+          <input type="email" id="cfgMailCC" value="${cfg.mailCC||''}" placeholder="gerencia@moretti.com.ar"/>
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>Asunto del email</label>
+          <input type="text" id="cfgMailSubject" value="${cfg.mailSubject||'Nuevo cheque rechazado — Moretti S.A.'}" placeholder="Nuevo cheque rechazado — Moretti S.A."/>
+        </div>
+      </div>
+      <div style="background:var(--surf2);border:1px solid var(--brd);border-radius:8px;padding:14px 16px;margin-bottom:16px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3);margin-bottom:8px">El mail se enviará cuando:</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;color:var(--txt2)">
+            <input type="checkbox" id="cfgOnNew" ${cfg.onNew!==false?'checked':''} style="accent-color:var(--red);width:14px;height:14px"/>
+            Se carga un nuevo cheque rechazado en la planilla
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;color:var(--txt2)">
+            <input type="checkbox" id="cfgOnImport" ${cfg.onImport?'checked':''} style="accent-color:var(--red);width:14px;height:14px"/>
+            Se realiza una importación masiva
+          </label>
+        </div>
+      </div>
+      <div style="background:rgba(212,0,10,.06);border:1px solid rgba(212,0,10,.15);border-radius:8px;padding:12px 14px;margin-bottom:16px">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:4px">⚠ Configuración en Google Apps Script</div>
+        <div style="font-size:11px;color:var(--txt2);line-height:1.5">
+          El envío de mails se ejecuta desde Apps Script con <code style="background:var(--surf3);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:10px">MailApp.sendEmail()</code>. 
+          Guardá esta configuración y luego activá el trigger en el editor de Apps Script.
+        </div>
+      </div>
+    </div>
+
+    <!-- SISTEMA -->
+    <div class="card">
+      <div class="card-title">Sistema</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
+          <span style="font-size:12px;color:var(--txt2)">Versión</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.0.4</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
+          <span style="font-size:12px;color:var(--txt2)">Última actualización</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txt3)">09/03/2026</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
+          <span style="font-size:12px;color:var(--txt2)">Cheques cargados</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#fff">${S.rechazados.length}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0">
+          <span style="font-size:12px;color:var(--txt2)">Cancelados</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green-lt)">${S.cancelados.length}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LINKS -->
+    <div class="card">
+      <div class="card-title">Accesos Directos</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <a href="https://docs.google.com/spreadsheets/d/1rJK2rRGf8fYjktOIX1BxS94EaCGs-XPhQa6bLnHQjwE" target="_blank"
+          style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;text-decoration:none;color:var(--txt2);font-size:12px;font-weight:600;transition:.15s"
+          onmouseover="this.style.borderColor='var(--txt3)'" onmouseout="this.style.borderColor='var(--brd2)'">
+          <span>📊 Google Sheet — Cheques 2026</span>
+          <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+        <a href="https://script.google.com/u/0/home/projects/1Y5yMJrJ2aMFeke5vke5T9Y3n2YfHSYZuzPMgAg0dEGByzo_HduhHUM_K/edit" target="_blank"
+          style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;text-decoration:none;color:var(--txt2);font-size:12px;font-weight:600;transition:.15s"
+          onmouseover="this.style.borderColor='var(--txt3)'" onmouseout="this.style.borderColor='var(--brd2)'">
+          <span>⚙️ Apps Script — Backend</span>
+          <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+        <a href="https://github.com/marcevsanti-ux/Tesorer-a-Moretti" target="_blank"
+          style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;text-decoration:none;color:var(--txt2);font-size:12px;font-weight:600;transition:.15s"
+          onmouseover="this.style.borderColor='var(--txt3)'" onmouseout="this.style.borderColor='var(--brd2)'">
+          <span>🐙 GitHub — Repositorio</span>
+          <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- URL MOBILE -->
+    <div class="card" style="grid-column:1/-1;border:1px solid rgba(212,0,10,.2);background:rgba(212,0,10,.04)">
+      <div class="card-title" style="color:var(--red)">URL Mobile · Escaneo desde Celular</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#fff;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;padding:12px 14px;word-break:break-all">
+            https://marcevsanti-ux.github.io/Tesorer-a-Moretti/mobile.html
+          </div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:8px">
+            Abrí esta URL desde el celu, fotografiá el comprobante y la IA carga los datos automáticamente.
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+          <a href="https://marcevsanti-ux.github.io/Tesorer-a-Moretti/mobile.html" target="_blank"
+            style="display:flex;align-items:center;gap:7px;padding:10px 16px;background:var(--red);border-radius:8px;text-decoration:none;color:#fff;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">
+            <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Abrir
+          </a>
+          <button onclick="copyMobileURL()" style="display:flex;align-items:center;gap:7px;padding:9px 16px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;color:var(--txt2);font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;font-family:'Inter',sans-serif" id="copyBtn">
+            <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copiar
+          </button>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--brd)">
+        <div id="qrWrap" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <div id="qrCode" style="width:100px;height:100px;background:var(--surf2);border:1px solid var(--brd);border-radius:8px;display:flex;align-items:center;justify-content:center">
+            <div class="spinner" style="width:20px;height:20px;border-width:2px"></div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:4px">Escaneá con la cámara del celu</div>
+            <div style="font-size:11px;color:var(--txt3)">Apuntá la cámara al QR para abrir la app mobile directamente</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
 
-</script>
-</body>
-</html>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;max-width:900px;margin-top:16px">
+    <button class="btn-save" onclick="guardarConfig()">
+      <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Guardar Configuración
+    </button>
+  </div>`;
+  setTimeout(renderQR, 100);
+}
+
+async function guardarConfig(){
+  const cfg={
+    mailTo:    document.getElementById('cfgMailTo').value,
+    mailCC:    document.getElementById('cfgMailCC').value,
+    mailSubject:document.getElementById('cfgMailSubject').value,
+    onNew:     document.getElementById('cfgOnNew').checked,
+    onImport:  document.getElementById('cfgOnImport').checked,
+  };
+  try{
+    const res=await fetch(API,{method:'POST',body:JSON.stringify({action:'guardarConfig',config:cfg})});
+    const r=await res.json();
+    if(!r.ok)throw new Error(r.error);
+    S.config=cfg;
+    toast('✓ Configuración guardada','success');
+  }catch(e){
+    toast('Error: '+e.message,'error');
+  }
+}
+function fmt(n){if(!n&&n!==0)return'—';return'$'+Number(n).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtK(n){if(!n)return'—';if(n>=1000000)return'$'+(n/1000000).toFixed(1)+'M';if(n>=1000)return'$'+(n/1000).toFixed(0)+'k';return'$'+n.toFixed(0);}
+function toDate(d){if(!d)return'';const p=d.split('/');return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:'';}
+function fromDate(d){if(!d)return'';const p=d.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:'';}
+function setSyncState(s){
+  const el=document.getElementById('syncPill'),t=document.getElementById('syncTxt');
+  if(!el)return;
+  el.className='sync-pill '+s;
+  t.textContent=s==='ok'?'Sincronizado':s==='loading'?'Cargando':'Error';
+}
+function toast(msg,type='info'){
+  const c=document.getElementById('toasts'),t=document.createElement('div');
+  t.className='toast '+type;t.textContent=msg;c.appendChild(t);
+  setTimeout(()=>t.remove(),3500);
+}
+
+// ── NUEVO CHEQUE (manual + IA) ───────────────────
