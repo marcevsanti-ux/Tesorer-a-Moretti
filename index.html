@@ -514,7 +514,7 @@ footer{
       <div id="brand-fallback" style="display:none;align-items:center;justify-content:center;width:36px;height:36px;background:var(--red);font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;border-radius:4px">M</div>
       <div class="brand-divider"></div>
       <div class="brand-label">Tesorería <span>·</span> Cheques</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.2.8</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.3.0</div>
     </div>
     <div class="hdr-right">
       <div class="sync-pill loading" id="syncPill">
@@ -535,6 +535,7 @@ footer{
 <nav class="nav">
   <div class="nav-inner">
     <button class="tab active" id="tab-dashboard"  onclick="showTab('dashboard')">Dashboard</button>
+    <button class="tab"        id="tab-resumen"    onclick="showTab('resumen')">Resumen</button>
     <button class="tab"        id="tab-rechazados" onclick="showTab('rechazados')">Rechazados</button>
     <button class="tab"        id="tab-cancelados" onclick="showTab('cancelados')">Cancelados</button>
     <button class="tab"        id="tab-importar"   onclick="showTab('importar')">Importación</button>
@@ -551,7 +552,7 @@ footer{
 </main>
 
 <footer>
-  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.2.8</span></div>
+  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.3.0</span></div>
   <div class="ftr-right" id="ftrDate">Última modificación: 09/03/2026</div>
 </footer>
 </div>
@@ -597,6 +598,7 @@ function showTab(t){
 function render(){
   if(S.tab==='dashboard')renderDashboard();
   else if(S.tab==='rechazados')renderRechazados();
+  else if(S.tab==='resumen')renderResumen();
   else if(S.tab==='cancelados')renderCancelados();
   else if(S.tab==='importar')renderImportar();
   else if(S.tab==='config')renderConfig();
@@ -734,6 +736,102 @@ function renderTabla(rows){
     </tr>`).join('')}</tbody></table></div>`;
 }
 
+// ── RESUMEN ───────────────────────────────────────
+function renderResumen(){
+  const rows = S.rechazados || [];
+  if(!rows.length){
+    document.getElementById('main').innerHTML='<div class="empty"><p>Sin datos cargados</p></div>';
+    return;
+  }
+
+  // Agrupar por motivo → cliente → año
+  const años = [...new Set(rows.map(r=>r.anio).filter(Boolean))].sort();
+  const tree = {};
+  rows.forEach(r=>{
+    const m = r.motivo || 'SIN MOTIVO';
+    const c = r.cliente || 'SIN CLIENTE';
+    const a = r.anio || 'S/F';
+    if(!tree[m]) tree[m]={};
+    if(!tree[m][c]) tree[m][c]={};
+    tree[m][c][a] = (tree[m][c][a]||0) + (r.pendiente||0);
+  });
+
+  // Build table
+  const motivosSorted = Object.keys(tree).sort();
+  let tbodyHTML = '';
+  const granTotal = {};
+  años.forEach(a=>granTotal[a]=0);
+  let granTotalTotal = 0;
+
+  motivosSorted.forEach(motivo=>{
+    const clientes = Object.keys(tree[motivo]).sort();
+    const motivoTotals = {};
+    años.forEach(a=>motivoTotals[a]=0);
+    let motivoTotal = 0;
+
+    clientes.forEach(cliente=>{
+      let rowTotal = 0;
+      const cells = años.map(a=>{
+        const v = tree[motivo][cliente][a]||0;
+        motivoTotals[a]+=v;
+        rowTotal+=v;
+        return v>0?`<td class="tc-monto tc-mono">${fmt(v)}</td>`:`<td style="color:var(--txt3);text-align:right">—</td>`;
+      }).join('');
+      motivoTotal += rowTotal;
+      tbodyHTML += `<tr><td class="tc-name" style="padding-left:24px">${cliente}</td>${cells}<td class="tc-monto tc-mono" style="font-weight:700">${fmt(rowTotal)}</td></tr>`;
+    });
+
+    // Subtotal row
+    const subCells = años.map(a=>{
+      granTotal[a]=(granTotal[a]||0)+motivoTotals[a];
+      return `<td class="tc-monto tc-mono" style="font-weight:700;background:var(--surf3)">${motivoTotals[a]>0?fmt(motivoTotals[a]):'—'}</td>`;
+    }).join('');
+    granTotalTotal += motivoTotal;
+    tbodyHTML += `<tr style="background:var(--surf2)"><td style="font-weight:700;color:var(--txt1);padding-left:8px">Total ${motivo}</td>${subCells}<td class="tc-monto tc-mono" style="font-weight:700;background:var(--surf3);color:var(--red)">${fmt(motivoTotal)}</td></tr>`;
+  });
+
+  // Grand total row
+  const grandCells = años.map(a=>`<td class="tc-monto tc-mono" style="font-weight:700;background:var(--red);color:#fff">${fmt(granTotal[a]||0)}</td>`).join('');
+  tbodyHTML += `<tr style="background:var(--surf2)"><td style="font-weight:900;color:#fff;background:var(--red);padding-left:8px">TOTAL GENERAL</td>${grandCells}<td class="tc-monto tc-mono" style="font-weight:900;background:var(--red);color:#fff">${fmt(granTotalTotal)}</td></tr>`;
+
+  const añoHeaders = años.map(a=>`<th style="text-align:right">${a}</th>`).join('');
+  const totalPend = rows.reduce((s,r)=>s+(r.pendiente||0),0);
+  const totalCheques = rows.filter(r=>r.pendiente>0).length;
+
+  document.getElementById('main').innerHTML=`
+  <div style="padding:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div>
+        <h2 style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--txt1);margin:0">RESUMEN EJECUTIVO</h2>
+        <p style="color:var(--txt3);font-size:12px;margin:4px 0 0">Pendiente por motivo y año · Solo cheques activos</p>
+      </div>
+      <div style="display:flex;gap:12px">
+        <div style="background:var(--surf2);border:1px solid var(--brd2);border-radius:10px;padding:12px 20px;text-align:center">
+          <div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px">Cheques activos</div>
+          <div style="font-size:22px;font-weight:700;color:var(--red);font-family:'JetBrains Mono',monospace">${totalCheques}</div>
+        </div>
+        <div style="background:var(--surf2);border:1px solid var(--brd2);border-radius:10px;padding:12px 20px;text-align:center">
+          <div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px">Total pendiente</div>
+          <div style="font-size:22px;font-weight:700;color:var(--red);font-family:'JetBrains Mono',monospace">${fmt(totalPend)}</div>
+        </div>
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr>
+          <th>Motivo / Cliente</th>
+          ${añoHeaders}
+          <th style="text-align:right">Total</th>
+        </tr></thead>
+        <tbody>${tbodyHTML}</tbody>
+      </table>
+    </div>
+    <p style="color:var(--txt3);font-size:11px;margin-top:12px;text-align:right">
+      Montos en pesos · Pendiente al día de hoy · Última actualización: ${new Date().toLocaleString('es-AR')}
+    </p>
+  </div>`;
+}
+
 // ── CANCELADOS ───────────────────────────────────
 function renderCancelados(){
   document.getElementById('main').innerHTML=`
@@ -745,7 +843,7 @@ function renderCancelados(){
   <div class="tbl-wrap">
     ${!S.cancelados.length?'<div class="empty"><p>Sin datos</p></div>':`
     <div class="tbl-scroll"><table>
-      <thead><tr><th>Cliente</th><th>N° Cheque</th><th>Tipo</th><th>Rechazo</th><th>Motivo</th><th style="text-align:right">Importe</th><th>Cancelación</th><th style="text-align:right">Importe Canc.</th></tr></thead>
+      <thead><tr><th>Cliente</th><th>N° Cheque</th><th>Tipo</th><th>Rechazo</th><th>Motivo</th><th style="text-align:right">Importe</th><th>Cancelación</th><th style="text-align:right">Importe Canc.</th><th></th></tr></thead>
       <tbody>${S.cancelados.map(r=>`<tr>
         <td class="tc-name">${r.cliente}</td>
         <td class="tc-mono tc-cheque">${r.nroCheque}</td>
@@ -755,6 +853,7 @@ function renderCancelados(){
         <td class="tc-monto tc-mono">${fmt(r.importe)}</td>
         <td class="tc-mono tc-fecha">${r.cancelacion||'—'}</td>
         <td class="tc-monto tc-mono" style="color:var(--green-lt)">${r.importeCancelacion?fmt(r.importeCancelacion):'—'}</td>
+        <td class="tc-act"><button class="act-btn" title="Eliminar" style="color:#f87171" onclick=\'confirmarBorrar(${r.fila},${r.nroCheque},${JSON.stringify(r.cliente)},\'cancelados\')\'><svg viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></td>
       </tr>`).join('')}</tbody></table></div>`}
   </div>`;
 }
@@ -1131,7 +1230,7 @@ function renderConfig(){
       <div style="display:flex;flex-direction:column;gap:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
           <span style="font-size:12px;color:var(--txt2)">Versión</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.2.8</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.3.0</span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
           <span style="font-size:12px;color:var(--txt2)">Última actualización</span>
@@ -1268,7 +1367,7 @@ function openNuevoCheque(destino){
     <div class="modal-hdr">
       <div>
         <div class="modal-title">Nuevo Cheque Rechazado</div>
-        <div class="modal-sub">Carga en ${_ncDest.toUpperCase()} <span style="background:var(--surf3);color:var(--txt3);font-size:9px;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;margin-left:6px">v1.2.8</span></div>
+        <div class="modal-sub">Carga en ${_ncDest.toUpperCase()} <span style="background:var(--surf3);color:var(--txt3);font-size:9px;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;margin-left:6px">v1.3.0</span></div>
       </div>
       <button class="modal-x" onclick="closeModal()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
