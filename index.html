@@ -510,7 +510,7 @@ footer{
       <div id="brand-fallback" style="display:none;align-items:center;justify-content:center;width:36px;height:36px;background:var(--red);font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;border-radius:4px">M</div>
       <div class="brand-divider"></div>
       <div class="brand-label">Tesorería <span>·</span> Cheques</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.0.5</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.0.6</div>
     </div>
     <div class="hdr-right">
       <div class="sync-pill loading" id="syncPill">
@@ -547,7 +547,7 @@ footer{
 </main>
 
 <footer>
-  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.0.5</span></div>
+  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.0.6</span></div>
   <div class="ftr-right" id="ftrDate">Última modificación: 09/03/2026</div>
 </footer>
 </div>
@@ -1107,7 +1107,7 @@ function renderConfig(){
       <div style="display:flex;flex-direction:column;gap:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
           <span style="font-size:12px;color:var(--txt2)">Versión</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.0.5</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.0.6</span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
           <span style="font-size:12px;color:var(--txt2)">Última actualización</span>
@@ -1269,20 +1269,26 @@ function ncSwitch(tab){
 
 // ── IA TAB ──────────────────────────────────────
 function renderNcAI(){
-  document.getElementById('ncBody').innerHTML=`
+  const body=document.getElementById('ncBody');
+  if(!body){console.error('ncBody not found');return;}
+  body.innerHTML=`
+    <input type="file" id="aiFileInput" accept="image/*,.pdf" style="display:none" onchange="ncAiHandleFile(this.files[0])"/>
     <div class="ai-drop" id="aiDrop"
-      ondragover="event.preventDefault();this.style.borderColor='var(--red)'"
-      ondragleave="this.style.borderColor=''"
-      ondrop="ncAiDrop(event)"
-      onclick="document.getElementById('aiFileInput').click()">
-      <input type="file" id="aiFileInput" accept="image/*,.pdf" onchange="ncAiHandleFile(this.files[0])"/>
-      <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-      <div style="font-size:13px;font-weight:600;color:var(--txt2)">Subí el comprobante del banco</div>
-      <div style="font-size:11px;color:var(--txt3);margin-top:5px">JPG, PNG o PDF · La IA lee los datos automáticamente</div>
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="this.classList.remove('drag');ncAiDrop(event)">
+      <svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:var(--txt3);fill:none;stroke-width:1.5;margin-bottom:12px">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      <div style="font-size:13px;font-weight:700;color:var(--txt2);margin-bottom:6px">Arrasta el comprobante aca</div>
+      <div style="font-size:11px;color:var(--txt3);margin-bottom:16px">JPG - PNG - PDF del banco</div>
+      <button onclick="document.getElementById('aiFileInput').click()" style="padding:10px 24px;background:var(--red);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">
+        Seleccionar archivo
+      </button>
     </div>
     <div id="ncAiStatus"></div>`;
 }
-
 function ncAiDrop(e){
   e.preventDefault();
   document.getElementById('aiDrop').style.borderColor='';
@@ -1380,7 +1386,7 @@ function renderNcManual(d, afterAI){
         </div>
       </div>
       <div class="frow">
-        <div class="field"><label>N° Cheque</label><input type="text" id="nNroCheque" value="${esc(d.nroCheque||'')}" placeholder="28326020"/></div>
+        <div class="field"><label>N° Cheque</label><input type="text" id="nNroCheque" value="${esc(d.nroCheque||'')}" placeholder="Ej: 12345678"/></div>
         <div class="field"><label>Tipo</label><select id="nTipo">
           <option value="Electronico" ${(!d.tipo||d.tipo==='Electronico')?'selected':''}>Electrónico</option>
           <option value="Fisico" ${d.tipo==='Fisico'?'selected':''}>Físico</option>
