@@ -510,8 +510,8 @@ function renderManualForm(d, fromAI){
       </div>
       <div class="field"><label>Tipo</label>
         <select id="nTipo">
-          <option value="Electronico" ${(!d?.tipo||d?.tipo==='Electronico')?'selected':''}>Electrónico</option>
-          <option value="Fisico" ${d?.tipo==='Fisico'?'selected':''}>Físico</option>
+          <option value="Electronico" ${(d?.tipo==='Fisico')?'':'selected'}>Electrónico</option>
+          <option value="Fisico" ${(d?.tipo==='Fisico')?'selected':''}>Físico</option>
         </select>
       </div>
     </div>
