@@ -599,9 +599,21 @@ async function guardar(){
     pendiente:    total,
   };
 
+  await _ejecutarGuardar(row, btn, nroCheque, false);
+}
+
+async function _ejecutarGuardar(row, btn, nroCheque, forzar){
+  if(btn){ btn.disabled=true; btn.innerHTML='Guardando...'; }
   try{
-    const res = await fetch(API, { method:'POST', body: JSON.stringify({ action:'agregarRechazado', row }) });
+    const res = await fetch(API, { method:'POST', body: JSON.stringify({ action:'agregarRechazado', row, forzar }) });
     const r   = await res.json();
+
+    // ─── Cheque duplicado: mostrar warning ───────────────────
+    if(!r.ok && r.duplicate){
+      if(btn){ btn.disabled=false; btn.innerHTML=`<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg> Guardar en Rechazados`; }
+      showDupWarn(r.existingRow, row, nroCheque);
+      return;
+    }
     if(!r.ok) throw new Error(r.error);
 
     toast('✓ Cheque ' + nroCheque + ' guardado en RECHAZADOS','success');
@@ -619,13 +631,11 @@ async function guardar(){
         toast('📎 Comprobante guardado en Drive','success');
       }catch(ev){ console.warn('Evidencia no subida:', ev); }
     } else {
-      // Sin evidencia → enviar mail sin adjunto
       try{
         await fetch(API, { method:'POST', body: JSON.stringify({ action:'enviarMailSinAdjunto', row }) });
       }catch(ev){ console.warn('Mail sin adjunto:', ev); }
     }
 
-    // Limpiar y volver a la pantalla de escaneo
     _base64 = null; _file = null; _mime = null;
     switchTab('ia');
     resetCapture();
@@ -633,9 +643,31 @@ async function guardar(){
 
   }catch(e){
     toast('Error: ' + e.message, 'error');
-    btn.disabled = false;
-    btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg> Guardar en Rechazados`;
+    if(btn){ btn.disabled=false; btn.innerHTML=`<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg> Guardar en Rechazados`; }
   }
+}
+
+function showDupWarn(ex, row, nroCheque){
+  let w = document.getElementById('dupWarn');
+  if(w) w.remove();
+  w = document.createElement('div');
+  w.id = 'dupWarn';
+  w.style.cssText = 'margin:12px 0;padding:14px;background:rgba(217,119,6,.1);border:1px solid rgba(252,211,77,.25);border-radius:10px';
+  w.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <svg style="width:16px;height:16px;stroke:#fcd34d;fill:none;stroke-width:2;flex-shrink:0" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span style="font-size:13px;font-weight:700;color:#fcd34d">Cheque N° ${nroCheque} ya existe</span>
+    </div>
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:4px"><b style="color:#fff">${ex.cliente}</b> · ${ex.fechaRechazo}</div>
+    <div style="font-size:11px;color:#f87171;margin-bottom:10px">${ex.motivo} · $${Number(ex.importe).toLocaleString('es-AR',{minimumFractionDigits:2})}</div>
+    <div style="font-size:11px;color:var(--txt3);margin-bottom:12px">¿Guardarlo igual? (válido si es otro banco o emisión)</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="document.getElementById('dupWarn').remove()" style="flex:1;padding:10px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;color:var(--txt2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button>
+      <button onclick="_ejecutarGuardar(${JSON.stringify(row)},null,'${nroCheque}',true)" style="flex:1;padding:10px;background:#D97706;border:none;border-radius:8px;color:#000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">⚠ Guardar igual</button>
+    </div>`;
+  const form = document.getElementById('manualForm');
+  if(form) form.insertAdjacentElement('beforebegin', w);
+  w.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
 // ── HELPERS ───────────────────────────────────────────────────
