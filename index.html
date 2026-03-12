@@ -6,7 +6,7 @@
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Tesorería · Moretti S.A.</title>
+<title>🏦 Tesorería · Moretti S.A.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
@@ -30,120 +30,43 @@
   --amber:     #D97706;
   --amber-lt:  #FCD34D;
 }
-
-html,body{
-  min-height:100%;
-  background:var(--black);
-  color:var(--txt);
-  font-family:'Inter',sans-serif;
-  font-size:13px;
-  -webkit-font-smoothing:antialiased;
-}
-
-/* ── SCROLLBAR ─────────────────────────────────── */
+html,body{min-height:100%;background:var(--black);color:var(--txt);font-family:'Inter',sans-serif;font-size:13px;-webkit-font-smoothing:antialiased;}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:var(--dark)}
 ::-webkit-scrollbar-thumb{background:var(--surf3);border-radius:2px}
 ::-webkit-scrollbar-thumb:hover{background:var(--red2)}
-
-/* ── HEADER ────────────────────────────────────── */
-header{
-  position:sticky;top:0;z-index:100;
-  background:rgba(8,8,8,0.96);
-  border-bottom:1px solid var(--brd);
-  backdrop-filter:blur(12px);
-}
-.hdr{
-  max-width:1600px;margin:0 auto;
-  padding:0 28px;height:56px;
-  display:flex;align-items:center;justify-content:space-between;
-}
+header{position:sticky;top:0;z-index:100;background:rgba(8,8,8,0.96);border-bottom:1px solid var(--brd);backdrop-filter:blur(12px);}
+.hdr{max-width:1600px;margin:0 auto;padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;}
 .brand{display:flex;align-items:center;gap:14px}
-.brand-logo{
-  height:30px;
-  /* Logo oficial Moretti */
-}
-.brand-logo img{height:30px;width:auto;display:block;}
+.brand-logo{height:30px;}
+.brand-logo img{height:30px;width:auto;display:block;filter:brightness(0) invert(1)}
 .brand-divider{width:1px;height:24px;background:var(--brd2)}
-.brand-label{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:18px;letter-spacing:.12em;
-  color:var(--txt2);line-height:1;
-}
+.brand-label{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.12em;color:var(--txt2);line-height:1;}
 .brand-label span{color:var(--red)}
-
 .hdr-right{display:flex;align-items:center;gap:6px}
-.sync-pill{
-  display:flex;align-items:center;gap:6px;
-  padding:4px 10px;border-radius:20px;
-  background:var(--surf2);border:1px solid var(--brd);
-  font-size:10px;font-weight:600;letter-spacing:.08em;
-  text-transform:uppercase;color:var(--txt3);
-  transition:.2s;
-}
+.sync-pill{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:var(--surf2);border:1px solid var(--brd);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);transition:.2s;}
 .sync-pill.ok{color:var(--green-lt);border-color:rgba(74,222,128,.15);background:rgba(22,163,74,.06)}
 .sync-pill.loading{color:var(--amber-lt);border-color:rgba(252,211,77,.1);background:rgba(217,119,6,.05)}
 .sync-pill.error{color:#f87171;border-color:rgba(212,0,10,.2);background:rgba(212,0,10,.06)}
 .sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
 .sync-pill.loading .sync-dot{animation:pulse 1.2s ease infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
-
-.icon-btn{
-  width:34px;height:34px;border:none;
-  background:transparent;color:var(--txt3);
-  cursor:pointer;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  transition:.15s;
-}
+.icon-btn{width:34px;height:34px;border:none;background:transparent;color:var(--txt3);cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:.15s;}
 .icon-btn:hover{background:var(--surf2);color:var(--txt)}
 .icon-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-
-/* ── NAV ───────────────────────────────────────── */
-.nav{
-  background:var(--dark);
-  border-bottom:1px solid var(--brd);
-}
-.nav-inner{
-  max-width:1600px;margin:0 auto;
-  padding:0 28px;display:flex;gap:0;
-}
-.tab{
-  padding:12px 20px;
-  font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--txt3);border:none;background:transparent;
-  cursor:pointer;position:relative;transition:.2s;
-  border-bottom:2px solid transparent;
-}
-.tab::after{
-  content:'';position:absolute;bottom:-1px;left:0;right:0;
-  height:2px;background:var(--red);
-  transform:scaleX(0);transition:.2s ease;
-}
+.nav{background:var(--dark);border-bottom:1px solid var(--brd);}
+.nav-inner{max-width:1600px;margin:0 auto;padding:0 28px;display:flex;gap:0;}
+.tab{padding:12px 20px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);border:none;background:transparent;cursor:pointer;position:relative;transition:.2s;border-bottom:2px solid transparent;}
+.tab::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--red);transform:scaleX(0);transition:.2s ease;}
 .tab:hover{color:var(--txt2)}
 .tab.active{color:#fff}
 .tab.active::after{transform:scaleX(1)}
-
-/* ── MAIN ──────────────────────────────────────── */
 #app{display:flex;flex-direction:column;min-height:100vh}
 main{flex:1;max-width:1600px;width:100%;margin:0 auto;padding:28px}
-
-/* ── SECTION HEADER ────────────────────────────── */
-.section-header{
-  display:flex;align-items:center;gap:12px;
-  margin-bottom:20px;flex-wrap:wrap;
-}
-.section-title{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:22px;letter-spacing:.1em;color:#fff;
-}
+.section-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.1em;color:#fff;}
 .section-sub{font-size:10px;font-weight:600;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase}
-.btn-new{
-  display:flex;align-items:center;gap:7px;
-  padding:8px 16px;background:var(--red);border:none;
-  border-radius:8px;color:#fff;font-size:11px;font-weight:700;
-  letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
-  font-family:'Inter',sans-serif;transition:.15s;margin-left:auto;
-}
+.btn-new{display:flex;align-items:center;gap:7px;padding:8px 16px;background:var(--red);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:'Inter',sans-serif;transition:.15s;margin-left:auto;}
 .btn-new:hover{background:var(--red2)}
 .btn-new svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5}
 .nc-tabs{display:flex;gap:0;border-bottom:1px solid var(--brd);margin-bottom:20px}
@@ -153,177 +76,57 @@ main{flex:1;max-width:1600px;width:100%;margin:0 auto;padding:28px}
 .ai-drop:hover,.ai-drop.drag{border-color:var(--red);background:rgba(212,0,10,.04)}
 .ai-drop input[type=file]{display:none}
 .ai-drop svg{width:32px;height:32px;stroke:var(--txt3);fill:none;stroke-width:1.5;margin:0 auto 10px;display:block}
-.ai-result{background:rgba(212,0,10,.06);border:1px solid rgba(212,0,10,.2);border-radius:8px;padding:14px 16px;margin-bottom:16px;}
-.ai-result-title{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.ai-scanning{display:flex;align-items:center;gap:12px;padding:20px;color:var(--txt2);font-size:12px;font-weight:600;}
-.ai-scanning .spinner{width:18px;height:18px;border-width:2px;flex-shrink:0}
-
-/* ── KPI GRID ──────────────────────────────────── */
-.kpi-grid{
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:10px;margin-bottom:24px;
-}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:24px;}
 @media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:700px){.kpi-grid{grid-template-columns:1fr 1fr}}
-
-.kpi{
-  background:var(--surf);
-  border:1px solid var(--brd);
-  border-radius:10px;padding:18px 20px;
-  position:relative;overflow:hidden;
-  transition:.2s;
-}
+.kpi{background:var(--surf);border:1px solid var(--brd);border-radius:10px;padding:18px 20px;position:relative;overflow:hidden;transition:.2s;}
 .kpi:hover{border-color:var(--brd2);background:var(--surf2)}
-.kpi::after{
-  content:'';
-  position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,var(--red),transparent);
-  opacity:0;transition:.2s;
-}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent);opacity:0;transition:.2s;}
 .kpi:hover::after{opacity:1}
-.kpi-label{
-  font-size:9px;font-weight:700;letter-spacing:.15em;
-  text-transform:uppercase;color:var(--txt3);margin-bottom:8px;
-}
-.kpi-val{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:30px;letter-spacing:.04em;color:#fff;line-height:1;
-}
+.kpi-label{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--txt3);margin-bottom:8px;}
+.kpi-val{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:.04em;color:#fff;line-height:1;}
 .kpi-val.danger{color:var(--red)}
 .kpi-val.warn{color:var(--amber-lt)}
 .kpi-val.good{color:var(--green-lt)}
-.kpi-sub{
-  font-size:10px;color:var(--txt3);margin-top:6px;
-  font-weight:500;
-}
-
-/* ── CHARTS GRID ───────────────────────────────── */
+.kpi-sub{font-size:10px;color:var(--txt3);margin-top:6px;font-weight:500;}
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
 @media(max-width:900px){.charts-grid{grid-template-columns:1fr}}
-
-.card{
-  background:var(--surf);border:1px solid var(--brd);
-  border-radius:10px;padding:20px 24px;
-}
-.card-title{
-  font-size:9px;font-weight:700;letter-spacing:.15em;
-  text-transform:uppercase;color:var(--txt3);
-  margin-bottom:18px;display:flex;align-items:center;gap:8px;
-}
-.card-title::before{
-  content:'';width:3px;height:10px;
-  background:var(--red);border-radius:2px;flex-shrink:0;
-}
-
-/* ── BARS ──────────────────────────────────────── */
+.card{background:var(--surf);border:1px solid var(--brd);border-radius:10px;padding:20px 24px;}
+.card-title{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--txt3);margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.card-title::before{content:'';width:3px;height:10px;background:var(--red);border-radius:2px;flex-shrink:0;}
 .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .bar-row:last-child{margin-bottom:0}
-.bar-lbl{
-  font-size:11px;font-weight:500;color:var(--txt2);
-  width:145px;overflow:hidden;text-overflow:ellipsis;
-  white-space:nowrap;flex-shrink:0;
-}
-.bar-track{
-  flex:1;height:6px;background:var(--surf3);
-  border-radius:3px;overflow:hidden;
-}
-.bar-fill{
-  height:100%;border-radius:3px;
-  background:var(--red);
-  transition:width .6s cubic-bezier(.4,0,.2,1);
-}
+.bar-lbl{font-size:11px;font-weight:500;color:var(--txt2);width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;}
+.bar-track{flex:1;height:6px;background:var(--surf3);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;background:var(--red);transition:width .6s cubic-bezier(.4,0,.2,1);}
 .bar-fill.gold{background:linear-gradient(90deg,var(--amber),var(--amber-lt))}
-.bar-val{
-  font-family:'JetBrains Mono',monospace;
-  font-size:10px;font-weight:500;color:var(--txt3);
-  width:68px;text-align:right;flex-shrink:0;
-}
-
-/* ── TOOLBAR ───────────────────────────────────── */
-.toolbar{
-  display:flex;align-items:center;gap:8px;
-  margin-bottom:14px;flex-wrap:wrap;
-}
+.bar-val{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;color:var(--txt3);width:68px;text-align:right;flex-shrink:0;}
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
 .search-wrap{position:relative;flex:1;min-width:200px;max-width:380px}
-.search-ico{
-  position:absolute;left:10px;top:50%;transform:translateY(-50%);
-  width:13px;height:13px;color:var(--txt3);pointer-events:none;
-  stroke:currentColor;fill:none;stroke-width:2;
-  stroke-linecap:round;stroke-linejoin:round;
-}
-.search-input{
-  width:100%;padding:8px 12px 8px 30px;
-  background:var(--surf2);border:1px solid var(--brd2);
-  border-radius:8px;color:var(--txt);
-  font-size:12px;font-weight:500;
-  font-family:'Inter',sans-serif;outline:none;transition:.15s;
-}
+.search-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--txt3);pointer-events:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.search-input{width:100%;padding:8px 12px 8px 30px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;color:var(--txt);font-size:12px;font-weight:500;font-family:'Inter',sans-serif;outline:none;transition:.15s;}
 .search-input:focus{border-color:var(--red);background:var(--surf3)}
 .search-input::placeholder{color:var(--txt3)}
-
-.sel{
-  padding:8px 12px;background:var(--surf2);
-  border:1px solid var(--brd2);border-radius:8px;
-  color:var(--txt2);font-size:11px;font-weight:600;
-  font-family:'Inter',sans-serif;outline:none;cursor:pointer;
-  transition:.15s;
-}
+.sel{padding:8px 12px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;color:var(--txt2);font-size:11px;font-weight:600;font-family:'Inter',sans-serif;outline:none;cursor:pointer;transition:.15s;}
 .sel:focus{border-color:var(--red)}
-
-.badge{
-  font-size:10px;font-weight:600;color:var(--txt3);
-  padding:4px 10px;background:var(--surf2);
-  border-radius:20px;border:1px solid var(--brd);
-  white-space:nowrap;
-}
-
-.btn-outline{
-  padding:7px 14px;background:transparent;
-  border:1px solid var(--brd2);border-radius:8px;
-  color:var(--txt3);font-size:10px;font-weight:700;
-  letter-spacing:.08em;text-transform:uppercase;
-  cursor:pointer;display:flex;align-items:center;gap:6px;
-  transition:.15s;font-family:'Inter',sans-serif;
-}
+.badge{font-size:10px;font-weight:600;color:var(--txt3);padding:4px 10px;background:var(--surf2);border-radius:20px;border:1px solid var(--brd);white-space:nowrap;}
+.btn-outline{padding:7px 14px;background:transparent;border:1px solid var(--brd2);border-radius:8px;color:var(--txt3);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:6px;transition:.15s;font-family:'Inter',sans-serif;}
 .btn-outline:hover{border-color:var(--txt3);color:var(--txt)}
 .btn-outline svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
-
-/* ── TABLE ─────────────────────────────────────── */
-.tbl-wrap{
-  background:var(--surf);border:1px solid var(--brd);
-  border-radius:10px;overflow:hidden;
-}
+.tbl-wrap{background:var(--surf);border:1px solid var(--brd);border-radius:10px;overflow:hidden;}
 .tbl-scroll{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
 thead tr{background:var(--surf2);border-bottom:1px solid var(--brd)}
-th{
-  padding:10px 14px;text-align:left;
-  font-size:9px;font-weight:700;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--txt3);
-  white-space:nowrap;cursor:pointer;user-select:none;
-  transition:.15s;
-}
+th{padding:10px 14px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3);white-space:nowrap;cursor:pointer;user-select:none;transition:.15s;}
 th:hover{color:var(--txt2)}
 th.asc::after{content:' ↑';color:var(--red)}
 th.desc::after{content:' ↓';color:var(--red)}
-tbody tr{
-  border-bottom:1px solid rgba(255,255,255,.03);
-  transition:.1s;
-}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.03);transition:.1s;}
 tbody tr:last-child{border-bottom:none}
 tbody tr:hover{background:rgba(255,255,255,.02)}
 td{padding:11px 14px;vertical-align:middle}
-
-.tc-name{
-  font-weight:600;color:#fff;
-  max-width:160px;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap;
-}
-.tc-mono{
-  font-family:'JetBrains Mono',monospace;
-  font-size:11px;font-weight:500;
-}
+.tc-name{font-weight:600;color:#fff;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tc-mono{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;}
 .tc-cheque{color:var(--red)}
 .tc-fecha{color:var(--txt2)}
 .tc-monto{text-align:right;color:var(--txt2)}
@@ -332,189 +135,71 @@ td{padding:11px 14px;vertical-align:middle}
 .tc-pend.debt{color:var(--red)}
 .tc-pend.paid{color:var(--green-lt)}
 .tc-mora{text-align:right}
-.tc-detail{
-  font-size:11px;color:var(--txt3);
-  max-width:120px;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap;
-}
+.tc-detail{font-size:11px;color:var(--txt3);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tc-act{text-align:right;width:50px}
-
-/* TAGS */
-.tag{
-  display:inline-flex;align-items:center;
-  padding:2px 7px;border-radius:4px;
-  font-size:9px;font-weight:700;letter-spacing:.06em;
-  text-transform:uppercase;white-space:nowrap;
-}
+.tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;}
 .tag-red{background:rgba(212,0,10,.1);color:#f87171;border:1px solid rgba(212,0,10,.2)}
 .tag-blue{background:rgba(59,130,246,.1);color:#93c5fd;border:1px solid rgba(59,130,246,.15)}
 .tag-gold{background:rgba(217,119,6,.1);color:#fcd34d;border:1px solid rgba(217,119,6,.15)}
-
-/* ACTION BTN */
-.act-btn{
-  width:28px;height:28px;border:none;background:transparent;
-  color:var(--txt3);cursor:pointer;border-radius:6px;
-  display:inline-flex;align-items:center;justify-content:center;
-  transition:.15s;
-}
-.act-btn[title="Eliminar"]:hover{background:rgba(212,0,10,.15)!important;}
+.act-btn{width:28px;height:28px;border:none;background:transparent;color:var(--txt3);cursor:pointer;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;transition:.15s;}
 .act-btn:hover{background:var(--surf3);color:#fff}
 .act-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-
-/* ── EMPTY ─────────────────────────────────────── */
-.empty{
-  padding:60px 20px;text-align:center;color:var(--txt3);
-}
+.empty{padding:60px 20px;text-align:center;color:var(--txt3);}
 .empty svg{width:32px;height:32px;margin:0 auto 10px;display:block;stroke:currentColor;fill:none;stroke-width:1.5;opacity:.25}
 .empty p{font-size:13px;font-weight:600}
 .empty span{font-size:11px;display:block;margin-top:3px;opacity:.5}
-
-/* ── LOADING ───────────────────────────────────── */
-#loading{
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  min-height:340px;gap:16px;color:var(--txt3);
-}
-.spinner{
-  width:32px;height:32px;
-  border:2px solid var(--brd2);
-  border-top-color:var(--red);
-  border-radius:50%;
-  animation:spin .6s linear infinite;
-}
+#loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:340px;gap:16px;color:var(--txt3);}
+.spinner{width:32px;height:32px;border:2px solid var(--brd2);border-top-color:var(--red);border-radius:50%;animation:spin .6s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loading-txt{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:16px;letter-spacing:.2em;color:var(--txt3);
-}
-
-/* ── MODAL ─────────────────────────────────────── */
-.overlay{
-  position:fixed;inset:0;z-index:200;
-  background:rgba(0,0,0,.85);backdrop-filter:blur(6px);
-  display:flex;align-items:center;justify-content:center;padding:16px;
-}
-.modal{
-  background:var(--surf);border:1px solid var(--brd2);
-  border-radius:12px;width:100%;max-width:500px;
-  max-height:90vh;overflow-y:auto;
-  box-shadow:0 32px 80px rgba(0,0,0,.7);
-}
-.modal-hdr{
-  padding:20px 24px 18px;
-  border-bottom:1px solid var(--brd);
-  display:flex;align-items:flex-start;justify-content:space-between;
-}
-.modal-title{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:18px;letter-spacing:.1em;color:#fff;line-height:1;
-}
-.modal-sub{
-  font-size:10px;color:var(--txt3);font-weight:600;
-  letter-spacing:.1em;text-transform:uppercase;margin-top:4px;
-}
-.modal-x{
-  width:28px;height:28px;border:none;background:transparent;
-  color:var(--txt3);cursor:pointer;border-radius:6px;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
+.loading-txt{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.2em;color:var(--txt3);}
+.overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal{background:var(--surf);border:1px solid var(--brd2);border-radius:12px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.7);}
+.modal-hdr{padding:20px 24px 18px;border-bottom:1px solid var(--brd);display:flex;align-items:flex-start;justify-content:space-between;}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.1em;color:#fff;line-height:1;}
+.modal-sub{font-size:10px;color:var(--txt3);font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-top:4px;}
+.modal-x{width:28px;height:28px;border:none;background:transparent;color:var(--txt3);cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .modal-x:hover{background:var(--surf2);color:#fff}
 .modal-x svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
 .modal-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px}
-.modal-ftr{
-  padding:16px 24px;border-top:1px solid var(--brd);
-  display:flex;justify-content:flex-end;gap:8px;
-}
-
-/* FIELDS */
+.modal-ftr{padding:16px 24px;border-top:1px solid var(--brd);display:flex;justify-content:flex-end;gap:8px;}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.field label{
-  display:block;font-size:9px;font-weight:700;
-  letter-spacing:.14em;text-transform:uppercase;
-  color:var(--txt3);margin-bottom:5px;
-}
-.field input,.field select{
-  width:100%;padding:9px 12px;
-  background:var(--surf2);border:1px solid var(--brd2);
-  border-radius:7px;color:#fff;font-size:12px;font-weight:500;
-  font-family:'Inter',sans-serif;outline:none;transition:.15s;
-}
+.field label{display:block;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3);margin-bottom:5px;}
+.field input,.field select{width:100%;padding:9px 12px;background:var(--surf2);border:1px solid var(--brd2);border-radius:7px;color:#fff;font-size:12px;font-weight:500;font-family:'Inter',sans-serif;outline:none;transition:.15s;}
 .field input:focus,.field select:focus{border-color:var(--red);background:var(--surf3)}
 .field input::placeholder{color:var(--txt3)}
 .field input[readonly]{opacity:.45;cursor:not-allowed}
-
-.saldo-box{
-  background:var(--surf2);border:1px solid var(--brd);
-  border-radius:8px;padding:14px 16px;
-  display:flex;align-items:center;justify-content:space-between;
-}
+.saldo-box{background:var(--surf2);border:1px solid var(--brd);border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
 .saldo-lbl{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--txt3)}
-.saldo-val{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:28px;letter-spacing:.04em;line-height:1;
-}
+.saldo-val{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.04em;line-height:1;}
 .saldo-val.debt{color:var(--red)}
 .saldo-val.paid{color:var(--green-lt)}
-
-.btn-cancel{
-  padding:9px 18px;background:transparent;
-  border:1px solid var(--brd2);border-radius:8px;
-  color:var(--txt2);font-size:11px;font-weight:600;
-  font-family:'Inter',sans-serif;cursor:pointer;transition:.15s;
-}
+.btn-cancel{padding:9px 18px;background:transparent;border:1px solid var(--brd2);border-radius:8px;color:var(--txt2);font-size:11px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:.15s;}
 .btn-cancel:hover{border-color:var(--txt3)}
-.btn-save{
-  padding:9px 22px;background:var(--red);border:none;
-  border-radius:8px;color:#fff;font-size:11px;font-weight:700;
-  letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
-  display:flex;align-items:center;gap:7px;transition:.15s;
-  font-family:'Inter',sans-serif;
-}
+.btn-save{padding:9px 22px;background:var(--red);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.15s;font-family:'Inter',sans-serif;}
 .btn-save:hover{background:var(--red2)}
 .btn-save:disabled{opacity:.4;cursor:not-allowed}
 .btn-save svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
-
-/* ── TOASTS ────────────────────────────────────── */
 #toasts{position:fixed;top:18px;right:18px;z-index:999;display:flex;flex-direction:column;gap:8px}
-.toast{
-  padding:10px 16px;border-radius:8px;
-  font-size:12px;font-weight:600;max-width:300px;
-  display:flex;align-items:center;gap:8px;
-  animation:tin .2s ease;
-}
+.toast{padding:10px 16px;border-radius:8px;font-size:12px;font-weight:600;max-width:300px;display:flex;align-items:center;gap:8px;animation:tin .2s ease;}
 @keyframes tin{from{transform:translateX(105%);opacity:0}to{transform:none;opacity:1}}
 .toast.success{background:#052e16;border:1px solid rgba(74,222,128,.2);color:#86efac}
 .toast.error{background:#180000;border:1px solid rgba(212,0,10,.3);color:#f87171}
 .toast.info{background:var(--surf);border:1px solid var(--brd2);color:var(--txt2)}
-
-/* ── FOOTER ────────────────────────────────────── */
-footer{
-  border-top:1px solid var(--brd);
-  padding:12px 28px;
-  display:flex;align-items:center;justify-content:space-between;
-}
-.ftr-left{
-  font-size:9px;font-weight:600;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--txt3);
-}
-.ftr-right{
-  font-family:'JetBrains Mono',monospace;
-  font-size:9px;color:var(--txt3);
-}
+footer{border-top:1px solid var(--brd);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;}
+.ftr-left{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);}
+.ftr-right{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txt3);}
 </style>
 </head>
 <body>
 <div id="app">
-
-<!-- HEADER -->
 <header>
   <div class="hdr">
     <div class="brand">
-      <img class="brand-logo" src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCACjAnwDASIAAhEBAxEB/8QAHAABAQEAAwEBAQAAAAAAAAAAAAgHBAUGAwIB/8QAWhAAAQIDAQcLDgwEBAMJAAAAAAECAwQFBgcIERY3VNESFzZzdHWTo7Gz0hMUGCExQVFVVmaUpbLjFTQ1UmFxgYSRlbTDIjKSpCMzU6EkQmJDRmNygoOiwdP/xAAbAQEAAgMBAQAAAAAAAAAAAAAABQYCBAcDAf/EAD4RAAECAgQIDAYCAgMBAAAAAAABAgMEBRFSkQYTFTE0caHREhQWITIzUVNyscHhNUFDYWKBIoKiwiRCg/D/2gAMAwEAAhEDEQA/AIyNtuRXAqpaaWg1m1EaNSaXERHwoDETriO1e/2+0xq95VRVXwYMCn2vWLm0vaOpxbWVuXSNTafF6nKwXphbHjoiKquTvtaiouDvqqeBUKyIycnFYvAZnJaRkUemMiZvkh5Sy1zixFmYTG0mzcgyI3B/jxYaRYyr4dW/Cv4YEPVNRGtRrURERMCIncQ/oIhzlctaqTTWNalTUqAAPhkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADjzE9KwO1EjNw+BO2v+x8Vaj6iKuY5AOlma4nbSXg4f+p+hDrZmdmpjCkSK7U/NTtIYLFRD3bLPXPzHoJqpSkvhRYmrd81nbOpm6zMRcLYKJCb4e6p1gPJ0RVNlkuxv3P69znuVznK5y91VXCp/ADzPYAAH0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHSWlslZy0cu6DV6TKzCu7kXUamI36UenbT8TuwZNcrVratRi9jXpU5K0JQuuXNZyxUy2blYkSco8Z2phxlT+OE75kTB2sPgXv4O8Z8XHXqVJVujzVKqEJIsrMw1hxG/X308CovbRe8qEX2ro0xZ60c/RZpcMWUjLD1WDBq291rk+hUVF+0slHTix2q1/SQp9LUeks9Hs6K7FLguI0qFR7k9m5SEzUK+QhzERFTAurip1R2H6cLsH2HsjpLAbA7P71y3NNO7ImItb1VSWhJUxETsAAMD0ABuZtysrj6+eqo0pub4vVzV1mGA3MG1kv8tnuaeVvw2+xhgNzAyX+Wz3GVvw2+xhgNzAyX+Wz3GVvw2+xhgNzAyX+Wz3GVvw2+xhgNzAyX+Wz3GVvw2+xhgNzAyX+Wz3GVvw2+xhgNzAyX+Wz3GVvw2+xhgNzAyX+Wz3GVvw2+xhh84saFCTDFisZ/5nYDYLS0CRrtPiy0diQ4rmr1OOztPY7vLhTup9BOc5Biy03Glo3+bCiOY/60XApoTkB0sqfNFJWj4zJxF+Sp8j0EesScP+Vzoi/9KaTgx65Gd2oMFrE8LlwqdQDQWI5SVbLsQ5Eedmo/+ZHeqeBFwJ+CHHAPNVrPZERMwAAPoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPW3KJGTqFr4ctPS0KZgrBeqsiN1SYUTtdo9IUNYj0YnzPKPFSDDdEX5HkgUdinZnxFT+AaMU7M+IqfwDSUyPEtIQvKCFYXYTiCjsU7M+IqfwDTzl0yz1DkbEVCak6TJwI7Op6mJDhIjkwxWIuBfqVTCJRURjFcrk5uczhU5CixGsRq86ol5igAIonAAa/czspZ+qWQlp2fpsOPMPfERz1e5FXA5UTuKbEtLOmH8BqmpOTbJSHw3pWldXMZAChMRLJeJYXCP0jESyXiWFwj9JvZHjdqbdxG5fgWV2byewUJiJZLxLC4R+kzW7BRaXRalIQqXKNlmRILnPRrlXCuH6VU8ZijokBivcqVGxK0tCmYiQ2ota6t54UAEeSoAAAAAAAAAAAAMRu4WCj1+2UOpSaozVybGxf+pyOcmH8NSn2G3HmrU/KEPak5VNmViuhROE0052CyNC4L8x7awM/IpYagNdNwEc2mSyKixETB/hNO8Sdk1TCk3Lr/AO4hPFm9jtN3JC9hDnnk+ZVHLzEjCoVrobV4fyT5G9ddS2cwf60P6kxLr3I8JfqehggMeM/YzyGlvZ7m+dXgf60P+pDdyDC8yboeLjOHzdnqVbCWR4piv5V11+gABNlWB+Yz+pwnv+a1VP0fCpfJ0ztTuRT4uY+tStajOFuqQk7sOT+x7lO4sbb2BaCspTUhQkc6G56KxV731oSEaZe05UIO5I3IhWpWko8SM1qrzKpfZ/ByWgSsSK3OiKpU4ALMUEAAA8xdFtPFstS5ecgy8KOsWN1NUiOVET+FVw9r6jw2u/O+K5LhVPxfW7DaVvh+28m8rtIz0aDHVjFqQu1B0JLzcokWInPWv/2ctmxVebaSgQqm2B1BXOcxzEdqkRUXvKd0Zne05L4O643KhphNyr1iQWudnVCq0hBbAmokJuZFVAAD3NME1WxexLXVlFe34/H7/wD4jilSKro2UK0m+01zriFpp1TG6y04LS+OixErq5k8z1fVIfz2/ie/hXKrQxIbYjZ2l4HIiphixO//AOgncuym/J0ttTeRDSoyXhzKu4fyqJLCCJFo5Iaw16Vfy7Kt5jutPaLPaVwsToDWntFntK4WJ0DaQSuSpfsW8reW5rtS4xbWntFntK4WJ0BrT2iz2lcLE6BtIGSpfsW8Zbmu1LjFtae0We0rhYnQGtPaLPaVwsToG0gZKl+xbxlua7UuMW1p7RZ7SuFidAa09os9pXCxOgbSBkqX7FvGW5rtS4xbWntFntK4WJ0BrT2iz2lcLE6BtIGSpfsW8Zbmu1LjFtae0We0rhYnQGtPaLPaVwsToG0gZKl+xbxlua7UuMW1p7RZ7SuFidAa09os9pXCxOgbSBkqX7FvGW5rtS4xbWntFntK4WJ0BrT2iz2lcLE6BtIGSpfsW8Zbmu1LjFtae0We0rhYnQGtPaLPaVwsToG0gZKl+xbxlua7UuMW1p7RZ7SuFidAa09os9pXCxOgbSBkqX7FvGW5rtS4xbWntFntK4WJ0BrT2iz2lcLE6BtIGSpfsW8Zbmu1LjFtae0We0rhYnQGtPaLPaVwsToG0gZKl+xbxlua7UuMW1p7RZ7SuFidAa09os9pXCxOgbSBkqX7FvGW5rtS4xbWntFntK4WJ0BrT2iz2lcLE6BtIGSpfsW8Zbmu1LjFtae0We0rhYnQPQ3PrB1iz1omVGdmZGJCSE9mCC96uwr9bUNIBnDo6BDcjkzoecWl5mKxWOVKl+wABvkYDoLodOnKtY6ep9Pg9WmYvU9QzVI3DgiNVe2qoncRTvwYRGI9qtX5mcKIsN6PTOi13GA63lsfE/8AcwukNby2Pif+5hdI34EbkiB2rs3Ezl+ZstuXeYDreWx8T/3MLpGt3N6ZPUiyUtI1GB1CYY+IrmatrsCK5VTtoqp3D0YNiWkIcu/htVTVm6UjTTOA9Eqrr5q94ABukaDOLrlma3XajIxaVJdcMhQXNevVWMwKq4f+ZUNHB4x4DY7FY7MbErMuloiRGZ07TAdby2Pif+5hdIa3lsfE/wDcwukb8DQyRA7V2biUy/M2W3LvMB1vLY+J/wC5hdIa3lsfE/8Acwukb8BkiB2rs3DL8zZbcu8wHW8tj4n/ALmF0hreWx8T/wBzC6RvwGSIHauzcMvzNlty7yfo1gLWwYL40Wk6lkNqucvXMLtIiYV/5jy3VIfz2/iU3aPY9UtyRfYUhsiqRlmSqtRla19pY6CixKSa9YlScGrMnbX9zSeqQ/nt/EdUh/Pb+JmwI3GE9k5LWw0nqkP57fxPNWpez4Qh/wAbf8pO/wDSp5s6Wu/G2bWnKp6wX/yPCZo9EZ0thy7N7HabuSF7CHPOBZvY7TdyQvYQ554xOmuslZfqm6kAAMD1BeZBheZYKC+p+vUo+Gf0f7f6gAFgKOD4VL5OmdqdyKfc+FS+TpnancinxcxkzpIQmaZe05UIO5I3IhmZpl7TlQg7kjciFKktIZrQ65TGgxvCpU4ALschAAAMcvrdhtK3w/beTeUhfW7DaVvh+28m8qVL6SupDp+C/wAPbrXzKnvacl8HdcblQ0wzO9pyXwd1xuVDTCxyWjs1IUKmNOjeJQADaI0EVXRsoVpN9prnXFqkVXRsoVpN9prnXEHTnVs1lxwO6+JqTzOhN2lr4XqMvDg4oarUMRuH4SwYcCYP9IwkEHAmosvXi1qrLjO0dLTtWPbXVm51TPqVDeuyK8z/AFl7odkV5n+svdGCg2MqzdvYm40eTdG91tdvN67IrzP9Ze6HZFeZ/rL3RgoGVZu3sTcOTdG91tdvN67IrzP9Ze6HZFeZ/rL3RgoGVZu3sTcOTdG91tdvN67IrzP9Ze6HZFeZ/rL3RgoGVZu3sTcOTdG91tdvN67IrzP9Ze6HZFeZ/rL3RgoGVZu3sTcOTdG91tdvN67IrzP9Ze6HZFeZ/rL3Rgp+oUOJFfqIUNz3eBqYVGVJu3sTcOTdGd3tdvN47IrzP9Ze6HZFeZ/rL3RhvWU5mkxwajrKczSY4NT7lOctbE3GPJ2i+7/ydvNy7IrzP9Ze6HZFeZ/rL3RhvWU5mkxwajrKczSY4NRlOctbE3Dk7Rfd/wCTt5uXZFeZ/rL3Q7IrzP8AWXujCI0GLBVEiwnw1XuI5qphPwfMqTdrYm4y5OUYv09rt5vXZFeZ/rL3Q7IrzP8AWXujBQMqzdvYm4cm6N7ra7eb12RXmf6y90OyK8z/AFl7owUDKs3b2JuHJuje62u3m9dkV5n+svdDsivM/wBZe6MFAyrN29ibhybo3utrt5vXZFeZ/rL3Q7IrzP8AWXujBQMqzdvYm4cm6N7ra7eb12RXmf6y90OyK8z/AFl7owUDKs3b2JuHJuje62u3m9dkV5n+svdHqbl91rHa0rqNi/1hqZd8bqvXnVf5VamDBqG/O7uElw1S9fykxN74vtMNiUpGZiRmtc7mVexNxo0nQMhAlIkSHDqVE5udd5T4ALQc5B09tbQS1lbMzdenIEaPAldRqmQsGqXVPaxMGFUTuuQ7g8FfBZIa393/AFEM8Zh6shOcmdEXyNqRhNjTMOG/MrkRf2p5nsgrNeJav+EPpDsgrNeJav8AhD6RN4KxleZ7UuOi8l6PsrepSHZBWa8S1f8ACH0jR7DWllbW2cgVySgRoEGM57UZGwapNS5Wr3FVO8RQVfe55KKdtsfnHEhRs/GmIytevNUQeEFCykjKpEgoqLWiZ/spogAJ0pgPB3TbpcjYWfk5SbpkzOOmoSxGuhPa1Goi4MHbPeE7X2OyGibkf7ZpUhGfBgK9mfmJeg5SFNzjYUVK2rX5Hf8AZC0byen+GYOyFo3k9P8ADMJ2BXsrTVrYheuTFHWFvXeUT2QtG8np/hmDshaN5PT/AAzCeIbHxHoyG1z3L3EamFVPt1lOZpMcGp9yrNduxDFcGqNTO3au8oHshaN5PT/DMHZC0byen+GYT91lOZpMcGo6ynM0mODUZVm+3YOTdGWdq7zeKpd8pE5TJqUbQJ5ro0F8NHLFZgRXNVMP+5P593Sc21qudKx2tRMKqsNcCIfA1ZiaizCosRcxJSFHS0kjkgJVXn56wADWN8HS1342za05VO6Olrvxtm1pyqesHpGvNdWcuzex2m7khewhzzgWb2O03ckL2EOeYxOmuszl+qbqQAAwPUF5kGF5lgoL6n69Sj4Z/R/t/qAAWAo4PhUvk6Z2p3Ip9z4VL5OmdqdyKfFzGTOkhCZpl7TlQg7kjciGZmmXtOVCDuSNyIUqS0hmtDrlMaDG8KlTgAuxyEAAAxy+t2G0rfD9t5N5SF9bsNpW+H7bybypUvpK6kOn4L/D2618yp72nJfB3XG5UNMMzvacl8HdcblQ0wsclo7NSFCpjTo3iUAA2iNBFV0bKFaTfaa51xapFV0bKFaTfaa51xB051bNZccDuviak8zqab8oy22t5ULrIUpvyjLba3lQuswoLM/9ep64ZdKD/b0AAJ8pIAJ6tZdvtXSbU1alS1Poj4MnPRpeG6JBiq5WserUVcEREw4E8CGtMzUOWRFf8zfkKNjz7lbBqrTtKFBiFy27JW7SWylKHWKbTmQptHNhxJVj2uY9Gq5MOqc7Cnawd7um3mUvMw5hvCZmMZ6QjSMRIcZOdUrAAPc0jyl0OwdEtlS4sGbloUGf1K9bzrWYIkN3ewqn8zfC1f8AZcCkgVSRmaZUpmnTkPqcxLRXQYrfA5q4F5C6iQLuDWsuq15GpgTqzV+1YbVUgKagMRrYiJz11F2wRnIrnvl3LW1ErT7c9XqdFY6hTFpbTyFDlnIyJNxdSr1TDqGoiq52D6Goq/YWFZCy1EsrS2SFGk2QWoidUiqmGJFX5z3d1V/2TvYEJjvfcr1E+8fp4hWxnQkJmLdEq566vI8sL5mJj2QEX+NVdX3rXcAAThTgDwt2u2c9Yqy8CepsvAjTczMpAasZFVjE1LnKuBFTCvawJ9f0YFxrX4tv/pUj0Z3TNGYpGDAfwH11kzI0FNzsLGwqqvup219jshom5H+2Yqelt7bSsW0m5aarDZVsSWhrDZ1CGrUwKuHt4VU80VacitjR3PbmU6PRUs+VlGQYmdN5clnNj1N3JC9hDnnAs5sepu5IXsIc8urOihyKL011gAGRgAYldXut2ksnbabolOkqTFloLIbmumIURz1VzEcuFUeid1fAdFQbvloolYlYVUpVKdJxIrWRet2RGRERVwYUVz3J2u7gwdv6CPfScux6sVedFqzE7CwdnosFIzERUVK85RQAJAggdHauyVn7TyMSVq9NgRVci6mMjESLDXwtd3UX/Ze/hO8Bi5jXpU5K0M4cV8JyPYtSp2ER2zoUezVqKhQ5h2rfKRdSj8GDVtVEVrsHewtVF+097ev5SYm98X2mHX3xaIl1eo4E7sKBh4Jp2F6/lJib3xfaYVKCxIc8jEzI46fNxnR6HWI7OrK1uKfABbzloPBXwWSGt/d/1EM96eCvgskNb+7/AKiGa831D9S+RvUZpsHxN80JJABRzsQKvvc8lFO22PzjiUCr73PJRTttj844l6F0hdXqhV8LdBb4k8lNEABaTm4J2vsdkNE3I/2yiSdr7HZDRNyP9sjaW0V368ywYMfEWal8jFQAVE6ge1uGZV6Ftr+beV8SDcMyr0LbX828r4s9CdQ7X6Ic7wv0tnh9VAAJkqZ0N0bJ7aTema5pxFRat0bJ7aTema5pxFRW6c6xmov+B3URNaeQABBlxB0td+Ns2tOVTujpa78bZtacqnrB6RrzXVnLs3sdpu5IXsIc84Fm9jtN3JC9hDnmMTprrM5fqm6kAAMD1BeZBheZYKC+p+vUo+Gf0f7f6gAFgKOD4VL5OmdqdyKfc+FS+TpnancinxcxkzpIQmaZe05UIO5I3IhmZpl7TlQg7kjciFKktIZrQ65TGgxvCpU4ALschAAAMcvrdhtK3w/beTeUhfW7DaVvh+28m8qVL6SupDp+C/w9utfMqe9pyXwd1xuVDTDM72nJfB3XG5UNMLHJaOzUhQqY06N4lAANojQRVdGyhWk32mudcWqRVdGyhWk32mudcQdOdWzWXHA7r4mpPM6mm/KMttreVC6yFKb8oy22t5ULrMKCzP8A16nrhl0oP9vQAAnykgi26XDdDuiWja7BhWqTLvsWI5U5S0iMrquUm0W+Eb2lISnOrbrLhgev/IiJ9vU59wzKvQttfzbyviQbhmVehba/m3lfGVCdQ7X6IeeF+ls8PqoABMlTBIN3PKvXdtZzbCviQbueVeu7azm2ENTfUN1+ilswQ0t/h9UORe+5XqJ94/TxCtiSb33K9RPvH6eIVsfaE6hdfohjhfprfCnm4AAmCqmOX1uw2lb4ftvJvKQvrdhtK3w/beTeVKl9JXUh0/Bf4e3WvmAARhYS5LObHqbuSF7CHPOBZzY9TdyQvYQ55fmdFDiUXprrAAMjAlC+Myr1HaoHNtPB035RlttbyobndguXWrtPbycrFKgyjpWLDhNasSOjVwtYiL2vrQ8rJ3ErdQpuDFfLyGpZEa5f+KTuIv1FRmZSO6O5yMWqtfM6hR9KSbJKGx0VEVGp8/sVEAC3HLwAACUL4zKvUdqgc207C9fykxN74vtMOvvjMq9R2qBzbTsL1/KTE3vi+0wqbfiH9vU6bE+Bf+aeRT4ALYcyB4K+CyQ1v7v+ohnvTwV8Fkhrf3f9RDNeb6h+pfI3qM02D4m+aEkgAo52IFX3ueSinbbH5xxKBV97nkop22x+ccS9C6Qur1Qq+Fugt8SeSmiAAtJzcE7X2OyGibkf7ZRJO19jshom5H+2RtLaK79eZYMGPiLNS+RioAKidQPa3DMq9C21/NvK+JBuGZV6Ftr+beV8WehOodr9EOd4X6Wzw+qgAEyVM6G6Nk9tJvTNc04iotW6Nk9tJvTNc04iordOdYzUX/A7qImtPIAAgy4g6Wu/G2bWnKp3R0td+Ns2tOVT1g9I15rqzl2b2O03ckL2EOecCzex2m7khewhzzGJ011mcv1TdSAAGB6gvMgwvMsFBfU/XqUfDP6P9v8AUAAsBRwfCpfJ0ztTuRT7nwqXydM7U7kU+LmMmdJCEzTL2nKhB3JG5EMzNMvacqEHckbkQpUlpDNaHXKY0GN4VKnABdjkIAABjl9bsNpW+H7bybykL63YbSt8P23k3lSpfSV1IdPwX+Ht1r5lT3tOS+DuuNyoaYZne05L4O643KhphY5LR2akKFTGnRvEoABtEaCKro2UK0m+01zri1SKro2UK0m+01zriDpzq2ay44HdfE1J5nU035RlttbyoXWQpTflGW21vKhdZhQWZ/69T1wy6UH+3oAAT5SQRldVyk2i3wje0pZpGV1XKTaLfCN7SkJTnVN1lvwP0iJq9Tn3DMq9C21/NvK+JBuGZV6Ftr+beV8ZUJ1DtfohhhfpbPD6qAATJUwSDdzyr13bWc2wr4kG7nlXru2s5thDU31DdfopbMENLf4fVDkXvuV6ifeP08QrYkm99yvUT7x+niFbH2hOoXX6IY4X6a3wp5uAAJgqpjl9bsNpW+H7bybykL63YbSt8P23k3lSpfSV1IdPwX+Ht1r5gAEYWEuSzmx6m7khewhzzgWc2PU3ckL2EOeX5nRQ4lF6a6wADIwAMkug3Z8U7Xz1n8W+vOtep/43X3U9VqobX/y9TXBg1WDu946HsivM/wBZe6NF9JSzHK1zudPsu4mYVAUhFYkRkOtFStOduZf2byDBuyK8z/WXuh2RXmf6y90Y5VlLexdxnybpLutrd5vIMG7IrzP9Ze6HZFeZ/rL3QyrKW9i7hybpLutrd54m+Myr1HaoHNtOwvX8pMTe+L7TDxt0a0+OFq5iu9Y9ZdWYxvUeq9UwalqN/mwJ4PAeyvX8pMTe+L7TCBhPR8+jm5lcXWahPg0MsN6VKjKluKfABbjlwPBXwWSGt/d/1EM96eCvgskNb+7/AKiGa831D9S+RvUZpsHxN80JJABRzsQKvvc8lFO22PzjiUCr73PJRTttj844l6F0hdXqhV8LdBb4k8lNEABaTm4J2vsdkNE3I/2yiSdr7HZDRNyP9sjaW0V368ywYMfEWal8jFQAVE6ge1uGZV6Ftr+beV8SDcMyr0LbX828r4s9CdQ7X6Ic7wv0tnh9VAAJkqZ0N0bJ7aTema5pxFRat0bJ7aTema5pxFRW6c6xmov+B3URNaeQABBlxB0td+Ns2tOVTujpa78bZtacqnrB6RrzXVnLs3sdpu5IXsIc84Fm9jtN3JC9hDnmMTprrM5fqm6kAAMD1BeZBheZYKC+p+vUo+Gf0f7f6gAFgKOD4VL5OmdqdyKfc+FS+TpnancinxcxkzpIQmaZe05UIO5I3IhmZpl7TlQg7kjciFKktIZrQ65TGgxvCpU4ALschAAAMcvrdhtK3w/beTeUhfW7DaVvh+28m8qVL6SupDp+C/w9utfMqe9pyXwd1xuVDTDM72nJfB3XG5UNMLHJaOzUhQqY06N4lAANojQRVdGyhWk32mudcWqRVdGyhWk32mudcQdOdWzWXHA7r4mpPM6mm/KMttreVC6yE6cqJUJdVXAiRW4V+1C7DCgsz/16nrhlng/29AACfKSCMrquUm0W+Eb2lLNJ2uhXHbXVW2lVqlOSRjSs5MOjw3Oj6hyapcOBUVO6hEUvBiRYbUYlfOWfBaagy0d6xnI1FT56zxVwzKvQttfzbyvifbmFye19n7eUusVGDJtlZaI50RWTCOXArHJ2k+tUKCMqIhPhQVR6Vc/ohjhRMwZiaa6E5HJwflrUAAlStAkG7nlXru2s5thXxIN3PKvXdtZzbCGpvqG6/RS2YIaW/wAPqhyL33K9RPvH6eIVsSTe+5XqJ94/TxCtj7QnULr9EMcL9Nb4U83AAEwVUxy+t2G0rfD9t5N5SF9bsNpW+H7bybypUvpK6kOn4L/D2618wACMLCXJZzY9TdyQvYQ55wLObHqbuSF7CHPL8zoocSi9NdYABkYEk3wWV6t/d/08M8Ebbd3udWnqduZiu0amxKhLTsOHqupOTVQ3tYjMCoq4e41Fwp2u2eA1tLeeTE//AEppKbNy8XHvXgrnX5HV6Mn5bicJFiJWjUTOnySo8iD12tpbzyYn/wClNI1tLeeTE/8A0ppNfi8awtym/wAfle8beh5EHrtbS3nkxP8A9KaRraW88mJ/+lNI4vGsLco4/K9429DyJql6/lJib3xfaYZfNQI0rMxZaYhrDjQXrDiMXutci4FT8TUL1/KTE3vi+0w9ZHSWazVpla6PiqllSnwAXU5GDwV8Fkhrf3f9RDPennLpdn49qbD1OhSsWHCjzLGLDdEw6nVMe16IuBF7Sq3B9p4zLVfBe1M6ovkbchEbDmoT3LUiORV/SoReDTNY+3mbyHpSaDzNubD16xnWfw3Dl2deavqXUoqPw6jU6rD4P5kKY+VjQ28JzVRDrEGkpSM9GQ4iKq/JFPMlX3ueSinbbH5xxKBV97nkop22x+ccSFC6Qur1QhMLdBb4k8lNEABaTm4J2vsdkNE3I/2yiTIL4SwdobVzVLn6BLMm3S8N8KLCWKyG5EVUVHIrlRF7/f8AAaFJw3RJZyNStebzJvB6NDgz7HxHIic/OubMTWD3us9dG8nf72X/AP0PBFSiQYkPptVNaHToM1Aj14p6Oq7FRfI9rcMyr0LbX828r4kG4ZlXoW2v5t5XxY6E6h2v0QoWF+ls8PqoABMlTOhujZPbSb0zXNOIqLVujZPbSb0zXNOIqK3TnWM1F/wO6iJrTyAAIMuIOlrvxtm1pyqd0dLXfjbNrTlU9YPSNea6s5dm9jtN3JC9hDnnAs3sdpu5IXsIc8xidNdZnL9U3UgABgeoLs69k87l+EQhMG/Iz3FOF/GuurYQlM0MlJ8Ct/B4Nfyrz1fdOwuzr2TzuX4RB17J53L8IhCYJDLq2NvsQnI1vff4+5dnXsnncvwiHHqM7JrT5lEm4H+U7/tE8CkNgLTir/02+x9TA5qLXjv8fcGmXtOVCDuSNyIZmfWWmJiVi9Vlo8WBEwYNXDerVwfWhCwImKiNf2KWydl+My74KLVwkVC7gQ38NVnxtP8ApL9I+Gqz42n/AEl+kncuNsbfYpvI1/epd7lyAhv4arPjaf8ASX6R8NVnxtP+kv0jLjbG32HI1/epd7lA31uw2lb4ftvJvOTN1Cfm2IybnZmYa1cKNixXORF8PbU4xDzkwkxFWIiVFpoqQWQlkgq6uqvn1lRXt0zLQrmUFkWYhMd13G7Tnoi91DSuvZPO5fhEITBIQKYWFDazgZvv7EHN4KpMx3xsbVwlrze5dnXsnncvwiDr2TzuX4RCEweuXVsbfY1+Rre+/wAfcuzr2TzuX4RCMLojmuugWjc1Uc1arNKiovaVOquOiBoz1ILNNRODVV9yYoeg0o17no/hVpVmq9VBXVyG3kha+z8vDiTDGViXhoybgOdgc5UTB1Rqd9q936FXAvewyKfqFEiQojYkJ7mPauFrmrgVF+hTykpx0q9VRK0XOhsUvRMOkoSNctSpmUvEEN/DVZ8bT/pL9I+Gqz42n/SX6SWy42xt9itcjX96l3uXICG/hqs+Np/0l+kfDVZ8bT/pL9Iy42xt9hyNf3qXe5cgIb+Gqz42n/SX6R8NVnxtP+kv0jLjbG32HI1/epd7lyAhv4arPjaf9JfpHw1WfG0/6S/SMuNsbfYcjX96l3uXISDdzyr13bWc2w8z8NVnxtP+kv0nDjxoseK6NHivixHfzPe5XKv1qppT1IpNMRiNqqWsl6GoF1GxnRFfwq0qzVfNPv8AY91e+5XqJ94/TxCtiEJePGl4zY0vGiQYrf5XscrXJ3u0qHL+Gqz42n/SX6RI0kkrDVitr56z5TNAOpGOkVH8GpKs1fzVe37lyAhv4arPjaf9JfpHw1WfG0/6S/SbuXG2NvsRPI1/epd7lA31uw2lb4ftvJvOTN1Cfm2IybnZmYa1cKNixXORF8PbU4xDzkwkxFWIiVFpoqQWQlkgq6uqvn1gAGqSRV9wy20haSykpTIkdjKtT4DYMaC5f4ntamBsRvhRURMPgX7MOiEHwYsWBFbGgxHwojFwtexyorV8KKh3bbaWxa1GttZXkREwIiVGL2v/AJE9L01wGI2I2tUKXO4JY2MsSC+pF56lTMWqCKsdbZeVte/MYvSGOtsvK2vfmMXpHtlyHYU1OR0fvEuUtUEVY62y8ra9+YxekMdbZeVte/MYvSGXIdhRyOj94lylqgirHW2XlbXvzGL0hjrbLytr35jF6Qy5DsKOR0fvEuUtUEVY62y8ra9+YxekMdbZeVte/MYvSGXIdhRyOj94lynwtrsyre+EfnHHa3JrUQ7I23k6tMI5ZRUdBmdSmFUhu7SqnhwLgXB38B5aPFix4z40aI+LFiOVz3vcquc5VwqqqvdVT8EA2KrYmMbnrrLu+XbEgLBfzoqVKXZTp2UqMlCnZGZhTMtGajocWG7VNcn0KfchulVus0lHJSqvPyGq/m62mXwsP16lUOfjrbLytr35jF6RPNpxtX8mc5S34HROEvAipV90LVBFWOtsvK2vfmMXpDHW2XlbXvzGL0j7lyHYUw5HR+8S5S1TBr7j/ux97/ZMjx1tl5W178xi9I4FXrVZrHUvherT9Q6jh6l11Mvi6jDgw4NUq4MOBO54ENacpVkeCsNGqle8kKLwaiyU0yO56KiV7UVPU4BQl7Fa2QSjxrKTkxDgzbI7osoj3YOrNd3Wt8LkVFXB4F+hSewiqioqKqKncVCNlZl0tER6FgpKj2T8usFy1di9il5gi2UtxbGVgpBgWoq7Ibe43rt6on1YV7R9dcC2/lVV/SnaScy5DsqU5cDpivmiJtLNBGWuBbfyqq/pTtI1wLb+VVX9KdpGXIVlT5yPmO8TaWaQYem1wLb+VVX9KdpPMkZSM82a4PBSqqv0LDQVDxKNxnDci8KrN9q957W4ZlXoW2v5t5XxClNnpymz0Kep8zFlZmEqrDiwnalzVwYO0v1Kp32uBbfyqq/pTtJ60fSLJWGrXIq1rWeFN0FFpGO2IxyJUlXPrUs0EZa4Ft/Kqr+lO0jXAtv5VVf0p2k3suQrKkLyPmO8TaVfdGye2k3pmuacRUehm7cWwm5WNKzVpapGgRmOhxYb5hyte1UwKip30VFPPEVSE42acitSqostB0VEo2G9r3Ita18wABHk4Dpa78bZtacqndHS1342za05VPWD0jXmurOXZvY7TdyQvYQ55wLN7HabuSF7CHPMYnTXWZy/VN1IAAYHqAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADN7pFrfgm0LZKC3qisgNWJgwfwuVVXB+GBftPW2utLT7OU90eaiI6O5q9RgIv8URf/pPCpP1UnpipVCPPzb9XHjvV71+le8n0J3EJmipLGuWI9P4lUwlpbi7EgQXfzXnX7J7mq0mvVWHSpSGyawNbAY1E6m3tIjU+g5WMNYzvi2aAD1dCh8Jf4oa0OZjIxP5reoxhrGd8WzQMYaxnfFs0AGOJh2UuM+NR7a3qMYaxnfFs0DGGsZ3xbNAAxMOylw41HtreoxhrGd8WzQMYaxnfFs0ADEw7KXDjUe2t6jGGsZ3xbNAxhrGd8WzQAMTDspcONR7a3qMYaxnfFs0DGGsZ3xbNAAxMOylw41HtreoxhrGd8WzQMYaxnfFs0ADEw7KXDjUe2t6jGGsZ3xbNAxhrGd8WzQAMTDspcONR7a3qMYaxnfFs0DGGsZ3xbNAAxMOylw41HtreoxhrGd8WzQMYaxnfFs0ADEw7KXDjUe2t6jGGsZ3xbNAxhrGd8WzQAMTDspcONR7a3qMYaxnfFs0DGGsZ3xbNAAxMOylw41HtreoxhrGd8WzQMYaxnfFs0ADEw7KXDjUe2t6jGGsZ3xbNAxhrGd8WzQAMTDspcONR7a3qMYaxnfFs0DGGsZ3xbNAAxMOylw41HtreoxhrGd8WzQMYaxnfFs0ADEw7KXDjUe2t6jGGsZ3xbNAxhrGd8WzQAMTDspcONR7a3qMYaxnfFs0DGGsZ3xbNAAxMOylw41HtreoxhrGd8WzQMYaxnfFs0ADEw7KXDjUe2t6jGGsZ3xbNAxhrGd8WzQAMTDspcONR7a3qMYaxnfFs0DGGsZ3xbNAAxMOylw41HtreoxhrGd8WzQMYaxnfFs0ADEw7KXDjUe2t6jGGsZ3xbNAxhrGd8WzQAMTDspcONR7a3qMYaxnfFs0DGGsZ3xbNAAxMOylw41HtreoxhrGd8WzQMYaxnfFs0ADEw7KXDjUe2t6jGGsZ3xbNAxhrGd8WzQAMTDspcONR7a3qMYaxnfFs0DGGsZ3xbNAAxMOylw41HtreoxhrGd8WzQMYaxnfFs0ADEw7KXDjUe2t6jGGsZ3xbNAxhrGd8WzQAMTDspcONR7a3qMYaxnfFs0DGGsZ3xbNAAxMOylw41HtreoxhrGd8WzQMYaxnfFs0ADEw7KXDjUe2t6jGGsZ3xbNAxhrGd8WzQAMTDspcONR7a3qMYaxnfFs0DGGsZ3xbNAAxMOylw41HtreoxhrGd8WzQMYaxnfFs0ADEw7KXDjUe2t6jGGsZ3xbNAxhrGd8WzQAMTDspcONR7a3qMYaxnfFs0DGGsZ3xbNAAxMOylw41HtreoxhrGd8WzQMYaxnfFs0ADEw7KXDjUe2t6jGGsZ3xbNAxhrGd8WzQAMTDspcONR7a3qMYaxnfFs0HQWxtbaKVl4bZapOhatcDlbCZh7/fwYU+wA95aBDWIlbUuNOfnJhsu5UiLepnc3MzE3HdMTUeLHjP7bnxHK5y/ap8gCcRKuZCmqqqtan//2Q==" alt="Moretti" onerror="this.style.display='none';document.getElementById('brand-fallback').style.display='flex'"/>
+      <img class="brand-logo" src="https://moretti.com.ar/wp-content/uploads/2021/08/logo-moretti-1.png" alt="Moretti" onerror="this.style.display='none';document.getElementById('brand-fallback').style.display='flex'"/>
       <div id="brand-fallback" style="display:none;align-items:center;justify-content:center;width:36px;height:36px;background:var(--red);font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;border-radius:4px">M</div>
       <div class="brand-divider"></div>
       <div class="brand-label">Tesorería <span>·</span> Cheques</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.3.2</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txt3);padding:3px 8px;background:var(--surf2);border:1px solid var(--brd2);border-radius:4px;letter-spacing:.04em">v1.3.4</div>
     </div>
     <div class="hdr-right">
       <div class="sync-pill loading" id="syncPill">
@@ -530,41 +215,32 @@ footer{
     </div>
   </div>
 </header>
-
-<!-- NAV -->
 <nav class="nav">
   <div class="nav-inner">
     <button class="tab active" id="tab-dashboard"  onclick="showTab('dashboard')">Dashboard</button>
-    <button class="tab"        id="tab-resumen"    onclick="showTab('resumen')">Resumen</button>
     <button class="tab"        id="tab-rechazados" onclick="showTab('rechazados')">Rechazados</button>
     <button class="tab"        id="tab-cancelados" onclick="showTab('cancelados')">Cancelados</button>
     <button class="tab"        id="tab-importar"   onclick="showTab('importar')">Importación</button>
     <button class="tab"        id="tab-config"     onclick="showTab('config')">Configuración</button>
   </div>
 </nav>
-
-<!-- MAIN -->
 <main id="main">
   <div id="loading">
     <div class="spinner"></div>
     <div class="loading-txt">Cargando datos</div>
   </div>
 </main>
-
 <footer>
-  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.3.2</span></div>
-  <div class="ftr-right" id="ftrDate">Última modificación: 09/03/2026</div>
+  <div class="ftr-left">Moretti S.A. · Sistema de Tesorería · <span style="color:var(--red)">v1.3.4</span></div>
+  <div class="ftr-right" id="ftrDate">Última modificación: 13/03/2026</div>
 </footer>
 </div>
-
-<!-- MODAL -->
 <div class="overlay" id="overlay" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modalInner"></div>
 </div>
 <div id="toasts"></div>
-
 <script>
-const S={rechazados:[],cancelados:[],kpis:null,filtered:[],tab:'dashboard',q:'',mot:'',anio:'',cli:'',sortF:'fechaRechazo',sortD:'desc'};
+const S={rechazados:[],cancelados:[],kpis:null,filtered:[],tab:'dashboard',q:'',mot:'',anio:'',cli:'',sortF:'',sortD:'desc'};
 const API='https://script.google.com/macros/s/AKfycbwpf9Hvudj-Z95KcygAUO9EkrFuUwkJ8cexlxWHECcV58J9_-Q_nv4Ty2FGqpKQ19DPJg/exec';
 
 function setSyncState(s){
@@ -581,7 +257,7 @@ async function loadAll(){
       fetch(API+'?action=getCancelados').then(r=>r.json()),
     ]);
     if(!r1.ok)throw new Error(r1.error);
-    S.rechazados=r1.data; S.kpis=r1.kpis;
+    S.rechazados=r1.data;S.kpis=r1.kpis;
     if(r2.ok)S.cancelados=r2.data;
     setSyncState('ok');
     render();
@@ -598,19 +274,16 @@ function showTab(t){
 function render(){
   if(S.tab==='dashboard')renderDashboard();
   else if(S.tab==='rechazados')renderRechazados();
-  else if(S.tab==='resumen')renderResumen();
   else if(S.tab==='cancelados')renderCancelados();
   else if(S.tab==='importar')renderImportar();
   else if(S.tab==='config')renderConfig();
 }
 
-// ── DASHBOARD ────────────────────────────────────
 function renderDashboard(){
   const k=S.kpis;if(!k)return;
   const mots=Object.entries(k.porMotivo).sort((a,b)=>b[1].importe-a[1].importe);
   const maxM=mots[0]?.[1].importe||1;
   const maxC=k.topClientes[0]?.pendiente||1;
-
   document.getElementById('main').innerHTML=`
   <div class="section-header">
     <div class="section-title">Panel General</div>
@@ -661,13 +334,11 @@ function miniTbl(rows){
     </tr>`).join('')}</tbody></table></div>`;
 }
 
-// ── RECHAZADOS ───────────────────────────────────
 function renderRechazados(){
   applyFilters();
   const mots=[...new Set(S.rechazados.map(r=>r.motivo).filter(Boolean))].sort();
   const anios=[...new Set(S.rechazados.map(r=>r.anio).filter(Boolean))].sort().reverse();
   const clis=[...new Set(S.rechazados.map(r=>r.cliente).filter(Boolean))].sort();
-
   document.getElementById('main').innerHTML=`
   <div class="section-header">
     <div class="section-title">Rechazados</div>
@@ -716,7 +387,6 @@ function renderTabla(rows){
       <th onclick="sortBy('pendiente')" class="${sc('pendiente')}" style="text-align:right">Pendiente</th>
       <th onclick="sortBy('diasMora')" class="${sc('diasMora')}" style="text-align:right">Mora</th>
       <th>Detalle</th>
-      <th style="text-align:center">Evidencia</th>
       <th></th>
     </tr></thead>
     <tbody>${rows.map(r=>`<tr>
@@ -731,108 +401,10 @@ function renderTabla(rows){
       <td class="tc-pend tc-mono ${r.pendiente>0?'debt':'paid'}">${fmt(r.pendiente)}</td>
       <td class="tc-mora tc-mono" style="color:${r.diasMora>90?'var(--red)':r.diasMora>45?'var(--amber-lt)':'var(--txt2)'}">${r.diasMora||'—'}</td>
       <td class="tc-detail" title="${r.detalle}">${r.detalle||'—'}</td>
-      <td class="tc-act" style="text-align:center">${r.evidenciaUrl?`<a href="${r.evidenciaUrl}" target="_blank" title="Ver comprobante PDF" style="color:var(--red);text-decoration:none;font-size:18px" onclick="event.stopPropagation()">&#128196;</a>`:`<span style="color:var(--txt3);font-size:11px">—</span>`}</td>
-      <td class="tc-act"><button class="act-btn" onclick='openModal(${JSON.stringify(r).replace(/\\/g,"\\\\").replace(/'/g,"\\'")})'><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="act-btn del-btn" title="Eliminar" style="color:#f87171" data-fila="${r.fila}" data-cheque="${r.nroCheque}" data-cliente="${r.cliente.replace(/"/g,'&quot;')}" data-hoja="rechazados" onclick="delClick(this)"><svg viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></td>
+      <td class="tc-act"><button class="act-btn" onclick='openModal(${JSON.stringify(r).replace(/\\/g,"\\\\").replace(/'/g,"\\'")})'><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
     </tr>`).join('')}</tbody></table></div>`;
 }
 
-// ── RESUMEN ───────────────────────────────────────
-function renderResumen(){
-  const rows = S.rechazados || [];
-  if(!rows.length){
-    document.getElementById('main').innerHTML='<div class="empty"><p>Sin datos cargados</p></div>';
-    return;
-  }
-
-  // Agrupar por motivo → cliente → año
-  const años = [...new Set(rows.map(r=>r.anio).filter(Boolean))].sort();
-  const tree = {};
-  rows.forEach(r=>{
-    const m = r.motivo || 'SIN MOTIVO';
-    const c = r.cliente || 'SIN CLIENTE';
-    const a = r.anio || 'S/F';
-    if(!tree[m]) tree[m]={};
-    if(!tree[m][c]) tree[m][c]={};
-    tree[m][c][a] = (tree[m][c][a]||0) + (r.pendiente||0);
-  });
-
-  // Build table
-  const motivosSorted = Object.keys(tree).sort();
-  let tbodyHTML = '';
-  const granTotal = {};
-  años.forEach(a=>granTotal[a]=0);
-  let granTotalTotal = 0;
-
-  motivosSorted.forEach(motivo=>{
-    const clientes = Object.keys(tree[motivo]).sort();
-    const motivoTotals = {};
-    años.forEach(a=>motivoTotals[a]=0);
-    let motivoTotal = 0;
-
-    clientes.forEach(cliente=>{
-      let rowTotal = 0;
-      const cells = años.map(a=>{
-        const v = tree[motivo][cliente][a]||0;
-        motivoTotals[a]+=v;
-        rowTotal+=v;
-        return v>0?`<td class="tc-monto tc-mono">${fmt(v)}</td>`:`<td style="color:var(--txt3);text-align:right">—</td>`;
-      }).join('');
-      motivoTotal += rowTotal;
-      tbodyHTML += `<tr><td class="tc-name" style="padding-left:24px">${cliente}</td>${cells}<td class="tc-monto tc-mono" style="font-weight:700">${fmt(rowTotal)}</td></tr>`;
-    });
-
-    // Subtotal row
-    const subCells = años.map(a=>{
-      granTotal[a]=(granTotal[a]||0)+motivoTotals[a];
-      return `<td class="tc-monto tc-mono" style="font-weight:700;background:var(--surf3)">${motivoTotals[a]>0?fmt(motivoTotals[a]):'—'}</td>`;
-    }).join('');
-    granTotalTotal += motivoTotal;
-    tbodyHTML += `<tr style="background:var(--surf2)"><td style="font-weight:700;color:var(--txt1);padding-left:8px">Total ${motivo}</td>${subCells}<td class="tc-monto tc-mono" style="font-weight:700;background:var(--surf3);color:var(--red)">${fmt(motivoTotal)}</td></tr>`;
-  });
-
-  // Grand total row
-  const grandCells = años.map(a=>`<td class="tc-monto tc-mono" style="font-weight:700;background:var(--red);color:#fff">${fmt(granTotal[a]||0)}</td>`).join('');
-  tbodyHTML += `<tr style="background:var(--surf2)"><td style="font-weight:900;color:#fff;background:var(--red);padding-left:8px">TOTAL GENERAL</td>${grandCells}<td class="tc-monto tc-mono" style="font-weight:900;background:var(--red);color:#fff">${fmt(granTotalTotal)}</td></tr>`;
-
-  const añoHeaders = años.map(a=>`<th style="text-align:right">${a}</th>`).join('');
-  const totalPend = rows.reduce((s,r)=>s+(r.pendiente||0),0);
-  const totalCheques = rows.filter(r=>r.pendiente>0).length;
-
-  document.getElementById('main').innerHTML=`
-  <div style="padding:24px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-      <div>
-        <h2 style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--txt1);margin:0">RESUMEN EJECUTIVO</h2>
-        <p style="color:var(--txt3);font-size:12px;margin:4px 0 0">Pendiente por motivo y año · Solo cheques activos</p>
-      </div>
-      <div style="display:flex;gap:12px">
-        <div style="background:var(--surf2);border:1px solid var(--brd2);border-radius:10px;padding:12px 20px;text-align:center">
-          <div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px">Cheques activos</div>
-          <div style="font-size:22px;font-weight:700;color:var(--red);font-family:'JetBrains Mono',monospace">${totalCheques}</div>
-        </div>
-        <div style="background:var(--surf2);border:1px solid var(--brd2);border-radius:10px;padding:12px 20px;text-align:center">
-          <div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px">Total pendiente</div>
-          <div style="font-size:22px;font-weight:700;color:var(--red);font-family:'JetBrains Mono',monospace">${fmt(totalPend)}</div>
-        </div>
-      </div>
-    </div>
-    <div class="tbl-scroll">
-      <table>
-        <thead><tr>
-          <th>Motivo / Cliente</th>
-          ${añoHeaders}
-          <th style="text-align:right">Total</th>
-        </tr></thead>
-        <tbody>${tbodyHTML}</tbody>
-      </table>
-    </div>
-    <p style="color:var(--txt3);font-size:11px;margin-top:12px;text-align:right">
-      Montos en pesos · Pendiente al día de hoy · Última actualización: ${new Date().toLocaleString('es-AR')}
-    </p>
-  </div>`;
-}
-
-// ── CANCELADOS ───────────────────────────────────
 function renderCancelados(){
   document.getElementById('main').innerHTML=`
   <div class="section-header">
@@ -843,7 +415,7 @@ function renderCancelados(){
   <div class="tbl-wrap">
     ${!S.cancelados.length?'<div class="empty"><p>Sin datos</p></div>':`
     <div class="tbl-scroll"><table>
-      <thead><tr><th>Cliente</th><th>N° Cheque</th><th>Tipo</th><th>Rechazo</th><th>Motivo</th><th style="text-align:right">Importe</th><th>Cancelación</th><th style="text-align:right">Importe Canc.</th><th></th></tr></thead>
+      <thead><tr><th>Cliente</th><th>N° Cheque</th><th>Tipo</th><th>Rechazo</th><th>Motivo</th><th style="text-align:right">Importe</th><th>Cancelación</th><th style="text-align:right">Importe Canc.</th></tr></thead>
       <tbody>${S.cancelados.map(r=>`<tr>
         <td class="tc-name">${r.cliente}</td>
         <td class="tc-mono tc-cheque">${r.nroCheque}</td>
@@ -853,26 +425,17 @@ function renderCancelados(){
         <td class="tc-monto tc-mono">${fmt(r.importe)}</td>
         <td class="tc-mono tc-fecha">${r.cancelacion||'—'}</td>
         <td class="tc-monto tc-mono" style="color:var(--green-lt)">${r.importeCancelacion?fmt(r.importeCancelacion):'—'}</td>
-        <td class="tc-act"><button class="act-btn del-btn" title="Eliminar" style="color:#f87171" data-fila="${r.fila}" data-cheque="${r.nroCheque}" data-cliente="${r.cliente.replace(/"/g,'&quot;')}" data-hoja="cancelados" onclick="delClick(this)"><svg viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></td>
       </tr>`).join('')}</tbody></table></div>`}
   </div>`;
 }
 
-// ── FILTROS ──────────────────────────────────────
 function applyFilters(){
   let rows=S.rechazados;
   if(S.q){const q=S.q.toLowerCase();rows=rows.filter(r=>[r.cliente,r.nroCheque,r.motivo,r.detalle].some(f=>f?.toLowerCase().includes(q)));}
   if(S.mot)rows=rows.filter(r=>r.motivo===S.mot);
   if(S.anio)rows=rows.filter(r=>r.anio===S.anio);
   if(S.cli)rows=rows.filter(r=>r.cliente===S.cli);
-  if(S.sortF){rows=[...rows].sort((a,b)=>{
-    const va=a[S.sortF],vb=b[S.sortF];
-    // Convert dd/mm/yyyy to sortable yyyymmdd
-    const toSortable=v=>{if(!v)return'';const p=String(v).split('/');return p.length===3?p[2]+p[1]+p[0]:String(v);};
-    const isDate=S.sortF.toLowerCase().includes('fecha')||S.sortF==='emision'||S.sortF==='vencimiento';
-    const c=typeof va==='number'?va-vb:isDate?toSortable(va).localeCompare(toSortable(vb)):String(va||'').localeCompare(String(vb||''));
-    return S.sortD==='asc'?c:-c;
-  });}
+  if(S.sortF){rows=[...rows].sort((a,b)=>{const va=a[S.sortF],vb=b[S.sortF];const c=typeof va==='number'?va-vb:String(va||'').localeCompare(String(vb||''));return S.sortD==='asc'?c:-c;});}
   S.filtered=rows;
 }
 function refreshTbl(){applyFilters();const w=document.getElementById('tWrap');if(w){w.innerHTML=renderTabla(S.filtered);document.getElementById('cBadge').textContent=S.filtered.length+' / '+S.rechazados.length;}}
@@ -880,10 +443,10 @@ function onSearch(v){S.q=v;refreshTbl();}
 function onFiltro(k,v){S[k]=v;refreshTbl();}
 function sortBy(f){S.sortD=S.sortF===f&&S.sortD==='desc'?'asc':'desc';S.sortF=f;refreshTbl();}
 
-// ── MODAL ────────────────────────────────────────
 function openModal(row){
   const saldo=row.importe+row.gastos-(row.importeCancelacion||0);
   const opts=v=>['Deposito Galicia','Deposito Nacion','Deposito Santander','Pago a proveedores','Negociado Galicia','Efectivo','Transferencia','En gestión'].map(o=>`<option value="${o}" ${v===o?'selected':''}>${o}</option>`).join('');
+  const isPageProv = row.detalle === 'Pago a proveedores';
   document.getElementById('modalInner').innerHTML=`
     <div class="modal-hdr">
       <div><div class="modal-title">Actualizar Registro</div><div class="modal-sub">Cheque N° ${row.nroCheque} · ${row.cliente}</div></div>
@@ -902,7 +465,14 @@ function openModal(row){
         <div class="field"><label>Fecha Cancelación</label><input type="date" id="fFechaCan" value="${toDate(row.cancelacion)}"/></div>
         <div class="field"><label>Fecha Aviso</label><input type="date" id="fAviso" value="${toDate(row.aviso)}"/></div>
       </div>
-      <div class="field"><label>Detalle / Acción</label><select id="fDetalle"><option value="">— Sin detalle —</option>${opts(row.detalle)}</select></div>
+      <div class="field">
+        <label>Detalle / Acción</label>
+        <select id="fDetalle" onchange="toggleFDetalle()"><option value="">— Sin detalle —</option>${opts(row.detalle)}</select>
+      </div>
+      <div class="field" id="fDetalleTextoWrap" style="display:${isPageProv?'block':'none'}">
+        <label>Detalle — Pago a Proveedores <span style="color:var(--red)">*</span></label>
+        <input type="text" id="fDetalleTexto" value="${row.detalleTexto||''}" placeholder="Ej: Proveedor García S.A." autocomplete="off"/>
+      </div>
       <div class="frow">
         <div class="field"><label>Envío</label><input type="text" id="fEnvio" value="${row.envio||''}" placeholder="Enviado a..."/></div>
         <div class="field"><label>CAC / DEV</label><input type="text" id="fCac" value="${row.cacDev||''}"/></div>
@@ -922,6 +492,12 @@ function openModal(row){
   document.getElementById('overlay').style.display='flex';
 }
 
+function toggleFDetalle(){
+  const v=document.getElementById('fDetalle')?.value||'';
+  const w=document.getElementById('fDetalleTextoWrap');
+  if(w) w.style.display=v==='Pago a proveedores'?'block':'none';
+}
+
 function updSaldo(imp,gas){
   const canc=parseFloat(document.getElementById('fImporte').value)||0;
   const s=imp+gas-canc;
@@ -933,12 +509,13 @@ async function saveRow(fila,imp,gas){
   const btn=document.getElementById('btnSave');
   btn.disabled=true;btn.textContent='Guardando...';
   const canc=parseFloat(document.getElementById('fImporte').value)||0;
+  const detalleVal=document.getElementById('fDetalle').value;
   const campos={
     tipoCancelacion:document.getElementById('fTipo').value,
     importeCancelacion:canc,
     cancelacion:fromDate(document.getElementById('fFechaCan').value),
     aviso:fromDate(document.getElementById('fAviso').value),
-    detalle:document.getElementById('fDetalle').value,
+    detalle:detalleVal==='Pago a proveedores'?(document.getElementById('fDetalleTexto')?.value?.trim()||detalleVal):detalleVal,
     envio:document.getElementById('fEnvio').value,
     cacDev:document.getElementById('fCac').value,
     pendiente:imp+gas-canc,
@@ -955,7 +532,6 @@ async function saveRow(fila,imp,gas){
 }
 function closeModal(){document.getElementById('overlay').style.display='none';}
 
-// ── KPIs LOCAL ────────────────────────────────────
 function recalcKPIs(rows){
   const act=rows.filter(r=>r.pendiente>0);
   const pend=act.reduce((s,r)=>s+r.pendiente,0);
@@ -968,7 +544,6 @@ function recalcKPIs(rows){
   return{totalPendiente:pend,totalImporte:imp,totalGastos:gas,cantidadActivos:act.length,cantidadTotal:rows.length,moraProm:Math.round(mora),porMotivo,topClientes};
 }
 
-// ── CSV ───────────────────────────────────────────
 function exportCSV(){
   const rows=S.tab==='cancelados'?S.cancelados:S.filtered;
   if(!rows.length){toast('Sin datos','info');return;}
@@ -980,7 +555,6 @@ function exportCSV(){
   a.click();toast('CSV exportado','success');
 }
 
-// ── IMPORTACIÓN ──────────────────────────────────
 function renderImportar(){
   document.getElementById('main').innerHTML=`
   <div class="section-header">
@@ -988,7 +562,6 @@ function renderImportar(){
     <div class="section-sub">Subir archivo Excel con cheques rechazados</div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
-    <!-- DROP ZONE -->
     <div class="card" style="grid-column:1/-1">
       <div class="card-title">Archivo Excel</div>
       <div id="dropZone" style="border:2px dashed var(--brd2);border-radius:8px;padding:40px;text-align:center;cursor:pointer;transition:.2s;position:relative"
@@ -1003,8 +576,6 @@ function renderImportar(){
       </div>
     </div>
   </div>
-
-  <!-- PREVIEW / VALIDACION -->
   <div id="importPreview"></div>`;
 }
 
@@ -1016,101 +587,51 @@ function handleDrop(e){
 }
 
 async function handleFile(file){
-  if(!file){return;}
+  if(!file)return;
   const ext=file.name.split('.').pop().toLowerCase();
   if(!['xlsx','xls'].includes(ext)){toast('Solo se aceptan archivos .xlsx o .xls','error');return;}
-
   const prev=document.getElementById('importPreview');
   prev.innerHTML=`<div class="card"><div style="display:flex;align-items:center;gap:10px;color:var(--txt2)"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div><span style="font-size:12px;font-weight:600">Leyendo archivo...</span></div></div>`;
-
   try{
     const data=await file.arrayBuffer();
-    // Usar SheetJS
     const XLSX=await loadSheetJS();
     const wb=XLSX.read(data,{type:'array',cellDates:true});
-
-    // Buscar solapa RECHAZADOS
     const sheetName=wb.SheetNames.find(n=>n.toUpperCase().includes('RECHAZADO'));
-    if(!sheetName){
-      prev.innerHTML=renderImportError('No se encontró una solapa llamada "RECHAZADOS" en el archivo.');
-      return;
-    }
+    if(!sheetName){prev.innerHTML=renderImportError('No se encontró una solapa llamada "RECHAZADOS" en el archivo.');return;}
     const ws=wb.Sheets[sheetName];
     const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,dateNF:'dd/mm/yyyy'});
-
-    // Headers en fila 3 (índice 2)
     const headers=rows[2];
     const required=['Cliente','Emisión','Vencimiento','TIPO','n ch','Fecha de Rechazo','MES','AÑO','MOTIVO','Importe'];
     const missing=required.filter(r=>!headers.some(h=>String(h||'').toLowerCase().includes(r.toLowerCase())));
-
-    if(missing.length>0){
-      prev.innerHTML=renderImportError('Columnas faltantes: '+missing.join(', '));
-      return;
-    }
-
-    // Datos desde fila 4 (índice 3)
+    if(missing.length>0){prev.innerHTML=renderImportError('Columnas faltantes: '+missing.join(', '));return;}
     const dataRows=rows.slice(3).filter(r=>r[0]||r[5]);
-    const errors=[];
-    const valid=[];
-
+    const errors=[],valid=[];
     dataRows.forEach((r,i)=>{
-      const fila=i+4;
-      const rowErrors=[];
+      const fila=i+4,rowErrors=[];
       if(!r[0])rowErrors.push('Cliente vacío');
       if(!r[5])rowErrors.push('N° Cheque vacío');
       if(!r[9])rowErrors.push('Motivo vacío');
       const imp=parseFloat(String(r[10]||'').replace(/[^0-9.-]/g,''));
       if(isNaN(imp)||imp<=0)rowErrors.push('Importe inválido');
-
       if(rowErrors.length>0)errors.push({fila,cliente:r[0]||'—',cheque:r[5]||'—',errores:rowErrors});
       else valid.push(r);
     });
-
-    // Mostrar resultado
     prev.innerHTML=`
     <div class="card" style="margin-bottom:16px">
       <div class="card-title">Resultado de Validación</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:${errors.length>0?'20px':'0'}">
-        <div style="text-align:center;padding:16px;background:var(--surf2);border-radius:8px">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--green-lt)">${valid.length}</div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-top:4px">Registros válidos</div>
-        </div>
-        <div style="text-align:center;padding:16px;background:var(--surf2);border-radius:8px">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:${errors.length>0?'var(--red)':'var(--green-lt)'}">${errors.length}</div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-top:4px">Con errores</div>
-        </div>
-        <div style="text-align:center;padding:16px;background:var(--surf2);border-radius:8px">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:#fff">${dataRows.length}</div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-top:4px">Total en archivo</div>
-        </div>
+        <div style="text-align:center;padding:16px;background:var(--surf2);border-radius:8px"><div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--green-lt)">${valid.length}</div><div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-top:4px">Registros válidos</div></div>
+        <div style="text-align:center;padding:16px;background:var(--surf2);border-radius:8px"><div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:${errors.length>0?'var(--red)':'var(--green-lt)'}">${errors.length}</div><div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-top:4px">Con errores</div></div>
+        <div style="text-align:center;padding:16px;background:var(--surf2);border-radius:8px"><div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:#fff">${dataRows.length}</div><div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-top:4px">Total en archivo</div></div>
       </div>
-      ${errors.length>0?`
-      <div style="border-top:1px solid var(--brd);padding-top:16px;margin-top:4px">
-        <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:10px">⚠ Filas con errores (no se importarán)</div>
-        <div style="max-height:180px;overflow-y:auto">
-        ${errors.map(e=>`
-          <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:rgba(212,0,10,.06);border-radius:6px;margin-bottom:4px;font-size:11px">
-            <span style="font-family:'JetBrains Mono',monospace;color:var(--txt3);font-size:10px">F${e.fila}</span>
-            <span style="font-weight:600;color:var(--txt2);flex:1">${e.cliente}</span>
-            <span style="color:var(--txt3)">${e.errores.join(' · ')}</span>
-          </div>`).join('')}
-        </div>
-      </div>`:''}
+      ${errors.length>0?`<div style="border-top:1px solid var(--brd);padding-top:16px;margin-top:4px"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:10px">⚠ Filas con errores (no se importarán)</div><div style="max-height:180px;overflow-y:auto">${errors.map(e=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:rgba(212,0,10,.06);border-radius:6px;margin-bottom:4px;font-size:11px"><span style="font-family:'JetBrains Mono',monospace;color:var(--txt3);font-size:10px">F${e.fila}</span><span style="font-weight:600;color:var(--txt2);flex:1">${e.cliente}</span><span style="color:var(--txt3)">${e.errores.join(' · ')}</span></div>`).join('')}</div></div>`:''}
     </div>
-
     ${valid.length>0?`
     <div class="card" style="margin-bottom:16px">
       <div class="card-title">Vista Previa — Primeros 5 registros</div>
       <div class="tbl-scroll"><table>
         <thead><tr><th>Cliente</th><th>N° Cheque</th><th>Tipo</th><th>Rechazo</th><th>Motivo</th><th style="text-align:right">Importe</th></tr></thead>
-        <tbody>${valid.slice(0,5).map(r=>`<tr>
-          <td class="tc-name">${r[0]||'—'}</td>
-          <td class="tc-mono tc-cheque">${r[5]||'—'}</td>
-          <td><span class="tag tag-blue">${r[3]||'—'}</span></td>
-          <td class="tc-mono tc-fecha">${r[6]||'—'}</td>
-          <td><span class="tag tag-red">${r[9]||'—'}</span></td>
-          <td class="tc-monto tc-mono">$${parseFloat(String(r[10]||0).replace(/[^0-9.-]/g,'')).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
-        </tr>`).join('')}</tbody>
+        <tbody>${valid.slice(0,5).map(r=>`<tr><td class="tc-name">${r[0]||'—'}</td><td class="tc-mono tc-cheque">${r[5]||'—'}</td><td><span class="tag tag-blue">${r[3]||'—'}</span></td><td class="tc-mono tc-fecha">${r[6]||'—'}</td><td><span class="tag tag-red">${r[9]||'—'}</span></td><td class="tc-monto tc-mono">$${parseFloat(String(r[10]||0).replace(/[^0-9.-]/g,'')).toLocaleString('es-AR',{minimumFractionDigits:2})}</td></tr>`).join('')}</tbody>
       </table></div>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:10px">
@@ -1120,17 +641,11 @@ async function handleFile(file){
         Importar ${valid.length} registros a Google Sheets
       </button>
     </div>`:''}`;
-
-  }catch(e){
-    prev.innerHTML=renderImportError('Error leyendo el archivo: '+e.message);
-  }
+  }catch(e){prev.innerHTML=renderImportError('Error leyendo el archivo: '+e.message);}
 }
 
 function renderImportError(msg){
-  return`<div class="card"><div style="display:flex;align-items:center;gap:10px;color:#f87171;padding:8px 0">
-    <svg style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    <span style="font-size:12px;font-weight:600">${msg}</span>
-  </div></div>`;
+  return`<div class="card"><div style="display:flex;align-items:center;gap:10px;color:#f87171;padding:8px 0"><svg style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span style="font-size:12px;font-weight:600">${msg}</span></div></div>`;
 }
 
 async function loadSheetJS(){
@@ -1138,8 +653,7 @@ async function loadSheetJS(){
   return new Promise((res,rej)=>{
     const s=document.createElement('script');
     s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    s.onload=()=>res(window.XLSX);
-    s.onerror=rej;
+    s.onload=()=>res(window.XLSX);s.onerror=rej;
     document.head.appendChild(s);
   });
 }
@@ -1148,200 +662,110 @@ async function confirmarImport(rows){
   const btn=event.target.closest('button');
   btn.disabled=true;btn.textContent='Importando...';
   try{
-    const res=await fetch(API,{
-      method:'POST',
-      body:JSON.stringify({action:'importarRechazados',rows}),
-    });
+    const res=await fetch(API,{method:'POST',body:JSON.stringify({action:'importarRechazados',rows})});
     const r=await res.json();
     if(!r.ok)throw new Error(r.error);
     toast('✓ '+rows.length+' registros importados correctamente','success');
-    await loadAll();
-    showTab('rechazados');
-  }catch(e){
-    toast('Error al importar: '+e.message,'error');
-    btn.disabled=false;btn.textContent='Importar '+rows.length+' registros';
-  }
+    await loadAll();showTab('rechazados');
+  }catch(e){toast('Error al importar: '+e.message,'error');btn.disabled=false;btn.textContent='Importar '+rows.length+' registros';}
 }
 
-// ── CONFIGURACIÓN ─────────────────────────────────
 function renderConfig(){
   const cfg=S.config||{};
-  if(!cfg.geminiKey) cfg.geminiKey=localStorage.getItem('gemini_key')||'';
+  if(!cfg.geminiKey)cfg.geminiKey=localStorage.getItem('gemini_key')||'';
   document.getElementById('main').innerHTML=`
   <div class="section-header">
     <div class="section-title">Configuración</div>
     <div class="section-sub">Notificaciones y ajustes del sistema</div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:900px">
-
-    <!-- MAIL -->
     <div class="card" style="grid-column:1/-1">
       <div class="card-title">&#10024; Inteligencia Artificial · Gemini</div>
       <div class="field">
         <label>API Key de Google Gemini <span style="color:var(--green-lt);font-size:9px;font-weight:700;margin-left:6px">GRATIS</span></label>
         <input type="password" id="cfgGeminiKey" value="${cfg.geminiKey||localStorage.getItem('gemini_key')||''}" placeholder="AIza..."/>
-        <div style="font-size:10px;color:var(--txt3);margin-top:5px">
-          Gratis en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--red)">aistudio.google.com/app/apikey</a> &#8212; 1500 lecturas/d&#237;a.
-        </div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:5px">Gratis en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--red)">aistudio.google.com/app/apikey</a> &#8212; 1500 lecturas/día.</div>
       </div>
     </div>
-
     <div class="card" style="grid-column:1/-1">
       <div class="card-title">Notificaciones por Email</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
-        <div class="field">
-          <label>Email de destino (Administración)</label>
-          <input type="email" id="cfgMailTo" value="${cfg.mailTo||''}" placeholder="administracion@moretti.com.ar"/>
-        </div>
-        <div class="field">
-          <label>Email con copia (CC)</label>
-          <input type="email" id="cfgMailCC" value="${cfg.mailCC||''}" placeholder="gerencia@moretti.com.ar"/>
-        </div>
-        <div class="field" style="grid-column:1/-1">
-          <label>Asunto del email</label>
-          <input type="text" id="cfgMailSubject" value="${cfg.mailSubject||'Nuevo cheque rechazado — Moretti S.A.'}" placeholder="Nuevo cheque rechazado — Moretti S.A."/>
-        </div>
+        <div class="field"><label>Email de destino (Administración)</label><input type="email" id="cfgMailTo" value="${cfg.mailTo||''}" placeholder="administracion@moretti.com.ar"/></div>
+        <div class="field"><label>Email con copia (CC)</label><input type="email" id="cfgMailCC" value="${cfg.mailCC||''}" placeholder="gerencia@moretti.com.ar"/></div>
+        <div class="field" style="grid-column:1/-1"><label>Asunto del email</label><input type="text" id="cfgMailSubject" value="${cfg.mailSubject||'Nuevo cheque rechazado — Moretti S.A.'}" placeholder="Nuevo cheque rechazado — Moretti S.A."/></div>
       </div>
       <div style="background:var(--surf2);border:1px solid var(--brd);border-radius:8px;padding:14px 16px;margin-bottom:16px">
         <div style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3);margin-bottom:8px">El mail se enviará cuando:</div>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;color:var(--txt2)">
-            <input type="checkbox" id="cfgOnNew" ${cfg.onNew!==false?'checked':''} style="accent-color:var(--red);width:14px;height:14px"/>
-            Se carga un nuevo cheque rechazado en la planilla
-          </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;color:var(--txt2)">
-            <input type="checkbox" id="cfgOnImport" ${cfg.onImport?'checked':''} style="accent-color:var(--red);width:14px;height:14px"/>
-            Se realiza una importación masiva
-          </label>
-        </div>
-      </div>
-      <div style="background:rgba(212,0,10,.06);border:1px solid rgba(212,0,10,.15);border-radius:8px;padding:12px 14px;margin-bottom:16px">
-        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:4px">⚠ Configuración en Google Apps Script</div>
-        <div style="font-size:11px;color:var(--txt2);line-height:1.5">
-          El envío de mails se ejecuta desde Apps Script con <code style="background:var(--surf3);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:10px">MailApp.sendEmail()</code>. 
-          Guardá esta configuración y luego activá el trigger en el editor de Apps Script.
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;color:var(--txt2)"><input type="checkbox" id="cfgOnNew" ${cfg.onNew!==false?'checked':''} style="accent-color:var(--red);width:14px;height:14px"/>Se carga un nuevo cheque rechazado en la planilla</label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;color:var(--txt2)"><input type="checkbox" id="cfgOnImport" ${cfg.onImport?'checked':''} style="accent-color:var(--red);width:14px;height:14px"/>Se realiza una importación masiva</label>
         </div>
       </div>
     </div>
-
-    <!-- SISTEMA -->
     <div class="card">
       <div class="card-title">Sistema</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
-          <span style="font-size:12px;color:var(--txt2)">Versión</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.3.2</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
-          <span style="font-size:12px;color:var(--txt2)">Última actualización</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txt3)">09/03/2026</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)">
-          <span style="font-size:12px;color:var(--txt2)">Cheques cargados</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#fff">${S.rechazados.length}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0">
-          <span style="font-size:12px;color:var(--txt2)">Cancelados</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green-lt)">${S.cancelados.length}</span>
-        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)"><span style="font-size:12px;color:var(--txt2)">Versión</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)">v1.3.4</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)"><span style="font-size:12px;color:var(--txt2)">Última actualización</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txt3)">13/03/2026</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--brd)"><span style="font-size:12px;color:var(--txt2)">Cheques cargados</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#fff">${S.rechazados.length}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0"><span style="font-size:12px;color:var(--txt2)">Cancelados</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green-lt)">${S.cancelados.length}</span></div>
       </div>
     </div>
-
-    <!-- LINKS -->
     <div class="card">
       <div class="card-title">Accesos Directos</div>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <a href="https://docs.google.com/spreadsheets/d/1rJK2rRGf8fYjktOIX1BxS94EaCGs-XPhQa6bLnHQjwE" target="_blank"
-          style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;text-decoration:none;color:var(--txt2);font-size:12px;font-weight:600;transition:.15s"
-          onmouseover="this.style.borderColor='var(--txt3)'" onmouseout="this.style.borderColor='var(--brd2)'">
-          <span>📊 Google Sheet — Cheques 2026</span>
-          <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </a>
-        <a href="https://script.google.com/u/0/home/projects/1Y5yMJrJ2aMFeke5vke5T9Y3n2YfHSYZuzPMgAg0dEGByzo_HduhHUM_K/edit" target="_blank"
-          style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;text-decoration:none;color:var(--txt2);font-size:12px;font-weight:600;transition:.15s"
-          onmouseover="this.style.borderColor='var(--txt3)'" onmouseout="this.style.borderColor='var(--brd2)'">
-          <span>⚙️ Apps Script — Backend</span>
-          <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </a>
-        <a href="https://github.com/marcevsanti-ux/Tesorer-a-Moretti" target="_blank"
-          style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;text-decoration:none;color:var(--txt2);font-size:12px;font-weight:600;transition:.15s"
-          onmouseover="this.style.borderColor='var(--txt3)'" onmouseout="this.style.borderColor='var(--brd2)'">
-          <span>🐙 GitHub — Repositorio</span>
-          <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </a>
+        <a href="https://docs.google.com/spreadsheets/d/1rJK2rRGf8fYjktOIX1BxS94EaCGs-XPhQa6bLnHQjwE" target="_blank" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;text-decoration:none;color:var(--txt2);font-size:12px;font-weight:600;transition:.15s" onmouseover="this.style.borderColor='var(--txt3)'" onmouseout="this.style.borderColor='var(--brd2)'"><span>📊 Google Sheet — Cheques 2026</span><svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+        <a href="https://script.google.com/u/0/home/projects/1Y5yMJrJ2aMFeke5vke5T9Y3n2YfHSYZuzPMgAg0dEGByzo_HduhHUM_K/edit" target="_blank" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;text-decoration:none;color:var(--txt2);font-size:12px;font-weight:600;transition:.15s" onmouseover="this.style.borderColor='var(--txt3)'" onmouseout="this.style.borderColor='var(--brd2)'"><span>⚙️ Apps Script — Backend</span><svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+        <a href="https://github.com/marcevsanti-ux/Tesorer-a-Moretti" target="_blank" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;text-decoration:none;color:var(--txt2);font-size:12px;font-weight:600;transition:.15s" onmouseover="this.style.borderColor='var(--txt3)'" onmouseout="this.style.borderColor='var(--brd2)'"><span>🐙 GitHub — Repositorio</span><svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
       </div>
     </div>
-
-    <!-- URL MOBILE -->
     <div class="card" style="grid-column:1/-1;border:1px solid rgba(212,0,10,.2);background:rgba(212,0,10,.04)">
       <div class="card-title" style="color:var(--red)">URL Mobile · Escaneo desde Celular</div>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:200px">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#fff;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;padding:12px 14px;word-break:break-all">
-            https://marcevsanti-ux.github.io/Tesorer-a-Moretti/mobile.html
-          </div>
-          <div style="font-size:11px;color:var(--txt3);margin-top:8px">
-            Abrí esta URL desde el celu, fotografiá el comprobante y la IA carga los datos automáticamente.
-          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#fff;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;padding:12px 14px;word-break:break-all">https://marcevsanti-ux.github.io/Tesorer-a-Moretti/mobile.html</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:8px">Abrí esta URL desde el celu, fotografiá el comprobante y la IA carga los datos automáticamente.</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
-          <a href="https://marcevsanti-ux.github.io/Tesorer-a-Moretti/mobile.html" target="_blank"
-            style="display:flex;align-items:center;gap:7px;padding:10px 16px;background:var(--red);border-radius:8px;text-decoration:none;color:#fff;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">
-            <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            Abrir
-          </a>
-          <button onclick="copyMobileURL()" style="display:flex;align-items:center;gap:7px;padding:9px 16px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;color:var(--txt2);font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;font-family:'Inter',sans-serif" id="copyBtn">
-            <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            Copiar
-          </button>
+          <a href="https://marcevsanti-ux.github.io/Tesorer-a-Moretti/mobile.html" target="_blank" style="display:flex;align-items:center;gap:7px;padding:10px 16px;background:var(--red);border-radius:8px;text-decoration:none;color:#fff;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase"><svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Abrir</a>
+          <button onclick="copyMobileURL()" style="display:flex;align-items:center;gap:7px;padding:9px 16px;background:var(--surf2);border:1px solid var(--brd2);border-radius:8px;color:var(--txt2);font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;font-family:'Inter',sans-serif" id="copyBtn"><svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
         </div>
       </div>
       <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--brd)">
         <div id="qrWrap" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-          <div id="qrCode" style="width:100px;height:100px;background:var(--surf2);border:1px solid var(--brd);border-radius:8px;display:flex;align-items:center;justify-content:center">
-            <div class="spinner" style="width:20px;height:20px;border-width:2px"></div>
-          </div>
-          <div>
-            <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:4px">Escaneá con la cámara del celu</div>
-            <div style="font-size:11px;color:var(--txt3)">Apuntá la cámara al QR para abrir la app mobile directamente</div>
-          </div>
+          <div id="qrCode" style="width:100px;height:100px;background:var(--surf2);border:1px solid var(--brd);border-radius:8px;display:flex;align-items:center;justify-content:center"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div></div>
+          <div><div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:4px">Escaneá con la cámara del celu</div><div style="font-size:11px;color:var(--txt3)">Apuntá la cámara al QR para abrir la app mobile directamente</div></div>
         </div>
       </div>
     </div>
-
-
   </div>
-
   <div style="display:flex;justify-content:flex-end;max-width:900px;margin-top:16px">
     <button class="btn-save" onclick="guardarConfig()">
       <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       Guardar Configuración
     </button>
   </div>`;
-  setTimeout(renderQR, 100);
+  setTimeout(renderQR,100);
 }
 
 async function guardarConfig(){
   const cfg={
-    mailTo:    document.getElementById('cfgMailTo').value,
-    mailCC:    document.getElementById('cfgMailCC').value,
+    mailTo:document.getElementById('cfgMailTo').value,
+    mailCC:document.getElementById('cfgMailCC').value,
     mailSubject:document.getElementById('cfgMailSubject').value,
-    onNew:     document.getElementById('cfgOnNew').checked,
-    onImport:  document.getElementById('cfgOnImport').checked,
-    geminiKey: document.getElementById('cfgGeminiKey')?.value||'',
+    onNew:document.getElementById('cfgOnNew').checked,
+    onImport:document.getElementById('cfgOnImport').checked,
+    geminiKey:document.getElementById('cfgGeminiKey')?.value||'',
   };
-  // Save API key to localStorage for IA scanning
-  if(cfg.geminiKey) localStorage.setItem('gemini_key', cfg.geminiKey);
+  if(cfg.geminiKey)localStorage.setItem('gemini_key',cfg.geminiKey);
   try{
     const res=await fetch(API,{method:'POST',body:JSON.stringify({action:'guardarConfig',config:cfg})});
     const r=await res.json();
     if(!r.ok)throw new Error(r.error);
-    S.config=cfg;
-    toast('✓ Configuración guardada','success');
-  }catch(e){
-    toast('Error: '+e.message,'error');
-  }
+    S.config=cfg;toast('✓ Configuración guardada','success');
+  }catch(e){toast('Error: '+e.message,'error');}
 }
+
 function fmt(n){if(!n&&n!==0)return'—';return'$'+Number(n).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtK(n){if(!n)return'—';if(n>=1000000)return'$'+(n/1000000).toFixed(1)+'M';if(n>=1000)return'$'+(n/1000).toFixed(0)+'k';return'$'+n.toFixed(0);}
 function toDate(d){if(!d)return'';const p=d.split('/');return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:'';}
@@ -1352,29 +776,28 @@ function toast(msg,type='info'){
   setTimeout(()=>t.remove(),3500);
 }
 
-// ── NUEVO CHEQUE (manual + IA) ───────────────────
 const MOTIVOS=['SIN FONDOS','CTA CERRADA','CUENTA EMBARGADA','MAL CONFECCIONADO','CUENTA CONCURSADA','VENCIDO','MAL ENDOSADO','CUENTA INEXISTENTE'];
 const ACCIONES=['Deposito Galicia','Deposito Nacion','Deposito Santander','Deposito Frances','Negociado Galicia','Negociado Nacion','Negociado Santander','Pago a proveedores','Efectivo','Transferencia','En gestión'];
 
-let _ncDest = 'rechazados';
-let _ncEvidenciaFile = null;
-let _ncEvidenciaBase64 = null;
-let _ncEvidenciaMime = null;
+let _ncDest='rechazados';
+let _ncEvidenciaFile=null;
+let _ncEvidenciaBase64=null;
+let _ncEvidenciaMime=null;
 
 function openNuevoCheque(destino){
-  _ncDest = destino || 'rechazados';
+  _ncDest=destino||'rechazados';
   document.getElementById('modalInner').innerHTML=`
     <div class="modal-hdr">
       <div>
         <div class="modal-title">Nuevo Cheque Rechazado</div>
-        <div class="modal-sub">Carga en ${_ncDest.toUpperCase()} <span style="background:var(--surf3);color:var(--txt3);font-size:9px;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;margin-left:6px">v1.3.2</span></div>
+        <div class="modal-sub">Carga en ${_ncDest.toUpperCase()} <span style="background:var(--surf3);color:var(--txt3);font-size:9px;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;margin-left:6px">v1.3.4</span></div>
       </div>
       <button class="modal-x" onclick="closeModal()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div style="padding:0 24px">
       <div class="nc-tabs">
-        <button class="nc-tab active" id="nct-ai"     onclick="ncSwitch('ai')">&#x2736; Escanear con IA</button>
-        <button class="nc-tab"        id="nct-manual" onclick="ncSwitch('manual')">Carga manual</button>
+        <button class="nc-tab active" id="nct-ai" onclick="ncSwitch('ai')">&#x2736; Escanear con IA</button>
+        <button class="nc-tab" id="nct-manual" onclick="ncSwitch('manual')">Carga manual</button>
       </div>
     </div>
     <div id="ncBody" style="padding:16px 24px 24px">
@@ -1386,9 +809,7 @@ function openNuevoCheque(destino){
         <svg viewBox="0 0 24 24" style="width:38px;height:38px;stroke:var(--txt3);fill:none;stroke-width:1.5;margin-bottom:12px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
         <div style="font-size:13px;font-weight:700;color:var(--txt2);margin-bottom:6px">Arrasta el comprobante aca</div>
         <div style="font-size:11px;color:var(--txt3);margin-bottom:16px">JPG - PNG - PDF del banco</div>
-        <button onclick="document.getElementById('aiFileInput').click()" style="padding:10px 24px;background:var(--red);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">
-          Seleccionar archivo
-        </button>
+        <button onclick="document.getElementById('aiFileInput').click()" style="padding:10px 24px;background:var(--red);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Seleccionar archivo</button>
       </div>
       <div id="ncAiStatus"></div>
     </div>`;
@@ -1398,33 +819,28 @@ function openNuevoCheque(destino){
 function ncSwitch(tab){
   document.querySelectorAll('.nc-tab').forEach(t=>t.classList.remove('active'));
   const btn=document.getElementById('nct-'+tab);
-  if(btn) btn.classList.add('active');
-  if(tab==='ai') renderNcAI();
-  else           renderNcManual({});
+  if(btn)btn.classList.add('active');
+  if(tab==='ai')renderNcAI();
+  else renderNcManual({});
 }
 
-// ── IA TAB ──────────────────────────────────────
 function renderNcAI(){
   const body=document.getElementById('ncBody');
-  if(!body){console.error('ncBody not found');return;}
+  if(!body)return;
   body.innerHTML=`
     <input type="file" id="aiFileInput" accept="image/*,.pdf" style="display:none" onchange="ncAiHandleFile(this.files[0])"/>
     <div class="ai-drop" id="aiDrop"
       ondragover="event.preventDefault();this.classList.add('drag')"
       ondragleave="this.classList.remove('drag')"
       ondrop="this.classList.remove('drag');ncAiDrop(event)">
-      <svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:var(--txt3);fill:none;stroke-width:1.5;margin-bottom:12px">
-        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-        <circle cx="12" cy="13" r="4"/>
-      </svg>
+      <svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:var(--txt3);fill:none;stroke-width:1.5;margin-bottom:12px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
       <div style="font-size:13px;font-weight:700;color:var(--txt2);margin-bottom:6px">Arrasta el comprobante aca</div>
       <div style="font-size:11px;color:var(--txt3);margin-bottom:16px">JPG - PNG - PDF del banco</div>
-      <button onclick="document.getElementById('aiFileInput').click()" style="padding:10px 24px;background:var(--red);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">
-        Seleccionar archivo
-      </button>
+      <button onclick="document.getElementById('aiFileInput').click()" style="padding:10px 24px;background:var(--red);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Seleccionar archivo</button>
     </div>
     <div id="ncAiStatus"></div>`;
 }
+
 function ncAiDrop(e){
   e.preventDefault();
   document.getElementById('aiDrop').style.borderColor='';
@@ -1432,116 +848,70 @@ function ncAiDrop(e){
 }
 
 async function ncAiHandleFile(file){
-  if(!file) return;
+  if(!file)return;
   const status=document.getElementById('ncAiStatus');
-  if(!status) return;
-
+  if(!status)return;
   const isPDF=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
-
-  // Check Gemini API key
   const apiKey=S.config?.geminiKey||localStorage.getItem('gemini_key')||'';
   if(!apiKey){
-    status.innerHTML=`<div style="margin-top:14px;padding:14px;background:rgba(212,0,10,.08);border:1px solid rgba(212,0,10,.2);border-radius:8px;font-size:12px;color:#f87171">
-      &#9888; Falta la API Key de Gemini.<br/>
-      <span style="color:var(--txt2)">And&#225; a <strong>Configuraci&#243;n</strong> y carg&#225;la. Es gratis en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--red)">aistudio.google.com</a></span>
-    </div>`;
+    status.innerHTML=`<div style="margin-top:14px;padding:14px;background:rgba(212,0,10,.08);border:1px solid rgba(212,0,10,.2);border-radius:8px;font-size:12px;color:#f87171">&#9888; Falta la API Key de Gemini.<br/><span style="color:var(--txt2)">Andá a <strong>Configuración</strong> y cargála. Es gratis en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--red)">aistudio.google.com</a></span></div>`;
     return;
   }
-
-  status.innerHTML=`
-    <div style="display:flex;align-items:center;gap:12px;margin-top:16px;padding:16px;background:var(--surf2);border-radius:8px">
-      <div class="spinner" style="width:20px;height:20px;border-width:2px;flex-shrink:0"></div>
-      <span style="font-size:12px;color:var(--txt2)">La IA est&#225; leyendo el comprobante...</span>
-    </div>`;
-
+  status.innerHTML=`<div style="display:flex;align-items:center;gap:12px;margin-top:16px;padding:16px;background:var(--surf2);border-radius:8px"><div class="spinner" style="width:20px;height:20px;border-width:2px;flex-shrink:0"></div><span style="font-size:12px;color:var(--txt2)">La IA está leyendo el comprobante...</span></div>`;
   try{
-    const base64=await new Promise((res,rej)=>{
-      const r=new FileReader();
-      r.onload=()=>res(r.result.split(',')[1]);
-      r.onerror=rej;
-      r.readAsDataURL(file);
-    });
-
+    const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
     const mimeType=isPDF?'application/pdf':(file.type||'image/jpeg');
     const prompt=`Sos un asistente de tesoreria argentina. Analiza este comprobante bancario de cheque rechazado.
 Devuelve UNICAMENTE un objeto JSON valido, sin markdown, sin texto adicional:
 {"cliente":"nombre completo del emisor","nroCheque":"numero","tipo":"Electronico","emision":"dd/mm/yyyy","vencimiento":"dd/mm/yyyy","fechaRechazo":"dd/mm/yyyy","motivo":"SIN FONDOS","importe":391523}
 Motivos validos: SIN FONDOS, CTA CERRADA, CUENTA EMBARGADA, MAL CONFECCIONADO, CUENTA CONCURSADA, VENCIDO, MAL ENDOSADO, CUENTA INEXISTENTE.
 Si el motivo dice FALTA DE FONDOS usa SIN FONDOS. Importe como numero sin simbolos.`;
-
-    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        contents:[{parts:[
-          {inline_data:{mime_type:mimeType,data:base64}},
-          {text:prompt}
-        ]}]
-      })
-    });
-
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:mimeType,data:base64}},{text:prompt}]}]})});
     const data=await resp.json();
-    if(data.error) throw new Error(data.error.message);
-
+    if(data.error)throw new Error(data.error.message);
     const txt=(data.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
     const match=txt.match(/\{[\s\S]*\}/);
-    if(!match) throw new Error('No se encontro JSON en la respuesta');
+    if(!match)throw new Error('No se encontro JSON en la respuesta');
     const parsed=JSON.parse(match[0]);
-
-    status.innerHTML=`
-      <div style="display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 14px;background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.15);border-radius:8px;font-size:12px;color:#86efac">
-        <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;flex-shrink:0" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-        Datos le&#237;dos por IA &#8212; revis&#225; y guard&#225;
-      </div>`;
-    // Guardar referencia del archivo para evidencia
-    _ncEvidenciaFile = file;
-    _ncEvidenciaBase64 = base64;
-    _ncEvidenciaMime = mimeType;
-
-    renderNcManual(parsed, true);
-
+    status.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 14px;background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.15);border-radius:8px;font-size:12px;color:#86efac"><svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;flex-shrink:0" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Datos leídos por IA &#8212; revisá y guardá</div>`;
+    _ncEvidenciaFile=file;_ncEvidenciaBase64=base64;_ncEvidenciaMime=mimeType;
+    renderNcManual(parsed,true);
   }catch(e){
-    let errMsg = e.message;
-    let extraHelp = '';
-    if(errMsg.includes('not found') || errMsg.includes('not supported')){
-      extraHelp = '<br/><span style="color:#fbbf24">&#128161; La API "Generative Language API" no est&#225; habilitada en tu proyecto de Google Cloud.<br/>Entr&#225; a <a href="https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" target="_blank" style="color:var(--red)">este link</a> y hacé click en <strong>Habilitar</strong>.</span>';
-    } else if(errMsg.includes('quota') || errMsg.includes('limit')){
-      extraHelp = '<br/><span style="color:#fbbf24">&#128161; L&#237;mite de cuota alcanzado. Esperá unos minutos.</span>';
-    }
-    status.innerHTML=`
-      <div style="margin-top:14px;padding:12px 14px;background:rgba(212,0,10,.06);border:1px solid rgba(212,0,10,.2);border-radius:8px;font-size:12px;color:#f87171">
-        &#9888; ${errMsg}${extraHelp}<br/>
-        <span style="color:var(--txt3)">Pod&#233;s cargarlo manualmente.</span>
-      </div>`;
+    let errMsg=e.message,extraHelp='';
+    if(errMsg.includes('not found')||errMsg.includes('not supported'))extraHelp='<br/><span style="color:#fbbf24">&#128161; La API no está habilitada. Entrá a <a href="https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" target="_blank" style="color:var(--red)">este link</a> y habilitala.</span>';
+    else if(errMsg.includes('quota')||errMsg.includes('limit'))extraHelp='<br/><span style="color:#fbbf24">&#128161; Límite de cuota alcanzado. Esperá unos minutos.</span>';
+    status.innerHTML=`<div style="margin-top:14px;padding:12px 14px;background:rgba(212,0,10,.06);border:1px solid rgba(212,0,10,.2);border-radius:8px;font-size:12px;color:#f87171">&#9888; ${errMsg}${extraHelp}<br/><span style="color:var(--txt3)">Podés cargarlo manualmente.</span></div>`;
   }
 }
 
+function toggleNcDetalle(){
+  const v=document.getElementById('nDetalle')?.value||'';
+  const w=document.getElementById('nDetalleTextoWrap');
+  if(w)w.style.display=v==='Pago a proveedores'?'block':'none';
+}
+function toggleFDetalle(){
+  const v=document.getElementById('fDetalle')?.value||'';
+  const w=document.getElementById('fDetalleTextoWrap');
+  if(w)w.style.display=v==='Pago a proveedores'?'block':'none';
+}
 
-
-document.addEventListener('DOMContentLoaded', function(){
-  const el = document.getElementById('ftrDate');
-  if(el){
-    const d = new Date();
-    el.textContent = d.toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  }
+document.addEventListener('DOMContentLoaded',function(){
+  const el=document.getElementById('ftrDate');
+  if(el){const d=new Date();el.textContent=d.toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});}
   loadAll();
 });
 
-// ── QR & MOBILE URL ─────────────────────────────
 const MOBILE_URL='https://marcevsanti-ux.github.io/Tesorer-a-Moretti/mobile.html';
-
 function copyMobileURL(){
   navigator.clipboard.writeText(MOBILE_URL).then(()=>{
     const btn=document.getElementById('copyBtn');
-    if(btn){btn.innerHTML='&#10003; Copiado!';}
+    if(btn)btn.innerHTML='&#10003; Copiado!';
     setTimeout(()=>{if(btn)btn.innerHTML='Copiar';},2000);
     toast('URL copiada','success');
   }).catch(()=>{});
 }
-
 function renderQR(){
-  const wrap=document.getElementById('qrCode');
-  if(!wrap)return;
+  const wrap=document.getElementById('qrCode');if(!wrap)return;
   if(typeof QRCode==='undefined'){
     const s=document.createElement('script');
     s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
@@ -1554,19 +924,14 @@ function _drawQR(wrap){
   try{
     wrap.innerHTML='<div id="qrCanvas"></div>';
     new QRCode(document.getElementById('qrCanvas'),{text:MOBILE_URL,width:100,height:100,colorDark:'#FFFFFF',colorLight:'#1C1C1C',correctLevel:QRCode.CorrectLevel.M});
-    setTimeout(()=>{
-      // QRCode.js generates both canvas + img - hide canvas, show only img
-      const canvas=wrap.querySelector('canvas');
-      const img=wrap.querySelector('img');
-      if(canvas) canvas.style.display='none';
-      if(img){img.style.cssText='border-radius:6px;width:100px;height:100px;display:block';}
-    },200);
+    setTimeout(()=>{const canvas=wrap.querySelector('canvas'),img=wrap.querySelector('img');if(canvas)canvas.style.display='none';if(img)img.style.cssText='border-radius:6px;width:100px;height:100px;display:block';},200);
   }catch(e){wrap.innerHTML='<div style="font-size:10px;color:var(--txt3);padding:12px;text-align:center">Copiá la URL</div>';}
 }
-function renderNcManual(d, afterAI){
-  const motOpts=['SIN FONDOS', 'CTA CERRADA', 'CUENTA EMBARGADA', 'MAL CONFECCIONADO', 'CUENTA CONCURSADA', 'VENCIDO', 'MAL ENDOSADO', 'CUENTA INEXISTENTE'].map(m=>`<option value="${m}" ${(d&&d.motivo===m)?'selected':''}>${m}</option>`).join('');
-  const accOpts=['Deposito Galicia', 'Deposito Nacion', 'Deposito Santander', 'Deposito Frances', 'Negociado Galicia', 'Negociado Nacion', 'Negociado Santander', 'Pago a proveedores', 'Efectivo', 'Transferencia', 'En gestión'].map(a=>`<option value="${a}" ${(d&&d.detalle===a)?'selected':''}>${a}</option>`).join('');
 
+function renderNcManual(d,afterAI){
+  const motOpts=MOTIVOS.map(m=>`<option value="${m}" ${(d&&d.motivo===m)?'selected':''}>${m}</option>`).join('');
+  const accOpts=ACCIONES.map(a=>`<option value="${a}" ${(d&&d.detalle===a)?'selected':''}>${a}</option>`).join('');
+  const isPagoProv=d&&d.detalle==='Pago a proveedores';
   const formHTML=`
     <div style="margin-top:8px">
       <div class="frow">
@@ -1597,27 +962,29 @@ function renderNcManual(d, afterAI){
         <div class="field"><label>Gastos banco $</label><input type="number" id="nGastos" step="0.01" value="${d&&d.gastos||''}" placeholder="0.00"/></div>
       </div>
       <div class="frow">
-        <div class="field"><label>Detalle / Acci&#243;n</label><select id="nDetalle"><option value="">&#8212; Sin acci&#243;n &#8212;</option>${accOpts}</select></div>
+        <div class="field"><label>Detalle / Acci&#243;n</label><select id="nDetalle" onchange="toggleNcDetalle()"><option value="">&#8212; Sin acci&#243;n &#8212;</option>${accOpts}</select></div>
         <div class="field"><label>Env&#237;o</label><input type="text" id="nEnvio" value="${esc(d&&d.envio||'')}" placeholder="Enviado a..."/></div>
+      </div>
+      <div class="field" id="nDetalleTextoWrap" style="display:${isPagoProv?'block':'none'}">
+        <label>Detalle — Pago a Proveedores <span style="color:var(--red)">*</span></label>
+        <input type="text" id="nDetalleTexto" value="${esc(d&&d.detalleTexto||'')}" placeholder="Ej: Proveedor García S.A." autocomplete="off"/>
       </div>
       <div style="height:80px"></div>
     </div>`;
-
   if(afterAI){
     const status=document.getElementById('ncAiStatus');
     if(status){const div=document.createElement('div');div.innerHTML=formHTML;status.appendChild(div);}
-  } else {
+  }else{
     const nb=document.getElementById('ncBody');
-    if(nb) nb.innerHTML=formHTML;
+    if(nb)nb.innerHTML=formHTML;
   }
-  // Add/update sticky save footer
   let ftr=document.getElementById('ncStickyFtr');
   if(!ftr){
     ftr=document.createElement('div');
     ftr.id='ncStickyFtr';
     ftr.style.cssText='position:sticky;bottom:0;background:var(--surf);border-top:1px solid var(--brd2);padding:14px 24px;display:flex;justify-content:flex-end;gap:8px;z-index:10;margin-top:8px';
     const modal=document.querySelector('.modal');
-    if(modal) modal.appendChild(ftr);
+    if(modal)modal.appendChild(ftr);
   }
   ftr.innerHTML=`
     <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
@@ -1634,15 +1001,6 @@ async function guardarNuevoCheque(){
   if(!cliente){toast('El cliente es obligatorio','error');return;}
   if(!nroCheque){toast('El N&#176; de cheque es obligatorio','error');return;}
   if(!importe||importe<=0){toast('El importe debe ser mayor a 0','error');return;}
-
-  // ── Validar duplicado: mismo nroCheque del mismo cliente ──
-  const allRows=[...(S.rechazados||[]),...(S.cancelados||[])];
-  const dup=allRows.find(r=>String(r.nroCheque).trim()===String(nroCheque).trim() && r.cliente.trim().toLowerCase()===cliente.trim().toLowerCase());
-  if(dup){
-    const ya=`Ya existe el cheque N° ${nroCheque} de ${dup.cliente}\nFecha rechazo: ${dup.fechaRechazo} | Importe: ${fmt(dup.importe)} | Estado: ${dup.pendiente>0?'PENDIENTE':'CANCELADO'}`;
-    const sobreescribir=confirm(ya+'\n\n¿Querés sobreescribirlo de todas formas?');
-    if(!sobreescribir){toast('Carga cancelada — cheque duplicado','error');return;}
-  }
   const btn=event.target.closest('button');
   btn.disabled=true;btn.textContent='Guardando...';
   const fechaRec=document.getElementById('nFechaRechazo')?.value||'';
@@ -1651,6 +1009,7 @@ async function guardarNuevoCheque(){
   const meses=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
   let mes='',anio='';
   if(fechaRec){const dt=new Date(fechaRec);mes=meses[dt.getMonth()];anio=String(dt.getFullYear());}
+  const detalleVal=document.getElementById('nDetalle')?.value||'';
   const row={
     cliente,nroCheque,
     emision:fromDate(document.getElementById('nEmision')?.value||''),
@@ -1659,7 +1018,7 @@ async function guardarNuevoCheque(){
     tipoLetra:'V',fechaRechazo:fromDate(fechaRec),
     mes,anio,motivo:document.getElementById('nMotivo')?.value||'',
     importe,gastos,total,
-    detalle:document.getElementById('nDetalle')?.value||'',
+    detalle:detalleVal==='Pago a proveedores'?(document.getElementById('nDetalleTexto')?.value?.trim()||detalleVal):detalleVal,
     envio:document.getElementById('nEnvio')?.value||'',
     pendiente:_ncDest==='cancelados'?0:total,
   };
@@ -1670,24 +1029,12 @@ async function guardarNuevoCheque(){
     if(!r.ok)throw new Error(r.error);
     closeModal();
     toast('&#10003; Cheque '+nroCheque+' guardado en '+_ncDest.toUpperCase(),'success');
-    // Subir evidencia PDF/imagen si existe (mail combinado se envía desde agregarEvidencia)
-    if(_ncEvidenciaBase64 && r.fila){
+    if(_ncEvidenciaBase64&&r.fila){
       try{
-        await fetch(API,{method:'POST',body:JSON.stringify({
-          action:'agregarEvidencia',
-          fila:r.fila,
-          base64:_ncEvidenciaBase64,
-          mimeType:_ncEvidenciaMime||'application/pdf',
-          nombre:(_ncEvidenciaFile?.name)||'comprobante.pdf'
-        })});
+        await fetch(API,{method:'POST',body:JSON.stringify({action:'agregarEvidencia',fila:r.fila,base64:_ncEvidenciaBase64,mimeType:_ncEvidenciaMime||'application/pdf',nombre:(_ncEvidenciaFile?.name)||'comprobante.pdf'})});
         toast('&#128206; Comprobante guardado en Drive','success');
       }catch(ev){console.warn('Evidencia no subida:',ev);}
-      _ncEvidenciaBase64=null; _ncEvidenciaFile=null;
-    } else {
-      // Carga manual sin PDF: enviar mail sin adjunto
-      try{
-        await fetch(API,{method:'POST',body:JSON.stringify({action:'enviarMailSinAdjunto', row})});
-      }catch(ev){console.warn('Mail sin adjunto no enviado:',ev);}
+      _ncEvidenciaBase64=null;_ncEvidenciaFile=null;
     }
     await loadAll();
     showTab(_ncDest);
@@ -1700,30 +1047,6 @@ async function guardarNuevoCheque(){
 function esc(s){return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function toDate(d){if(!d)return'';const p=d.split('/');return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:d.includes('-')?d:'';}
 function fromDate(d){if(!d)return'';const p=d.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:'';}
-
-// ── BORRAR REGISTRO ──────────────────────────────────────────
-function delClick(btn){
-  const fila = parseInt(btn.dataset.fila);
-  const nroCheque = btn.dataset.cheque;
-  const cliente = btn.dataset.cliente;
-  const hoja = btn.dataset.hoja;
-  confirmarBorrar(fila, nroCheque, cliente, hoja);
-}
-
-async function confirmarBorrar(fila, nroCheque, cliente, hoja){
-  const msg = `¿Eliminar el cheque N° ${nroCheque} de ${cliente}?\n\nEsta acción no se puede deshacer.`;
-  if(!confirm(msg)) return;
-  try{
-    const res = await fetch(API, {method:'POST', body: JSON.stringify({action:'eliminarFila', fila: Number(fila), hoja})});
-    const r = await res.json();
-    if(!r.ok) throw new Error(r.error);
-    toast(`✓ Cheque ${nroCheque} eliminado`, 'success');
-    await loadAll();
-  }catch(e){
-    toast('Error al eliminar: ' + e.message, 'error');
-  }
-}
-
 </script>
 </body>
 </html>
