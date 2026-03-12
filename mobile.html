@@ -522,7 +522,7 @@ function renderManualForm(d, fromAI){
     <div class="frow">
       <div class="field"><label>Fecha Rechazo</label><input type="date" id="nFechaRechazo" value="${toDate(d?.fechaRechazo||'')}"/></div>
       <div class="field"><label>Motivo</label>
-        <select id="nMotivo">
+        <select id="nMotivo" onchange="toggleDetalle()">
           <option value="">— Seleccionar —</option>${motOpts}
         </select>
       </div>
@@ -535,6 +535,10 @@ function renderManualForm(d, fromAI){
         <input type="number" id="nGastos" step="0.01" value="${d?.gastos||''}" placeholder="0.00" inputmode="decimal" oninput="updSaldo()"/>
       </div>
     </div>
+    <div class="field" id="detalleWrap" style="display:none">
+      <label>Detalle <span style="color:var(--red)">*</span></label>
+      <input type="text" id="nDetalle" placeholder="Ej: Proveedor García S.A." autocomplete="off"/>
+    </div>
     <div class="saldo-box">
       <div class="saldo-lbl">Saldo Pendiente</div>
       <div class="saldo-val" id="saldoVal">${fmt((+d?.importe||0)+(+d?.gastos||0))}</div>
@@ -543,6 +547,14 @@ function renderManualForm(d, fromAI){
       <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
       Guardar en Rechazados
     </button>`;
+  // Mostrar campo detalle si el motivo ya está seteado
+  setTimeout(toggleDetalle, 0);
+}
+
+function toggleDetalle(){
+  const mot = document.getElementById('nMotivo')?.value || '';
+  const wrap = document.getElementById('detalleWrap');
+  if(wrap) wrap.style.display = mot === 'Pago a proveedores' ? 'block' : 'none';
 }
 
 function updSaldo(){
@@ -582,6 +594,7 @@ async function guardar(){
     fechaRechazo: fromDate(fechaRec),
     mes, anio,
     motivo:       document.getElementById('nMotivo')?.value || '',
+    detalle:      document.getElementById('nDetalle')?.value?.trim() || '',
     importe, gastos, total,
     pendiente:    total,
   };
