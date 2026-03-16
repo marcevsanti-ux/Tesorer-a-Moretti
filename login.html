@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>🏦 Tesorería · Moretti S.A.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:      #D4000A;
+  --red2:     #A8000A;
+  --black:    #080808;
+  --dark:     #0F0F0F;
+  --surf:     #141414;
+  --surf2:    #1C1C1C;
+  --brd:      #222222;
+  --brd2:     #2E2E2E;
+  --txt:      #EFEFEF;
+  --txt2:     #8A8A8A;
+  --txt3:     #444444;
+  --green:    #16A34A;
+}
+html,body{
+  min-height:100%;
+  background:var(--black);
+  color:var(--txt);
+  font-family:'DM Sans',sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── LAYOUT ── */
+.login-wrap{
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+}
+@media(max-width:768px){
+  .login-wrap{grid-template-columns:1fr}
+  .login-left{display:none}
+}
+
+/* ── LADO IZQUIERDO — decorativo ── */
+.login-left{
+  background:var(--dark);
+  border-right:1px solid var(--brd);
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding:48px;
+  position:relative;
+  overflow:hidden;
+}
+.login-left::before{
+  content:'';
+  position:absolute;
+  top:-120px;right:-120px;
+  width:400px;height:400px;
+  background:radial-gradient(circle,rgba(212,0,10,.12) 0%,transparent 70%);
+  border-radius:50%;
+  animation:pulse-glow 4s ease-in-out infinite;
+}
+.login-left::after{
+  content:'';
+  position:absolute;
+  bottom:-80px;left:-80px;
+  width:300px;height:300px;
+  background:radial-gradient(circle,rgba(212,0,10,.06) 0%,transparent 70%);
+  border-radius:50%;
+  animation:pulse-glow 4s ease-in-out infinite reverse;
+}
+@keyframes pulse-glow{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.6;transform:scale(1.1)}
+}
+.left-logo{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  position:relative;
+  z-index:1;
+}
+.left-logo-box{
+  width:44px;height:44px;
+  background:var(--red);
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:28px;color:#fff;
+}
+.left-logo-txt{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:20px;letter-spacing:.12em;color:var(--txt2);
+}
+.left-logo-txt span{color:var(--red)}
+.left-hero{
+  position:relative;z-index:1;
+}
+.left-hero-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:52px;
+  line-height:.95;
+  letter-spacing:.04em;
+  color:#fff;
+  margin-bottom:16px;
+}
+.left-hero-title span{color:var(--red)}
+.left-hero-sub{
+  font-size:14px;
+  color:var(--txt2);
+  line-height:1.6;
+  max-width:320px;
+}
+.left-stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  position:relative;z-index:1;
+}
+.stat-card{
+  background:var(--surf2);
+  border:1px solid var(--brd2);
+  border-radius:10px;
+  padding:16px;
+}
+.stat-val{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:28px;
+  color:#fff;
+  letter-spacing:.04em;
+}
+.stat-val.red{color:var(--red)}
+.stat-lbl{
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--txt3);
+  margin-top:4px;
+}
+
+/* ── LADO DERECHO — form ── */
+.login-right{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:48px 56px;
+  background:var(--black);
+}
+.login-box{
+  width:100%;
+  max-width:380px;
+}
+.login-header{
+  margin-bottom:40px;
+}
+.login-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:32px;
+  letter-spacing:.08em;
+  color:#fff;
+  margin-bottom:6px;
+}
+.login-sub{
+  font-size:13px;
+  color:var(--txt2);
+}
+.form-group{
+  margin-bottom:18px;
+}
+.form-label{
+  display:block;
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--txt3);
+  margin-bottom:7px;
+}
+.form-input{
+  width:100%;
+  padding:12px 14px;
+  background:var(--surf);
+  border:1px solid var(--brd2);
+  border-radius:8px;
+  color:var(--txt);
+  font-size:13px;
+  font-weight:500;
+  font-family:'DM Sans',sans-serif;
+  outline:none;
+  transition:.2s;
+}
+.form-input:focus{
+  border-color:var(--red);
+  background:var(--surf2);
+  box-shadow:0 0 0 3px rgba(212,0,10,.08);
+}
+.form-input::placeholder{color:var(--txt3)}
+.form-input.error{border-color:#f87171}
+
+.pass-wrap{position:relative}
+.pass-toggle{
+  position:absolute;
+  right:12px;top:50%;
+  transform:translateY(-50%);
+  background:none;border:none;
+  color:var(--txt3);cursor:pointer;
+  padding:4px;
+  display:flex;align-items:center;
+}
+.pass-toggle:hover{color:var(--txt2)}
+.pass-toggle svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
+
+.btn-login{
+  width:100%;
+  padding:13px;
+  background:var(--red);
+  border:none;border-radius:8px;
+  color:#fff;
+  font-size:13px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;
+  font-family:'DM Sans',sans-serif;
+  cursor:pointer;
+  transition:.2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:8px;
+}
+.btn-login:hover{background:var(--red2)}
+.btn-login:disabled{opacity:.5;cursor:not-allowed}
+.btn-login .spinner{
+  width:14px;height:14px;
+  border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:spin .6s linear infinite;
+  display:none;
+}
+.btn-login.loading .spinner{display:block}
+.btn-login.loading .btn-txt{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.error-msg{
+  display:none;
+  padding:10px 14px;
+  background:rgba(212,0,10,.08);
+  border:1px solid rgba(212,0,10,.2);
+  border-radius:7px;
+  font-size:12px;
+  color:#f87171;
+  margin-bottom:16px;
+}
+.error-msg.show{display:block}
+
+.login-footer{
+  margin-top:32px;
+  padding-top:24px;
+  border-top:1px solid var(--brd);
+  text-align:center;
+  font-size:11px;
+  color:var(--txt3);
+}
+.login-footer span{color:var(--red)}
+
+/* ── VERSION ── */
+.ver-badge{
+  position:fixed;bottom:16px;right:16px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;color:var(--txt3);
+  padding:3px 8px;
+  background:var(--surf);
+  border:1px solid var(--brd);
+  border-radius:4px;
+}
+
+/* ── ANIMACIÓN ENTRADA ── */
+.login-box{
+  animation:fadeUp .4s ease both;
+}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="login-wrap">
+  <!-- LADO IZQUIERDO -->
+  <div class="login-left">
+    <div class="left-logo">
+      <div class="left-logo-box">M</div>
+      <div class="left-logo-txt">Tesorería <span>·</span> Moretti S.A.</div>
+    </div>
+    <div class="left-hero">
+      <div class="left-hero-title">Sistema<br/>de <span>Cheques</span><br/>Rechazados</div>
+      <div class="left-hero-sub">Gestión centralizada de cheques rechazados, seguimiento de mora y recupero de cartera.</div>
+    </div>
+    <div class="left-stats">
+      <div class="stat-card">
+        <div class="stat-val red" id="statPendiente">—</div>
+        <div class="stat-lbl">Total pendiente</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="statCheques">290</div>
+        <div class="stat-lbl">Cheques registrados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="statActivos">279</div>
+        <div class="stat-lbl">Cheques activos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="statMora">—</div>
+        <div class="stat-lbl">Mora promedio</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LADO DERECHO -->
+  <div class="login-right">
+    <div class="login-box">
+      <div class="login-header">
+        <div class="login-title">Iniciar Sesión</div>
+        <div class="login-sub">Ingresá con tu cuenta de Tesorería Moretti</div>
+      </div>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="inputEmail"
+          placeholder="usuario@moretti.com.ar"
+          autocomplete="email"
+          onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <div class="pass-wrap">
+          <input type="password" class="form-input" id="inputPass"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            onkeydown="if(event.key==='Enter')doLogin()"/>
+          <button class="pass-toggle" onclick="togglePass()" tabindex="-1">
+            <svg id="eyeIcon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-login" id="btnLogin" onclick="doLogin()">
+        <div class="spinner"></div>
+        <span class="btn-txt">Ingresar</span>
+      </button>
+
+      <div class="login-footer">
+        Sistema interno · <span>Moretti S.A.</span><br/>
+        Acceso restringido a personal autorizado
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ver-badge">v2.0.0</div>
+
+<script>
+const SUPABASE_URL  = 'https://qqmzhwifrkgfrgewmpig.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxbXpod2lmcmtnZnJnZXdtcGlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2OTg4MzcsImV4cCI6MjA4OTI3NDgzN30.4W-n_WLRvcrE385qv0Phil4PrHrb1twpsZvxxIHodeg';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Verificar si ya hay sesión activa
+async function checkSession(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session){
+    // Ya logueado → ir a la app
+    window.location.href = 'index.html';
+  }
+}
+checkSession();
+
+// Cargar stats públicas desde Supabase
+async function loadStats(){
+  const { data } = await sb
+    .from('cheques')
+    .select('pendiente,dias_mora')
+    .gt('pendiente', 0);
+  if(!data) return;
+  const totalPend = data.reduce((s,r)=>s+Number(r.pendiente),0);
+  const moraProm  = Math.round(data.reduce((s,r)=>s+(r.dias_mora||0),0)/data.length);
+  document.getElementById('statPendiente').textContent = '$'+fmtK(totalPend);
+  document.getElementById('statActivos').textContent   = data.length;
+  document.getElementById('statMora').textContent      = moraProm+'d';
+}
+
+function fmtK(n){
+  if(n>=1000000000) return (n/1000000000).toFixed(1)+'B';
+  if(n>=1000000)    return (n/1000000).toFixed(1)+'M';
+  if(n>=1000)       return (n/1000).toFixed(0)+'k';
+  return n.toFixed(0);
+}
+
+async function doLogin(){
+  const email = document.getElementById('inputEmail').value.trim();
+  const pass  = document.getElementById('inputPass').value;
+  const btn   = document.getElementById('btnLogin');
+  const err   = document.getElementById('errorMsg');
+
+  err.classList.remove('show');
+
+  if(!email || !pass){
+    showError('Completá email y contraseña');
+    return;
+  }
+
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+
+  if(error){
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    const msg = error.message.includes('Invalid')
+      ? 'Email o contraseña incorrectos'
+      : error.message;
+    showError(msg);
+    return;
+  }
+
+  // Verificar que el usuario existe en nuestra tabla y está activo
+  const { data: usuario } = await sb
+    .from('usuarios')
+    .select('*')
+    .eq('id', data.user.id)
+    .single();
+
+  if(!usuario || !usuario.activo){
+    await sb.auth.signOut();
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    showError('Tu cuenta no tiene acceso al sistema. Contactá al administrador.');
+    return;
+  }
+
+  // Guardar rol en sessionStorage para uso en la app
+  sessionStorage.setItem('userRol',    usuario.rol);
+  sessionStorage.setItem('userNombre', usuario.nombre);
+  sessionStorage.setItem('userEmail',  usuario.email);
+
+  // Ir a la app
+  window.location.href = 'index.html';
+}
+
+function showError(msg){
+  const err = document.getElementById('errorMsg');
+  err.textContent = msg;
+  err.classList.add('show');
+}
+
+function togglePass(){
+  const inp = document.getElementById('inputPass');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+// Cargar stats al iniciar (sin auth — datos públicos del sistema)
+// NOTA: cuando tengamos RLS completo esto requiere auth
+// Por ahora mostramos los datos hardcodeados del proceso de migración
+document.getElementById('statPendiente').textContent = '$241.8M';
+document.getElementById('statCheques').textContent   = '290';
+document.getElementById('statActivos').textContent   = '279';
+document.getElementById('statMora').textContent      = '—';
+</script>
+</body>
+</html>
