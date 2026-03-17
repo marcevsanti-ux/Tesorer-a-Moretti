@@ -233,6 +233,7 @@ footer{border-top:1px solid var(--brd);padding:12px 28px;display:flex;align-item
     <button class="tab active" id="tab-dashboard"  onclick="showTab('dashboard')">Dashboard</button>
     <button class="tab"        id="tab-rechazados" onclick="showTab('rechazados')">Rechazados</button>
     <button class="tab"        id="tab-cancelados" onclick="showTab('cancelados')">Cancelados</button>
+    <button class="tab"        id="tab-resumen"    onclick="showTab('resumen')">Resumen</button>
     <button class="tab"        id="tab-importar"   onclick="showTab('importar')">Importación</button>
     <button class="tab"        id="tab-config"     onclick="showTab('config')">Configuración</button>
   </div>
@@ -360,6 +361,7 @@ function render(){
   if(S.tab==='dashboard')renderDashboard();
   else if(S.tab==='rechazados')renderRechazados();
   else if(S.tab==='cancelados')renderCancelados();
+  else if(S.tab==='resumen')renderResumen();
   else if(S.tab==='importar')renderImportar();
   else if(S.tab==='config')renderConfig();
 }
@@ -704,6 +706,138 @@ function exportCSV(){
   a.download='cheques_moretti_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();toast('CSV exportado','success');
 }
+
+
+// ── RESUMEN (tabla pivot por motivo/cliente/año) ──────────────
+function renderResumen(){
+  document.getElementById('main').innerHTML=`
+  <div class="section-header">
+    <div class="section-title">Resumen</div>
+    <div class="section-sub">Pendiente por motivo · cliente · año</div>
+    <button class="btn-outline" onclick="exportResumenCSV()" style="margin-left:auto">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar
+    </button>
+  </div>
+  <div class="tbl-wrap" id="resumenWrap">
+    <div style="padding:40px;text-align:center;color:var(--txt3)">
+      <div class="spinner" style="width:24px;height:24px;border-width:2px;margin:0 auto 12px"></div>
+      Calculando resumen...
+    </div>
+  </div>`;
+  setTimeout(buildResumen, 50);
+}
+
+function buildResumen(){
+  // Solo pendientes > 0
+  const rows = S.rechazados.filter(r => r.pendiente > 0);
+
+  // Años disponibles ordenados
+  const anios = [...new Set(rows.map(r => r.anio).filter(Boolean))].sort();
+
+  // Agrupar: motivo → cliente → anio → suma pendiente
+  const data = {};
+  rows.forEach(r => {
+    const mot = r.motivo || 'SIN MOTIVO';
+    const cli = r.cliente || 'SIN CLIENTE';
+    const anio = r.anio || 'S/F';
+    if(!data[mot]) data[mot] = {};
+    if(!data[mot][cli]) data[mot][cli] = {};
+    if(!data[mot][cli][anio]) data[mot][cli][anio] = 0;
+    data[mot][cli][anio] += r.pendiente;
+  });
+
+  // Construir HTML tabla
+  const colAnios = anios;
+  let html = `<div class="tbl-scroll"><table style="min-width:700px">
+    <thead>
+      <tr style="background:var(--surf2);border-bottom:2px solid var(--brd2)">
+        <th style="text-align:left;padding:10px 16px;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3);min-width:200px">Motivo / Cliente</th>
+        ${colAnios.map(a=>`<th style="text-align:right;padding:10px 16px;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3)">${a}</th>`).join('')}
+        <th style="text-align:right;padding:10px 16px;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red)">TOTAL</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  // Ordenar motivos
+  const motivos = Object.keys(data).sort();
+  let grandTotal = {};
+  colAnios.forEach(a => grandTotal[a] = 0);
+  grandTotal['total'] = 0;
+
+  motivos.forEach(mot => {
+    const clientes = Object.keys(data[mot]).sort();
+
+    // Subtotal del motivo
+    let motTotals = {};
+    colAnios.forEach(a => motTotals[a] = 0);
+    clientes.forEach(cli => {
+      colAnios.forEach(a => {
+        motTotals[a] += data[mot][cli][a] || 0;
+      });
+    });
+    const motTotal = colAnios.reduce((s,a) => s + motTotals[a], 0);
+
+    // Fila de motivo (subtotal — estilo cabecera)
+    html += `<tr style="background:rgba(212,0,10,.06);border-top:1px solid var(--brd2)">
+      <td style="padding:10px 16px;font-size:11px;font-weight:700;color:var(--red);letter-spacing:.06em;text-transform:uppercase">${mot}</td>
+      ${colAnios.map(a => `<td style="text-align:right;padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#fff">${motTotals[a]>0?fmt(motTotals[a]):'—'}</td>`).join('')}
+      <td style="text-align:right;padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--red)">${fmt(motTotal)}</td>
+    </tr>`;
+
+    // Filas de clientes
+    clientes.forEach(cli => {
+      const cliTotal = colAnios.reduce((s,a) => s + (data[mot][cli][a]||0), 0);
+      html += `<tr style="border-bottom:1px solid rgba(255,255,255,.03)" onmouseover="this.style.background='rgba(255,255,255,.02)'" onmouseout="this.style.background=''">
+        <td style="padding:8px 16px 8px 28px;font-size:12px;color:var(--txt2)">${cli}</td>
+        ${colAnios.map(a => `<td style="text-align:right;padding:8px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;color:${data[mot][cli][a]>0?'var(--txt)':'var(--txt3)'}">${data[mot][cli][a]>0?fmt(data[mot][cli][a]):'—'}</td>`).join('')}
+        <td style="text-align:right;padding:8px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:#fff">${fmt(cliTotal)}</td>
+      </tr>`;
+    });
+
+    // Acumular grand total
+    colAnios.forEach(a => { grandTotal[a] += motTotals[a]; });
+    grandTotal['total'] += motTotal;
+  });
+
+  // Fila grand total
+  html += `<tr style="background:var(--surf2);border-top:2px solid var(--brd2)">
+    <td style="padding:12px 16px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.1em;color:#fff">TOTAL GENERAL</td>
+    ${colAnios.map(a => `<td style="text-align:right;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:#fff">${grandTotal[a]>0?fmt(grandTotal[a]):'—'}</td>`).join('')}
+    <td style="text-align:right;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--red)">${fmt(grandTotal['total'])}</td>
+  </tr>`;
+
+  html += '</tbody></table></div>';
+
+  // Guardar para export
+  S._resumenData = { data, anios, grandTotal };
+
+  document.getElementById('resumenWrap').innerHTML = html;
+}
+
+function exportResumenCSV(){
+  if(!S._resumenData){toast('Generá el resumen primero','info');return;}
+  var rd=S._resumenData, rows=[['MOTIVO / CLIENTE'].concat(rd.anios).concat(['TOTAL'])];
+  Object.keys(rd.data).sort().forEach(function(mot){
+    var clientes=Object.keys(rd.data[mot]).sort(), motT={};
+    rd.anios.forEach(function(a){motT[a]=0;});
+    clientes.forEach(function(cli){rd.anios.forEach(function(a){motT[a]+=(rd.data[mot][cli][a]||0);});});
+    var motTotal=rd.anios.reduce(function(s,a){return s+motT[a];},0);
+    rows.push([mot].concat(rd.anios.map(function(a){return motT[a]||0;})).concat([motTotal]));
+    clientes.forEach(function(cli){
+      var ct=rd.anios.reduce(function(s,a){return s+(rd.data[mot][cli][a]||0);},0);
+      rows.push(['  '+cli].concat(rd.anios.map(function(a){return rd.data[mot][cli][a]||0;})).concat([ct]));
+    });
+  });
+  rows.push(['TOTAL GENERAL'].concat(rd.anios.map(function(a){return rd.grandTotal[a]||0;})).concat([rd.grandTotal['total']]));
+  var csv=rows.map(function(r){return r.map(function(v){return typeof v==='number'?v.toFixed(2):'"'+String(v)+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='resumen_moretti_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  toast('CSV exportado','success');
+}
+
 
 // ── IMPORTAR ──────────────────────────────────────────────────
 function renderImportar(){
