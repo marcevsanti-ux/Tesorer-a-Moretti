@@ -789,9 +789,9 @@ async function consultarCUIT(){
     ]);
 
     result.innerHTML = buildCrediticioHTML(cuit, resDeudas, resCheques);
-    registrarLog('CONSULTA_CREDITICIA',{detalle:'Consulta BCRA CUIT: '+cuit});
+    try{ registrarLog('CONSULTA_CREDITICIA',{detalle:'Consulta BCRA CUIT: '+cuit}); }catch(_){}
   }catch(e){
-    result.innerHTML = `<div class="card"><div style="color:#f87171;font-size:12px;font-weight:600">Error al consultar: ${e.message}</div></div>`;
+    result.innerHTML = '<div class="card"><div style="color:#f87171;font-size:12px;font-weight:600">Error al consultar: '+e.message+'</div></div>';
   }
   btn.disabled = false;
 }
