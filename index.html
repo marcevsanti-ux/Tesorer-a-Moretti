@@ -767,14 +767,14 @@ async function consultarCUIT(){
 
   try{
     // Consulta deudas actuales (proxy CORS para evitar bloqueo del navegador)
-    const PROXY = 'https://corsproxy.io/?url=';
+    const bcraFetch = async (url) => {
+      const res = await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url));
+      const data = await res.json();
+      return JSON.parse(data.contents);
+    };
     const [resDeudas, resCheques] = await Promise.all([
-      fetch(PROXY+encodeURIComponent('https://api.bcra.gob.ar/centraldedeudores/v1.0/Deudas/'+cuit), {
-        headers:{'Accept':'application/json'}
-      }).then(r=>r.json()).catch(()=>null),
-      fetch(PROXY+encodeURIComponent('https://api.bcra.gob.ar/centraldedeudores/v1.0/Deudas/ChequesRechazados/'+cuit), {
-        headers:{'Accept':'application/json'}
-      }).then(r=>r.json()).catch(()=>null)
+      bcraFetch('https://api.bcra.gob.ar/centraldedeudores/v1.0/Deudas/'+cuit).catch(()=>null),
+      bcraFetch('https://api.bcra.gob.ar/centraldedeudores/v1.0/Deudas/ChequesRechazados/'+cuit).catch(()=>null)
     ]);
 
     result.innerHTML = buildCrediticioHTML(cuit, resDeudas, resCheques);
