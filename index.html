@@ -766,12 +766,13 @@ async function consultarCUIT(){
   </div></div>`;
 
   try{
-    // Consulta deudas actuales
+    // Consulta deudas actuales (proxy CORS para evitar bloqueo del navegador)
+    const PROXY = 'https://corsproxy.io/?url=';
     const [resDeudas, resCheques] = await Promise.all([
-      fetch('https://api.bcra.gob.ar/centraldedeudores/v1.0/Deudas/'+cuit, {
+      fetch(PROXY+encodeURIComponent('https://api.bcra.gob.ar/centraldedeudores/v1.0/Deudas/'+cuit), {
         headers:{'Accept':'application/json'}
       }).then(r=>r.json()).catch(()=>null),
-      fetch('https://api.bcra.gob.ar/centraldedeudores/v1.0/Deudas/ChequesRechazados/'+cuit, {
+      fetch(PROXY+encodeURIComponent('https://api.bcra.gob.ar/centraldedeudores/v1.0/Deudas/ChequesRechazados/'+cuit), {
         headers:{'Accept':'application/json'}
       }).then(r=>r.json()).catch(()=>null)
     ]);
