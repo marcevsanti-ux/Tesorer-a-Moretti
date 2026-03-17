@@ -381,21 +381,30 @@ let _userNombre = null;
 
 // ── AUTH ──────────────────────────────────────────────────────
 async function initAuth(){
+  // Siempre mostrar login — verificar sesión en background
+  // Si hay sesión válida, pre-llenar el email y mostrar botón "Continuar"
   const { data:{ session } } = await sb.auth.getSession();
   if(!session){
-    showLogin();
+    // Sin sesión: login normal ya visible
     return;
   }
-  _userId = session.user.id;
-  const { data:usr } = await sb.from('usuarios').select('*').eq('id',_userId).single();
+  // Hay sesión: verificar que el usuario está activo
+  const { data:usr } = await sb.from('usuarios').select('*').eq('id',session.user.id).single();
   if(!usr || !usr.activo){
     await sb.auth.signOut();
-    showLogin();
     return;
   }
-  _userNombre = usr.nombre;
-  _userEmail  = usr.email;
-  hideLogin();
+  // Sesión válida: pre-llenar y mostrar botón continuar
+  _userId    = session.user.id;
+  _userNombre= usr.nombre;
+  _userEmail = usr.email;
+  const emailInput = document.getElementById('loginEmail');
+  if(emailInput) emailInput.value = usr.email;
+  // Mostrar botón "Continuar como X"
+  const btn = document.getElementById('loginBtn');
+  const txt = document.getElementById('loginBtnTxt');
+  if(txt) txt.textContent = 'Continuar como ' + usr.nombre;
+  if(btn) btn.onclick = function(){ hideLogin(); };
 }
 
 function showLogin(){
