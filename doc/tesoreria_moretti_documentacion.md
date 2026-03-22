@@ -1,7 +1,7 @@
 # Tesorería Moretti — Documentación del Proyecto
 
 > Sistema de gestión de cheques rechazados · Moretti S.A.
-> Última actualización: 20/03/2026
+> Última actualización: 22/03/2026
 
 ---
 
@@ -162,6 +162,25 @@ Notificaciones (100% automático)
 | created_at | timestamptz | Fecha de creación |
 | created_by | uuid | Usuario que creó el registro |
 
+#### `public.usuarios`
+
+| Columna | Tipo | Nullable | Default | Descripción |
+|---|---|---|---|---|
+| id | uuid | NO | — | PK — mismo UUID que `auth.users` |
+| nombre | text | NO | — | Nombre visible del usuario |
+| email | text | NO | — | Email de login |
+| rol | text | YES | `'consulta'` | admin / operador / consulta / crediticio |
+| activo | boolean | YES | `true` | Habilita/deshabilita acceso |
+| created_at | timestamptz | YES | `now()` | Fecha de alta |
+
+**RLS activo** — políticas:
+
+| Política | Operación | Descripción |
+|---|---|---|
+| `usuarios_select` | SELECT | Cualquier usuario autenticado puede leer |
+| `usuarios_update` | UPDATE | Solo admins pueden modificar |
+| `admin_insert_usuarios` | INSERT | Solo admins — usa función `SECURITY DEFINER` para bypass (ver abajo) |
+
 #### `public.configuracion`
 
 | Clave | Descripción |
@@ -228,6 +247,7 @@ WHERE email = 'usuario@moretti.com.ar';
 | v2.4.1 | Análisis Nosis: secciones 5a Aportes Patronales y 5b Situación SRT |
 | v2.4.2 | Card "Regla especial Pago a Proveedores" en Configuración — mail adicional configurable |
 | v2.4.3 | Fix detalle "Pago a proveedores": se guarda como "Pago a proveedores — {texto}" para que el trigger matchee correctamente |
+| v2.4.4 | Fix creación de usuarios: función duplicada eliminada + RLS bypass via `crear_usuario()` SECURITY DEFINER |
 
 ### App Mobile (mobile.html)
 | Versión | Cambios principales |
@@ -240,7 +260,7 @@ WHERE email = 'usuario@moretti.com.ar';
 
 ## Funcionalidades Activas
 
-### Desktop (v2.4.3)
+### Desktop (v2.4.4)
 - ✅ Login con email + contraseña (Supabase Auth)
 - ✅ Roles: admin / operador / consulta / crediticio
 - ✅ Dashboard con KPIs: Total Pendiente, Importe Total, Gastos, Mora Promedio, Total Registrados
@@ -305,6 +325,48 @@ WHERE email = 'usuario@moretti.com.ar';
 ---
 
 ## Notas Técnicas
+
+### Creación de usuarios — Fix RLS (v2.4.4)
+
+**Problema:** La política RLS `admin_insert_usuarios` bloqueaba el INSERT en `public.usuarios` porque al ejecutar `signUp`, Supabase autentica momentáneamente al usuario nuevo (no al admin), por lo que el check de rol fallaba.
+
+**Solución:** Función SQL con `SECURITY DEFINER` que bypasea el RLS. Ejecutar en caso de necesitar recrearla:
+
+```sql
+-- Crear función que inserta en public.usuarios sin restricciones RLS
+CREATE OR REPLACE FUNCTION public.crear_usuario(
+  p_id uuid,
+  p_nombre text,
+  p_email text,
+  p_rol text
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.usuarios (id, nombre, email, rol, activo)
+  VALUES (p_id, p_nombre, p_email, p_rol, true)
+  ON CONFLICT (id) DO UPDATE
+    SET nombre = EXCLUDED.nombre,
+        rol    = EXCLUDED.rol,
+        activo = true;
+END;
+$$;
+
+-- Dar permiso al rol authenticated para ejecutarla
+GRANT EXECUTE ON FUNCTION public.crear_usuario(uuid, text, text, text) TO authenticated;
+```
+
+**Flujo de creación de usuario (v2.4.4):**
+1. Admin completa formulario (nombre, email, contraseña, rol)
+2. `sb.auth.signUp()` crea el usuario en `auth.users` → devuelve el UUID
+3. Si el usuario ya existía en auth, se busca su UUID en `public.usuarios` por email
+4. `sb.rpc('crear_usuario', {...})` llama a la función SECURITY DEFINER → INSERT/UPSERT en `public.usuarios` sin fricción de RLS
+5. Se registra en el log de auditoría (acción: ALTA)
+
+---
 
 ### Sistema de Mail — Arquitectura final (v2.4.3)
 
@@ -414,4 +476,4 @@ WHERE email = 'usuario@moretti.com.ar';
 
 ---
 
-*Documento actualizado el 20/03/2026*
+*Documento actualizado el 22/03/2026*
