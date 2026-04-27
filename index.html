@@ -205,6 +205,7 @@ td{padding:11px 14px;vertical-align:middle}
 footer{border-top:1px solid var(--brd);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;}
 .ftr-left{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);}
 .ftr-right{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txt3);}
+.situacion{color:#ffffff;font-weight:700;font-size:14px;letter-spacing:.05em}
 </style>
 </head>
 <body>
@@ -1251,7 +1252,7 @@ function buildCrediticioHTML(cuit, deudas, cheques){
   html += '<div style="text-align:right">';
   html += '<div style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Situación BCRA</div>';
   html += '<div style="font-family:Bebas Neue,sans-serif;font-size:28px;letter-spacing:.06em;color:'+sit.color+'">'+sit.label+'</div>';
-  if(maxSit>0) html += '<div style="font-size:10px;color:var(--txt3);margin-top:2px">Situación '+maxSit+' de 6</div>';
+  if(maxSit>0) html += '<div class="situacion" style="margin-top:2px">Situación '+maxSit+' de 6</div>';
   if(montoTotal>0) html += '<div style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--txt2);margin-top:6px">Deuda total: $'+Number(montoTotal*1000).toLocaleString('es-AR')+' <span style="font-size:9px;color:var(--txt3)">(en miles de pesos)</span></div>';
   html += '</div></div></div>';
 
@@ -1506,7 +1507,7 @@ function buildNosisHTML(d){
   h += '<div style="background:'+sit.bg+';border:1px solid '+sit.brd+';border-radius:10px;padding:14px">';
   h += '<div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Situación BCRA</div>';
   h += '<div style="font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:.06em;color:'+sit.color+'">'+sit.label+'</div>';
-  h += '<div style="font-size:9px;color:var(--txt3);margin-top:2px">Situación '+d.situacionBCRA?.numero+' de 6</div>';
+  h += '<div class="situacion" style="margin-top:2px">Situación '+d.situacionBCRA?.numero+' de 6</div>';
   h += '</div>';
 
   // Deuda total
@@ -2361,7 +2362,7 @@ function renderNcManual(d,afterAI){
   const isPagoProv=d&&d.detalle==='Pago a proveedores';
   const formHTML=`<div style="margin-top:8px">
     <div class="frow"><div class="field" style="grid-column:1/-1">
-      <label>Cliente / Emisor</label>
+      <label>CLIENTE</label>
       <input type="text" id="nCliente" value="${esc(d&&d.cliente||'')}" placeholder="Nombre del emisor" autocomplete="off"/>
     </div></div>
     <div class="frow">
