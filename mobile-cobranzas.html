@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Moretti · Carga de Cheques</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--red:#D4000A;--bg:#080808;--card:#141414;--card2:#1c1c1c;--line:#2b2b2b;--txt:#f3f3f3;--muted:#8e8e8e;--ok:#22c55e;--warn:#f59e0b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:Arial,Helvetica,sans-serif}
+header{position:sticky;top:0;background:#0b0b0bf5;border-bottom:1px solid #222;padding:14px 16px;z-index:5}
+.brand{font-size:19px;font-weight:800}.brand b{color:var(--red)} .sub{font-size:11px;color:var(--muted);margin-top:3px}
+main{max-width:520px;margin:auto;padding:14px 14px 40px}.card{background:var(--card);border:1px solid #222;border-radius:14px;padding:14px;margin-bottom:12px}
+.title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+label{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;margin:9px 0 5px}
+input,select,textarea{width:100%;padding:12px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:white;font-size:15px}
+textarea{min-height:70px}.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.btn{border:0;border-radius:10px;padding:14px 15px;font-size:13px;font-weight:800;cursor:pointer}
+.btn-red{width:100%;background:var(--red);color:white}.btn-dark{width:100%;background:#242424;color:#eee;border:1px solid #333}
+.capture{display:grid;grid-template-columns:1fr 1fr;gap:10px}.capture label{margin:0;padding:20px 8px;text-align:center;background:#121212;border:1px dashed #444;border-radius:12px;font-size:12px;color:#ccc;cursor:pointer}
+#preview{display:none;width:100%;max-height:260px;object-fit:contain;border-radius:10px;margin-top:10px;background:#222}
+.badge{display:inline-block;padding:5px 8px;border-radius:99px;font-size:10px;font-weight:800;background:#272727;color:#aaa}
+.badge.ok{background:#052e16;color:#86efac}.badge.warn{background:#422006;color:#fcd34d}
+.results{max-height:210px;overflow:auto;margin-top:6px}.client{padding:10px;border:1px solid #292929;border-radius:8px;margin-bottom:6px;cursor:pointer;background:#181818}
+.client strong{display:block}.client small{color:#888}.selected{border-color:var(--red)}
+.info{font-size:12px;color:#aaa;line-height:1.5}.hidden{display:none!important}
+.match{padding:11px;background:#101010;border:1px solid #292929;border-radius:9px;margin-top:8px}.match strong{font-size:13px}.match small{display:block;color:#888;margin-top:3px}
+#toast{position:fixed;left:14px;right:14px;bottom:15px;padding:12px 14px;border-radius:9px;background:#222;color:white;display:none;z-index:20}
+</style>
+</head>
+<body>
+<header><div class="brand">MORETTI · <b>COBRANZAS</b></div><div class="sub">Carga mobile de cheques · V1</div></header>
+<main>
+  <div class="card">
+    <div class="title">1. Foto del cheque</div>
+    <div class="capture">
+      <label>📷 Sacar foto<input id="camera" type="file" accept="image/*" capture="environment" hidden></label>
+      <label>🖼 Galería<input id="gallery" type="file" accept="image/*" hidden></label>
+    </div>
+    <img id="preview">
+    <button id="btnOCR" class="btn btn-dark" style="margin-top:10px" disabled>Interpretar datos del cheque</button>
+    <div id="ocrState" class="info" style="margin-top:8px">Todavía no hay imagen seleccionada.</div>
+  </div>
+
+  <div class="card">
+    <div class="title">2. Cliente</div>
+    <label>Buscar por CUIT, código o razón social</label>
+    <input id="clienteBuscar" placeholder="Ej: 30-71661817-6 o 1 TEAM">
+    <div id="clientes" class="results"></div>
+    <input id="clienteId" type="hidden">
+    <div id="clienteElegido" class="info"></div>
+  </div>
+
+  <div class="card">
+    <div class="title">3. Datos detectados</div>
+    <div class="row">
+      <div><label>Banco</label><input id="banco"></div>
+      <div><label>N° cheque</label><input id="numeroCheque"></div>
+    </div>
+    <div class="row">
+      <div><label>Fecha pago</label><input id="fechaPago" type="date"></div>
+      <div><label>Importe</label><input id="importe" type="number" step="0.01"></div>
+    </div>
+    <label>CUIT librador</label><input id="cuitLibrador">
+    <label>Librador</label><input id="librador">
+    <label>Observaciones</label><textarea id="observaciones"></textarea>
+  </div>
+
+  <div class="card">
+    <div class="title">4. Facturas sugeridas por Clarity</div>
+    <div class="info">En V1 la consulta queda preparada para llamar a One Core. El vendedor confirma la factura; nunca se imputa automáticamente.</div>
+    <button id="btnFacturas" class="btn btn-dark" style="margin-top:10px">Buscar facturas del cliente</button>
+    <div id="facturas"></div>
+  </div>
+
+  <button id="btnEnviar" class="btn btn-red">Enviar a autorización</button>
+</main>
+<div id="toast"></div>
+
+<script>
+/* CONFIGURACION
+   Copiar los valores PUBLICOS del proyecto existente.
+   NO poner service_role ni API key de Gemini en este HTML.
+*/
+const SUPABASE_URL = 'PEGAR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'PEGAR_SUPABASE_ANON_KEY';
+const ONECORE_BASE_URL = 'PEGAR_URL_ONECORE';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null, perfil = null, selectedFile = null, selectedClient = null, selectedFactura = null;
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',3000)}
+function norm(v){return (v||'').replace(/\D/g,'')}
+function money(n){return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(Number(n||0))}
+
+async function init(){
+  const {data:{user}} = await sb.auth.getUser();
+  if(!user){location.href='login.html';return}
+  currentUser=user;
+  const {data} = await sb.from('cheques_perfiles').select('*').eq('user_id',user.id).single();
+  perfil=data;
+  if(!perfil || !['VENDEDOR','TESORERIA','ADMIN'].includes(perfil.rol)){
+    alert('Usuario sin permiso para cargar cheques'); return;
+  }
+}
+
+['camera','gallery'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',e=>{
+    const f=e.target.files?.[0]; if(!f)return;
+    selectedFile=f; const p=document.getElementById('preview');
+    p.src=URL.createObjectURL(f);p.style.display='block';
+    document.getElementById('btnOCR').disabled=false;
+    document.getElementById('ocrState').textContent='Imagen lista para interpretar.';
+  });
+});
+
+/*
+ OCR SEGURO:
+ Recomendado: crear Edge Function / One Core endpoint POST /tesoreria/ocr-cheque
+ para que la API key de Gemini quede del lado servidor.
+*/
+document.getElementById('btnOCR').onclick=async()=>{
+  if(!selectedFile)return;
+  document.getElementById('ocrState').textContent='Interpretando cheque...';
+  try{
+    const fd=new FormData(); fd.append('file',selectedFile);
+    const r=await fetch(ONECORE_BASE_URL+'/tesoreria/ocr-cheque',{method:'POST',body:fd});
+    if(!r.ok)throw new Error('OCR no disponible');
+    const x=await r.json();
+    document.getElementById('banco').value=x.banco||'';
+    document.getElementById('numeroCheque').value=x.numero_cheque||'';
+    document.getElementById('fechaPago').value=x.fecha_pago||'';
+    document.getElementById('importe').value=x.importe||'';
+    document.getElementById('cuitLibrador').value=x.cuit_librador||'';
+    document.getElementById('librador').value=x.librador||'';
+    if(x.cuit_cliente)document.getElementById('clienteBuscar').value=x.cuit_cliente;
+    document.getElementById('ocrState').innerHTML='<span class="badge ok">OCR OK</span> Verificá los datos antes de enviar.';
+    if(x.cuit_cliente)buscarClientes();
+  }catch(e){
+    document.getElementById('ocrState').innerHTML='<span class="badge warn">OCR pendiente</span> Podés completar los datos manualmente.';
+  }
+};
+
+let timer;
+document.getElementById('clienteBuscar').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(buscarClientes,300)});
+async function buscarClientes(){
+  const q=document.getElementById('clienteBuscar').value.trim();
+  if(q.length<3)return;
+  let query=sb.from('clientes_clarity').select('id,empresa_id,codigo,razon_social,cuit,empresa_vendedor,empresa_id_vendedor').limit(15);
+  const digits=norm(q);
+  if(digits.length>=8) query=query.eq('cuit_normalizado',digits);
+  else query=query.or(`razon_social.ilike.%${q}%,codigo.ilike.%${q}%`);
+  if(perfil?.rol==='VENDEDOR' && perfil.empresa_id_vendedor) query=query.eq('empresa_id_vendedor',perfil.empresa_id_vendedor);
+  const {data,error}=await query;
+  if(error){toast(error.message);return}
+  document.getElementById('clientes').innerHTML=(data||[]).map(c=>`
+    <div class="client" onclick='selectClient(${JSON.stringify(JSON.stringify(c))})'>
+      <strong>${c.razon_social}</strong><small>${c.cuit||''} · Código ${c.codigo||''}</small>
+    </div>`).join('') || '<div class="info">Sin coincidencias.</div>';
+}
+window.selectClient=(raw)=>{
+  selectedClient=JSON.parse(raw);
+  document.getElementById('clienteId').value=selectedClient.id;
+  document.getElementById('clienteElegido').innerHTML=
+    `<span class="badge ok">CLIENTE</span> <b>${selectedClient.razon_social}</b><br>${selectedClient.cuit||''} · EmpresaID ${selectedClient.empresa_id}`;
+  document.getElementById('clientes').innerHTML='';
+};
+
+document.getElementById('btnFacturas').onclick=async()=>{
+  if(!selectedClient){toast('Primero elegí el cliente');return}
+  const box=document.getElementById('facturas');
+  box.innerHTML='<div class="info" style="margin-top:9px">Consultando One Core / Clarity...</div>';
+  try{
+    const url=ONECORE_BASE_URL+`/api-tester/clarity/ivaventas?empresaid=${encodeURIComponent(selectedClient.empresa_id)}`;
+    const r=await fetch(url);
+    if(!r.ok)throw new Error('No se pudo consultar Clarity');
+    const j=await r.json();
+    const rows=Array.isArray(j)?j:(j.data||j.result||[]);
+    const imp=Number(document.getElementById('importe').value||0);
+    rows.sort((a,b)=>Math.abs(Number(a.TotalFactura||a.total||0)-imp)-Math.abs(Number(b.TotalFactura||b.total||0)-imp));
+    box.innerHTML=rows.slice(0,8).map((f,i)=>{
+      const total=Number(f.TotalFactura||f.total||0);
+      const score=imp && Math.abs(total-imp)<0.01?100:(imp && Math.abs(total-imp)/imp<.05?80:55);
+      return `<div class="match" onclick='selectFactura(${JSON.stringify(JSON.stringify(f))},this)'>
+        <strong>${f.Comprobante||f.numero||'Comprobante'}</strong>
+        <small>${f.Fecha||f.fecha||''} · ${money(total)} · Match ${score}%</small>
+      </div>`;
+    }).join('') || '<div class="info">No se encontraron comprobantes.</div>';
+  }catch(e){
+    box.innerHTML='<div class="info">La integración One Core/Clarity queda pendiente de ajustar al endpoint exacto de facturas abiertas.</div>';
+  }
+};
+window.selectFactura=(raw,el)=>{
+  selectedFactura=JSON.parse(raw);
+  document.querySelectorAll('.match').forEach(x=>x.style.borderColor='#292929');
+  el.style.borderColor='#D4000A'; toast('Factura seleccionada');
+};
+
+document.getElementById('btnEnviar').onclick=async()=>{
+  if(!selectedClient)return toast('Seleccioná un cliente');
+  const importe=Number(document.getElementById('importe').value||0);
+  if(!importe)return toast('Ingresá el importe');
+  if(!selectedFile)return toast('Falta la foto del cheque');
+
+  const ext=(selectedFile.name.split('.').pop()||'jpg').toLowerCase();
+  const path=`${currentUser.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const up=await sb.storage.from('cheques').upload(path,selectedFile,{upsert:false});
+  if(up.error)return toast('Error subiendo foto: '+up.error.message);
+
+  const payload={
+    creado_por:currentUser.id,
+    vendedor_nombre:perfil.nombre,
+    empresa_id_vendedor:perfil.empresa_id_vendedor,
+    cliente_id:selectedClient.id,
+    empresa_id_cliente:selectedClient.empresa_id,
+    codigo_cliente:selectedClient.codigo,
+    cliente_razon_social:selectedClient.razon_social,
+    cliente_cuit:selectedClient.cuit,
+    banco:document.getElementById('banco').value,
+    numero_cheque:document.getElementById('numeroCheque').value,
+    cuit_librador:document.getElementById('cuitLibrador').value,
+    librador:document.getElementById('librador').value,
+    fecha_pago:document.getElementById('fechaPago').value||null,
+    importe,
+    foto_path:path,
+    observaciones_vendedor:document.getElementById('observaciones').value,
+    estado:'PENDIENTE_AUTORIZACION',
+    factura_sugerida:selectedFactura?.Comprobante||selectedFactura?.numero||null,
+    factura_sugerida_importe:Number(selectedFactura?.TotalFactura||selectedFactura?.total||0)||null
+  };
+  const {data,error}=await sb.from('cheques_recibidos').insert(payload).select().single();
+  if(error)return toast(error.message);
+
+  await sb.from('cheques_auditoria').insert({
+    cheque_id:data.id,user_id:currentUser.id,usuario_nombre:perfil.nombre,
+    accion:'CARGA_CHEQUE',estado_nuevo:'PENDIENTE_AUTORIZACION'
+  });
+  toast('Cheque enviado a autorización');
+  setTimeout(()=>location.reload(),1200);
+};
+init();
+</script>
+</body>
+</html>

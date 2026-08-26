@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Moretti · Autorización de Cheques</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--red:#D4000A;--bg:#080808;--card:#141414;--line:#292929;--txt:#eee;--mut:#888;--green:#22c55e;--amber:#f59e0b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:Arial,Helvetica,sans-serif}
+header{height:62px;border-bottom:1px solid #222;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;background:#080808f5;z-index:5}
+.brand{font-size:20px;font-weight:900}.brand b{color:var(--red)}.user{color:#888;font-size:12px}
+main{padding:20px;max-width:1500px;margin:auto}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid #222;border-radius:12px;padding:14px}.stat small{color:#777;text-transform:uppercase;font-size:10px;font-weight:800}.stat strong{display:block;font-size:28px;margin-top:5px}
+.layout{display:grid;grid-template-columns:390px 1fr;gap:14px}.panel{background:var(--card);border:1px solid #222;border-radius:13px;overflow:hidden}.ph{padding:13px 15px;border-bottom:1px solid #252525;font-weight:800}.list{max-height:calc(100vh - 180px);overflow:auto}
+.item{padding:13px 15px;border-bottom:1px solid #222;cursor:pointer}.item:hover,.item.active{background:#1b1b1b}.item .top{display:flex;justify-content:space-between;gap:10px}.item strong{font-size:13px}.item small{display:block;color:#777;margin-top:5px}.amount{font-weight:900;color:white;white-space:nowrap}
+.detail{padding:18px}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}.photo{background:#0b0b0b;border:1px solid #222;border-radius:10px;min-height:380px;display:flex;align-items:center;justify-content:center}.photo img{max-width:100%;max-height:620px;object-fit:contain}.kv{display:grid;grid-template-columns:145px 1fr;border-bottom:1px solid #242424;padding:9px 0}.kv span{color:#777;font-size:11px;text-transform:uppercase}.kv b{font-size:13px}.badge{display:inline-block;padding:5px 8px;border-radius:99px;font-size:10px;font-weight:900}.pending{background:#422006;color:#fcd34d}.ok{background:#052e16;color:#86efac}.bad{background:#450a0a;color:#fca5a5}
+.actions{display:flex;gap:10px;margin-top:16px}.btn{flex:1;padding:14px;border:0;border-radius:9px;font-weight:900;cursor:pointer}.accept{background:#15803d;color:white}.reject{background:#b91c1c;color:white}.empty{padding:35px;text-align:center;color:#666}
+textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-radius:8px;padding:10px;min-height:80px;margin-top:8px}
+@media(max-width:900px){.stats{grid-template-columns:1fr 1fr}.layout,.grid{grid-template-columns:1fr}.list{max-height:300px}}
+</style>
+</head>
+<body>
+<header><div class="brand">MORETTI · <b>AUTORIZACIÓN DE CHEQUES</b></div><div id="user" class="user"></div></header>
+<main>
+<div class="stats">
+ <div class="stat"><small>Pendientes</small><strong id="sPending">0</strong></div>
+ <div class="stat"><small>Aceptados hoy</small><strong id="sOk">0</strong></div>
+ <div class="stat"><small>Rechazados hoy</small><strong id="sBad">0</strong></div>
+ <div class="stat"><small>Total pendiente</small><strong id="sAmount">$ 0</strong></div>
+</div>
+<div class="layout">
+ <section class="panel"><div class="ph">Pendientes de revisión</div><div id="list" class="list"></div></section>
+ <section class="panel"><div class="ph">Detalle</div><div id="detail" class="empty">Seleccioná un cheque.</div></section>
+</div>
+</main>
+<script>
+const SUPABASE_URL='PEGAR_SUPABASE_URL';
+const SUPABASE_ANON_KEY='PEGAR_SUPABASE_ANON_KEY';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+let currentUser,perfil,currentCheque;
+const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(Number(n||0));
+const date=v=>v?new Date(v+'T12:00:00').toLocaleDateString('es-AR'):'—';
+
+async function init(){
+ const {data:{user}}=await sb.auth.getUser(); if(!user){location.href='login.html';return}
+ currentUser=user;
+ const {data}=await sb.from('cheques_perfiles').select('*').eq('user_id',user.id).single(); perfil=data;
+ if(!perfil || !['AUTORIZADOR','TESORERIA','ADMIN'].includes(perfil.rol)){alert('Sin permiso de autorización');return}
+ document.getElementById('user').textContent=perfil.nombre+' · '+perfil.rol;
+ await load();
+}
+async function load(){
+ const {data,error}=await sb.from('cheques_recibidos').select('*').order('created_at',{ascending:false});
+ if(error){alert(error.message);return}
+ const p=data.filter(x=>x.estado==='PENDIENTE_AUTORIZACION');
+ const today=new Date().toISOString().slice(0,10);
+ document.getElementById('sPending').textContent=p.length;
+ document.getElementById('sOk').textContent=data.filter(x=>x.estado==='ACEPTADO' && (x.autorizado_fecha||'').slice(0,10)===today).length;
+ document.getElementById('sBad').textContent=data.filter(x=>x.estado==='RECHAZADO' && (x.autorizado_fecha||'').slice(0,10)===today).length;
+ document.getElementById('sAmount').textContent=money(p.reduce((a,x)=>a+Number(x.importe||0),0));
+ document.getElementById('list').innerHTML=p.map(x=>`
+ <div class="item" onclick="showCheque('${x.id}')">
+  <div class="top"><strong>${x.cliente_razon_social||'Sin cliente'}</strong><span class="amount">${money(x.importe)}</span></div>
+  <small>${x.vendedor_nombre||''} · ${x.banco||'Banco s/d'} · Pago ${date(x.fecha_pago)}</small>
+ </div>`).join('')||'<div class="empty">No hay cheques pendientes.</div>';
+ window._cheques=data;
+}
+window.showCheque=async id=>{
+ const x=window._cheques.find(c=>c.id===id);currentCheque=x;
+ let image='';
+ if(x.foto_path){
+   const {data}=await sb.storage.from('cheques').createSignedUrl(x.foto_path,600);
+   if(data?.signedUrl)image=`<img src="${data.signedUrl}">`;
+ }
+ const match=x.match_score==null?'Sin calcular':`${x.match_score}% · ${x.match_estado||''}`;
+ document.getElementById('detail').className='detail';
+ document.getElementById('detail').innerHTML=`
+ <div class="grid">
+  <div class="photo">${image||'Sin imagen disponible'}</div>
+  <div>
+    <span class="badge pending">PENDIENTE</span>
+    <div class="kv"><span>Cliente</span><b>${x.cliente_razon_social||'—'}</b></div>
+    <div class="kv"><span>CUIT</span><b>${x.cliente_cuit||'—'}</b></div>
+    <div class="kv"><span>Código Clarity</span><b>${x.codigo_cliente||'—'}</b></div>
+    <div class="kv"><span>Vendedor</span><b>${x.vendedor_nombre||'—'}</b></div>
+    <div class="kv"><span>Banco</span><b>${x.banco||'—'}</b></div>
+    <div class="kv"><span>Cheque</span><b>${x.numero_cheque||'—'}</b></div>
+    <div class="kv"><span>Fecha pago</span><b>${date(x.fecha_pago)}</b></div>
+    <div class="kv"><span>Importe</span><b>${money(x.importe)}</b></div>
+    <div class="kv"><span>Librador</span><b>${x.librador||'—'}</b></div>
+    <div class="kv"><span>Factura sugerida</span><b>${x.factura_sugerida||'—'} ${x.factura_sugerida_importe?(' · '+money(x.factura_sugerida_importe)):''}</b></div>
+    <div class="kv"><span>Match</span><b>${match}</b></div>
+    <label style="display:block;color:#777;font-size:11px;margin-top:14px">MOTIVO / OBSERVACIÓN</label>
+    <textarea id="motivo" placeholder="Obligatorio si se rechaza"></textarea>
+    <div class="actions"><button class="btn accept" onclick="resolver('ACEPTADO')">ACEPTAR</button><button class="btn reject" onclick="resolver('RECHAZADO')">RECHAZAR</button></div>
+  </div>
+ </div>`;
+}
+window.resolver=async estado=>{
+ if(!currentCheque)return;
+ const motivo=document.getElementById('motivo').value.trim();
+ if(estado==='RECHAZADO'&&!motivo){alert('Indicá el motivo del rechazo');return}
+ if(!confirm(estado==='ACEPTADO'?'¿Aceptar este cheque?':'¿Rechazar este cheque?'))return;
+ const {error}=await sb.from('cheques_recibidos').update({
+   estado,autorizado_por:currentUser.id,autorizado_nombre:perfil.nombre,
+   autorizado_fecha:new Date().toISOString(),motivo_rechazo:estado==='RECHAZADO'?motivo:null
+ }).eq('id',currentCheque.id);
+ if(error){alert(error.message);return}
+ await sb.from('cheques_auditoria').insert({
+   cheque_id:currentCheque.id,user_id:currentUser.id,usuario_nombre:perfil.nombre,
+   accion:estado==='ACEPTADO'?'AUTORIZAR_CHEQUE':'RECHAZAR_CHEQUE',
+   estado_anterior:'PENDIENTE_AUTORIZACION',estado_nuevo:estado,detalle:{motivo}
+ });
+ document.getElementById('detail').className='empty';
+ document.getElementById('detail').textContent='Operación registrada.';
+ currentCheque=null;await load();
+}
+init();
+</script>
+</body>
+</html>
