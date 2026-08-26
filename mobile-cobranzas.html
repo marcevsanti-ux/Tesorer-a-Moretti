@@ -82,9 +82,9 @@ textarea{min-height:70px}.row{display:grid;grid-template-columns:1fr 1fr;gap:9px
    Copiar los valores PUBLICOS del proyecto existente.
    NO poner service_role ni API key de Gemini en este HTML.
 */
-const SUPABASE_URL = 'PEGAR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'PEGAR_SUPABASE_ANON_KEY';
-const ONECORE_BASE_URL = 'PEGAR_URL_ONECORE';
+const SUPABASE_URL = 'https://qqmzhwifrkgfrgewmpig.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxbXpod2lmcmtnZnJnZXdtcGlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2OTg4MzcsImV4cCI6MjA4OTI3NDgzN30.4W-n_WLRvcrE385qv0Phil4PrHrb1twpsZvxxIHodeg';
+const ONECORE_BASE_URL = 'https://coreone-api-production.up.railway.app';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null, perfil = null, selectedFile = null, selectedClient = null, selectedFactura = null;
@@ -95,7 +95,7 @@ function money(n){return new Intl.NumberFormat('es-AR',{style:'currency',currenc
 
 async function init(){
   const {data:{user}} = await sb.auth.getUser();
-  if(!user){location.href='login.html';return}
+  if(!user){location.href='login.html?return=mobile-cobranzas.html';return}
   currentUser=user;
   const {data} = await sb.from('cheques_perfiles').select('*').eq('user_id',user.id).single();
   perfil=data;

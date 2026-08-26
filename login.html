@@ -371,12 +371,20 @@ const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Si venimos desde una pantalla específica (ej. mobile), volver allí después del login.
+function getReturnUrl(){
+  const p = new URLSearchParams(window.location.search);
+  const target = p.get('return');
+  // Seguridad: solo permitir archivos locales HTML simples.
+  return target && /^[a-zA-Z0-9_-]+\.html$/.test(target) ? target : 'index.html';
+}
+
 // Verificar si ya hay sesión activa
 async function checkSession(){
   const { data:{ session } } = await sb.auth.getSession();
   if(session){
     // Ya logueado → ir a la app
-    window.location.href = 'index.html';
+    window.location.href = getReturnUrl();
   }
 }
 checkSession();
@@ -451,7 +459,7 @@ async function doLogin(){
   sessionStorage.setItem('userEmail',  usuario.email);
 
   // Ir a la app
-  window.location.href = 'index.html';
+  window.location.href = getReturnUrl();
 }
 
 function showError(msg){
