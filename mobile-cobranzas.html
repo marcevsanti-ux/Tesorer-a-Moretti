@@ -82,7 +82,7 @@ textarea{min-height:70px}
 <header>
   <div>
     <div class="brand">MORETTI · <b>COBRANZAS</b></div>
-    <div class="sub">Carga mobile de cheques · <strong>v1.4</strong></div>
+    <div class="sub">Carga mobile de cheques · <strong>v1.5</strong></div>
   </div>
 
   <div style="text-align:right">
@@ -135,19 +135,27 @@ textarea{min-height:70px}
 
 
   <div class="card">
-    <div class="title">3. Ingrese N° Remito</div>
+    <div class="title">3. Ingrese N° Remito / Factura</div>
 
-    <label>Número de remito</label>
-    <input id="remito" inputmode="numeric" placeholder="Ej: 123456">
+    <label>Número de remito / factura</label>
+    <input id="remito" inputmode="numeric" maxlength="7" placeholder="XX-XXXX" autocomplete="off">
 
     <div class="info" style="margin-top:8px">
-      El mismo remito puede tener uno o varios cheques. El cliente y el remito se mantienen mientras agregás cheques.
+      Formato: XX-XXXX. El mismo remito / factura puede tener uno o varios cheques. El cliente y el documento se mantienen mientras agregás cheques.
     </div>
   </div>
 
 
   <div class="card">
-    <div class="title">4. Datos detectados del cheque</div>
+    <div class="title">4. Ingrese fecha Remito / Factura</div>
+
+    <label>Fecha remito / factura</label>
+    <input id="fechaRemitoFactura" type="date">
+  </div>
+
+
+  <div class="card">
+    <div class="title">5. Datos detectados del cheque</div>
 
     <div class="row">
       <div>
@@ -192,7 +200,7 @@ textarea{min-height:70px}
 
 
   <div class="card">
-    <div class="title">5. Cheques cargados para el remito</div>
+    <div class="title">6. Cheques cargados para el remito / factura</div>
 
     <div id="listaCheques">
       <div class="info">Todavía no agregaste cheques.</div>
@@ -386,6 +394,15 @@ async function init(){
   });
 });
 
+
+
+/* MÁSCARA REMITO / FACTURA XX-XXXX */
+document.getElementById('remito').addEventListener('input', e => {
+  const digits = e.target.value.replace(/\D/g,'').slice(0,6);
+  e.target.value = digits.length > 2
+    ? digits.slice(0,2) + '-' + digits.slice(2)
+    : digits;
+});
 
 /* OCR */
 document.getElementById('btnOCR').onclick = async () => {
@@ -594,7 +611,18 @@ document.getElementById('btnAgregarCheque').onclick = async () => {
     document.getElementById('remito').value.trim();
 
   if(!remito){
-    return toast('Ingresá el número de remito');
+    return toast('Ingresá el número de remito / factura');
+  }
+
+  if(!/^\d{2}-\d{4}$/.test(remito)){
+    return toast('El número debe tener formato XX-XXXX');
+  }
+
+  const fechaRemitoFactura =
+    document.getElementById('fechaRemitoFactura').value || null;
+
+  if(!fechaRemitoFactura){
+    return toast('Ingresá la fecha del remito / factura');
   }
 
   if(!selectedFile){
@@ -680,6 +708,7 @@ document.getElementById('btnAgregarCheque').onclick = async () => {
   /* Bloquea cliente/remito una vez iniciado el lote */
   document.getElementById('clienteBuscar').disabled = true;
   document.getElementById('remito').disabled = true;
+  document.getElementById('fechaRemitoFactura').disabled = true;
 
   limpiarChequeActual();
 
@@ -707,6 +736,9 @@ function renderCheques(){
       false;
 
     document.getElementById('remito').disabled =
+      false;
+
+    document.getElementById('fechaRemitoFactura').disabled =
       false;
 
     return;
@@ -865,7 +897,8 @@ async function generarPdfCarga(
   let y = 42;
 
   const lines = [
-    `Remito: ${remito}`,
+    `Remito / Factura: ${remito}`,
+    `Fecha Remito / Factura: ${document.getElementById('fechaRemitoFactura').value || ''}`,
     `Cliente: ${selectedClient.razon_social || ''}`,
     `CUIT cliente: ${selectedClient.cuit || ''}`,
     `Vendedor: ${perfil?.nombre || currentUser?.email || ''}`,
@@ -943,7 +976,7 @@ async function generarPdfCarga(
     pdf.setFontSize(12);
 
     pdf.text(
-      `Remito ${remito} - Cheque ${i + 1}`,
+      `Remito / Factura ${remito} - Cheque ${i + 1}`,
       15,
       15
     );
@@ -999,7 +1032,18 @@ document.getElementById('btnFinalizar').onclick = async () => {
     document.getElementById('remito').value.trim();
 
   if(!remito){
-    return toast('Ingresá el número de remito');
+    return toast('Ingresá el número de remito / factura');
+  }
+
+  if(!/^\d{2}-\d{4}$/.test(remito)){
+    return toast('El número debe tener formato XX-XXXX');
+  }
+
+  const fechaRemitoFactura =
+    document.getElementById('fechaRemitoFactura').value || null;
+
+  if(!fechaRemitoFactura){
+    return toast('Ingresá la fecha del remito / factura');
   }
 
   if(!chequesPendientes.length){
@@ -1151,6 +1195,7 @@ document.getElementById('btnFinalizar').onclick = async () => {
           selectedClient.cuit,
 
         remito,
+        fecha_remito_factura:fechaRemitoFactura,
         lote_carga_id:cargaId,
         pdf_path:pdfPath,
 
