@@ -20,7 +20,7 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
 </style>
 </head>
 <body>
-<header><div class="brand">MORETTI · <b>AUTORIZACIÓN DE CHEQUES</b> <span style="font-size:10px;color:#777">v1.3</span></div><div id="user" class="user"></div></header>
+<header><div class="brand">MORETTI · <b>AUTORIZACIÓN DE CHEQUES</b> <span style="font-size:10px;color:#777">v1.4</span></div><div id="user" class="user"></div></header>
 <main>
 <div class="stats">
  <div class="stat"><small>Pendientes</small><strong id="sPending">0</strong></div>
@@ -82,7 +82,8 @@ window.showCheque=async id=>{
     <div class="kv"><span>Cliente</span><b>${x.cliente_razon_social||'—'}</b></div>
     <div class="kv"><span>CUIT</span><b>${x.cliente_cuit||'—'}</b></div>
     <div class="kv"><span>Código Clarity</span><b>${x.codigo_cliente||'—'}</b></div>
-    <div class="kv"><span>Remito</span><b>${x.remito||'—'}</b></div>
+    <div class="kv"><span>Remito / Factura</span><b>${x.remito||'—'}</b></div>
+    <div class="kv"><span>Fecha Remito / Factura</span><b>${date(x.fecha_remito_factura)}</b></div>
     <div class="kv"><span>Vendedor</span><b>${x.vendedor_nombre||'—'}</b></div>
     <div class="kv"><span>Banco</span><b>${x.banco||'—'}</b></div>
     <div class="kv"><span>Cheque</span><b>${x.numero_cheque||'—'}</b></div>
@@ -113,10 +114,34 @@ window.resolver=async estado=>{
  const motivo=document.getElementById('motivo').value.trim();
  if(estado==='RECHAZADO'&&!motivo){alert('Indicá el motivo del rechazo');return}
  if(!confirm(estado==='ACEPTADO'?'¿Aceptar este cheque?':'¿Rechazar este cheque?'))return;
- const {error}=await sb.from('cheques_recibidos').update({
-   estado,autorizado_por:currentUser.id,autorizado_nombre:perfil.nombre,
-   autorizado_fecha:new Date().toISOString(),motivo_rechazo:estado==='RECHAZADO'?motivo:null
- }).eq('id',currentCheque.id);
+ const ahora=new Date().toISOString();
+
+ const cambios={
+   estado,
+   autorizado_por:currentUser.id,
+   autorizado_nombre:perfil.nombre,
+   autorizado_fecha:ahora,
+   motivo_rechazo:estado==='RECHAZADO'?motivo:null
+ };
+
+ if(estado==='RECHAZADO'){
+   cambios.vendedor_notificado=false;
+   cambios.vendedor_notificado_fecha=null;
+   cambios.vendedor_gestion_estado='PENDIENTE';
+   cambios.vendedor_gestion_fecha=null;
+   cambios.vendedor_gestion_observacion=null;
+ }else{
+   cambios.vendedor_notificado=false;
+   cambios.vendedor_notificado_fecha=null;
+   cambios.vendedor_gestion_estado=null;
+   cambios.vendedor_gestion_fecha=null;
+   cambios.vendedor_gestion_observacion=null;
+ }
+
+ const {error}=await sb
+   .from('cheques_recibidos')
+   .update(cambios)
+   .eq('id',currentCheque.id);
  if(error){alert(error.message);return}
  await sb.from('cheques_auditoria').insert({
    cheque_id:currentCheque.id,user_id:currentUser.id,usuario_nombre:perfil.nombre,

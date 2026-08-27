@@ -75,6 +75,20 @@ textarea{min-height:70px}
   position:fixed;left:14px;right:14px;bottom:15px;padding:12px 14px;
   border-radius:9px;background:#222;color:white;display:none;z-index:20
 }
+
+.rechazos-card{display:none;background:#2a0d10;border:1px solid #7f1d1d;border-radius:14px;padding:14px;margin-bottom:12px}
+.rechazos-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.rechazos-head strong{font-size:14px;color:#fecaca}
+.rechazo-count{min-width:28px;height:28px;border-radius:99px;background:#b91c1c;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900}
+.rechazo-item{background:#16090a;border:1px solid #5f171b;border-radius:11px;padding:12px;margin-top:9px}
+.rechazo-item h4{margin:0 0 6px;font-size:13px}
+.rechazo-item .meta{font-size:11px;color:#c7a3a3;line-height:1.55}
+.rechazo-item .motivo{margin-top:8px;padding:9px;border-radius:8px;background:#260d0f;color:#fecaca;font-size:12px;line-height:1.45}
+.rechazo-item textarea{min-height:62px;margin-top:9px}
+.rechazo-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+.btn-manage{background:#7c2d12;color:#fff}
+.btn-done{background:#166534;color:#fff}
+.gestion-badge{display:inline-block;padding:4px 7px;border-radius:99px;font-size:9px;font-weight:900;background:#3f3f46;color:#ddd;margin-top:7px}
 </style>
 </head>
 
@@ -82,7 +96,7 @@ textarea{min-height:70px}
 <header>
   <div>
     <div class="brand">MORETTI · <b>COBRANZAS</b></div>
-    <div class="sub">Carga mobile de cheques · <strong>v1.5</strong></div>
+    <div class="sub">Carga mobile de cheques · <strong>v1.6</strong></div>
   </div>
 
   <div style="text-align:right">
@@ -95,6 +109,17 @@ textarea{min-height:70px}
 </header>
 
 <main>
+
+  <div id="gestionRechazos" class="rechazos-card">
+    <div class="rechazos-head">
+      <strong>🔴 Cheques rechazados para gestionar</strong>
+      <div id="rechazosCount" class="rechazo-count">0</div>
+    </div>
+    <div class="info" style="color:#e7b8b8">
+      Andrés rechazó uno o más cheques. Revisalos con el cliente y registrá la gestión realizada.
+    </div>
+    <div id="rechazosLista"></div>
+  </div>
 
   <div class="card">
     <div class="title">1. Foto del cheque</div>
@@ -271,6 +296,13 @@ function money(n){
   }).format(Number(n || 0));
 }
 
+function fechaAR(v){
+  if(!v) return '—';
+  const s=String(v).slice(0,10);
+  const [y,m,d]=s.split('-');
+  return y&&m&&d ? `${d}/${m}/${y}` : v;
+}
+
 function escapeHtml(value){
   return String(value ?? '')
     .replaceAll('&','&amp;')
@@ -340,6 +372,158 @@ async function buscarChequeDuplicadoEnBD(c){
 }
 
 
+
+async function cargarGestionesRechazadas(){
+  if(!currentUser) return;
+
+  const {data,error}=await sb
+    .from('cheques_recibidos')
+    .select('id,cliente_razon_social,cliente_cuit,remito,fecha_remito_factura,banco,numero_cheque,fecha_pago,importe,motivo_rechazo,autorizado_nombre,autorizado_fecha,vendedor_notificado,vendedor_gestion_estado,vendedor_gestion_observacion')
+    .eq('creado_por',currentUser.id)
+    .eq('estado','RECHAZADO')
+    .or('vendedor_gestion_estado.is.null,vendedor_gestion_estado.neq.GESTIONADO')
+    .order('autorizado_fecha',{ascending:false});
+
+  if(error){
+    console.error('Error cargando rechazos:',error);
+    return;
+  }
+
+  const rows=data||[];
+  const card=document.getElementById('gestionRechazos');
+  const list=document.getElementById('rechazosLista');
+  const count=document.getElementById('rechazosCount');
+
+  count.textContent=String(rows.length);
+
+  if(!rows.length){
+    card.style.display='none';
+    list.innerHTML='';
+    return;
+  }
+
+  card.style.display='block';
+
+  list.innerHTML=rows.map(x=>{
+    const estado=x.vendedor_gestion_estado||'PENDIENTE';
+    return `
+      <div class="rechazo-item">
+        <h4>${escapeHtml(x.cliente_razon_social||'Sin cliente')} · ${money(x.importe)}</h4>
+        <div class="meta">
+          Remito / Factura: <b>${escapeHtml(x.remito||'—')}</b>
+          · Fecha: ${fechaAR(x.fecha_remito_factura)}<br>
+          Cheque: <b>${escapeHtml(x.numero_cheque||'—')}</b>
+          · ${escapeHtml(x.banco||'Banco s/d')}
+          · Pago ${fechaAR(x.fecha_pago)}<br>
+          Rechazado por: ${escapeHtml(x.autorizado_nombre||'Autorizador')}
+          · ${x.autorizado_fecha ? new Date(x.autorizado_fecha).toLocaleString('es-AR') : ''}
+        </div>
+
+        <div class="motivo">
+          <b>Motivo del rechazo:</b><br>
+          ${escapeHtml(x.motivo_rechazo||'Sin motivo informado')}
+        </div>
+
+        <span class="gestion-badge">${escapeHtml(estado)}</span>
+
+        <textarea id="gestionObs_${x.id}" placeholder="Ej: Hablé con el cliente. Reemplazará el cheque mañana.">${escapeHtml(x.vendedor_gestion_observacion||'')}</textarea>
+
+        <div class="rechazo-actions">
+          <button class="btn btn-manage" onclick="tomarGestion('${x.id}')">Tomar gestión</button>
+          <button class="btn btn-done" onclick="cerrarGestion('${x.id}')">Gestión realizada</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const noVistos=rows.filter(x=>x.vendedor_notificado===false);
+  if(noVistos.length){
+    const ids=noVistos.map(x=>x.id);
+    const ahora=new Date().toISOString();
+    const {error:updateError}=await sb
+      .from('cheques_recibidos')
+      .update({vendedor_notificado:true,vendedor_notificado_fecha:ahora})
+      .in('id',ids);
+
+    if(updateError){
+      console.error('Error marcando notificación:',updateError);
+    }
+  }
+}
+
+window.tomarGestion=async id=>{
+  const obs=document.getElementById(`gestionObs_${id}`)?.value.trim()||'';
+
+  const {error}=await sb
+    .from('cheques_recibidos')
+    .update({
+      vendedor_gestion_estado:'EN_GESTION',
+      vendedor_gestion_observacion:obs||null
+    })
+    .eq('id',id)
+    .eq('creado_por',currentUser.id);
+
+  if(error){
+    toast('No se pudo tomar la gestión: '+error.message);
+    return;
+  }
+
+  await sb.from('cheques_auditoria').insert({
+    cheque_id:id,
+    user_id:currentUser.id,
+    usuario_nombre:perfil?.nombre||currentUser.email,
+    accion:'TOMAR_GESTION_RECHAZO',
+    estado_anterior:'RECHAZADO',
+    estado_nuevo:'RECHAZADO',
+    detalle:{gestion_estado:'EN_GESTION',observacion:obs}
+  });
+
+  toast('Gestión tomada');
+  await cargarGestionesRechazadas();
+};
+
+window.cerrarGestion=async id=>{
+  const obs=document.getElementById(`gestionObs_${id}`)?.value.trim()||'';
+
+  if(!obs){
+    toast('Ingresá qué gestión realizaste con el cliente');
+    return;
+  }
+
+  if(!confirm('¿Marcar esta gestión como realizada?')) return;
+
+  const ahora=new Date().toISOString();
+
+  const {error}=await sb
+    .from('cheques_recibidos')
+    .update({
+      vendedor_gestion_estado:'GESTIONADO',
+      vendedor_gestion_fecha:ahora,
+      vendedor_gestion_observacion:obs
+    })
+    .eq('id',id)
+    .eq('creado_por',currentUser.id);
+
+  if(error){
+    toast('No se pudo cerrar la gestión: '+error.message);
+    return;
+  }
+
+  await sb.from('cheques_auditoria').insert({
+    cheque_id:id,
+    user_id:currentUser.id,
+    usuario_nombre:perfil?.nombre||currentUser.email,
+    accion:'GESTION_RECHAZO_COMPLETADA',
+    estado_anterior:'RECHAZADO',
+    estado_nuevo:'RECHAZADO',
+    detalle:{gestion_estado:'GESTIONADO',observacion:obs}
+  });
+
+  toast('Gestión registrada');
+  await cargarGestionesRechazadas();
+};
+
+
 async function init(){
   const {data:{user}} = await sb.auth.getUser();
 
@@ -372,6 +556,8 @@ async function init(){
     alert('Usuario sin permiso para cargar cheques');
     return;
   }
+
+  await cargarGestionesRechazadas();
 }
 
 
@@ -1310,6 +1496,9 @@ document.getElementById('btnLogout').addEventListener(
       'login.html?next=mobile-cobranzas.html';
   }
 );
+
+window.addEventListener('focus',()=>cargarGestionesRechazadas());
+setInterval(()=>cargarGestionesRechazadas(),60000);
 
 init();
 </script>
