@@ -82,7 +82,7 @@ textarea{min-height:70px}
 <header>
   <div>
     <div class="brand">MORETTI · <b>COBRANZAS</b></div>
-    <div class="sub">Carga mobile de cheques · <strong>v1.3</strong></div>
+    <div class="sub">Carga mobile de cheques · <strong>v1.4</strong></div>
   </div>
 
   <div style="text-align:right">
@@ -277,6 +277,58 @@ function sanitizePath(value){
     .trim()
     .replace(/[^a-zA-Z0-9_-]+/g,'_')
     .slice(0,80) || 'sin_remito';
+}
+
+
+function normText(v){
+  return String(v || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,' ');
+}
+
+function normCheque(v){
+  const onlyDigits = String(v || '').replace(/\D/g,'');
+  if(!onlyDigits) return '';
+  return onlyDigits.replace(/^0+(?=\d)/,'');
+}
+
+function chequeFingerprint(c){
+  return [
+    normText(c.banco),
+    norm(c.cuit_librador),
+    normCheque(c.numero_cheque),
+    c.fecha_pago || '',
+    Number(c.importe || 0).toFixed(2)
+  ].join('|');
+}
+
+async function buscarChequeDuplicadoEnBD(c){
+  const numero = String(c.numero_cheque || '').trim();
+  if(!numero) return null;
+
+  const {data,error} = await sb
+    .from('cheques_recibidos')
+    .select('id,banco,numero_cheque,cuit_librador,fecha_pago,importe,estado,remito,cliente_razon_social,created_at')
+    .in('estado',['PENDIENTE_AUTORIZACION','ACEPTADO'])
+    .limit(200);
+
+  if(error){
+    console.error('Error validando duplicado:', error);
+    throw new Error('No se pudo validar si el cheque ya existe');
+  }
+
+  const fp = chequeFingerprint(c);
+
+  return (data || []).find(x => chequeFingerprint({
+    banco:x.banco,
+    cuit_librador:x.cuit_librador,
+    numero_cheque:x.numero_cheque,
+    fecha_pago:x.fecha_pago,
+    importe:x.importe
+  }) === fp) || null;
 }
 
 
@@ -533,7 +585,7 @@ function limpiarChequeActual(){
 
 
 /* AGREGAR CHEQUE A MEMORIA */
-document.getElementById('btnAgregarCheque').onclick = () => {
+document.getElementById('btnAgregarCheque').onclick = async () => {
   if(!selectedClient){
     return toast('Seleccioná el cliente');
   }
@@ -598,6 +650,28 @@ document.getElementById('btnAgregarCheque').onclick = () => {
     observaciones:
       document.getElementById('observaciones').value.trim()
   };
+
+  const fp = chequeFingerprint(cheque);
+
+  const duplicadoLote = chequesPendientes.find(
+    c => chequeFingerprint(c) === fp
+  );
+
+  if(duplicadoLote){
+    return toast('Este cheque ya fue agregado a la carga actual');
+  }
+
+  try{
+    const duplicadoBD = await buscarChequeDuplicadoEnBD(cheque);
+
+    if(duplicadoBD){
+      return toast(
+        `Cheque duplicado: ya existe en ${duplicadoBD.estado} · Remito ${duplicadoBD.remito || 's/d'}`
+      );
+    }
+  }catch(e){
+    return toast(e.message || 'No se pudo validar el cheque');
+  }
 
   chequesPendientes.push(cheque);
 
@@ -951,6 +1025,21 @@ document.getElementById('btnFinalizar').onclick = async () => {
   const uploadedPaths = [];
 
   try{
+    /*
+      0) Revalidación final contra duplicados.
+         La restricción UNIQUE de Supabase sigue siendo la protección definitiva.
+    */
+    btn.textContent = 'Validando duplicados...';
+
+    for(const c of chequesPendientes){
+      const duplicadoBD = await buscarChequeDuplicadoEnBD(c);
+      if(duplicadoBD){
+        throw new Error(
+          `Cheque duplicado detectado antes de guardar: ${c.numero_cheque || 's/n'} · Remito ${duplicadoBD.remito || 's/d'}`
+        );
+      }
+    }
+
     /*
       1) Subir imágenes.
     */
