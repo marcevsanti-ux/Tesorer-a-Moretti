@@ -20,12 +20,12 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
 </style>
 </head>
 <body>
-<header><div class="brand">MORETTI · <b>AUTORIZACIÓN DE CHEQUES</b> <span style="font-size:10px;color:#777">v1.4</span></div><div id="user" class="user"></div></header>
+<header><div class="brand">MORETTI · <b>AUTORIZACIÓN DE CHEQUES</b> <span style="font-size:10px;color:#777">v1.5</span></div><div id="user" class="user"></div></header>
 <main>
 <div class="stats">
  <div class="stat"><small>Pendientes</small><strong id="sPending">0</strong></div>
  <div class="stat"><small>Aceptados hoy</small><strong id="sOk">0</strong></div>
- <div class="stat"><small>Rechazados hoy</small><strong id="sBad">0</strong></div>
+ <div class="stat"><small>NO ACEPTADOS hoy</small><strong id="sBad">0</strong></div>
  <div class="stat"><small>Total pendiente</small><strong id="sAmount">$ 0</strong></div>
 </div>
 <div class="layout">
@@ -39,7 +39,12 @@ const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let currentUser,perfil,currentCheque;
 const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(Number(n||0));
-const date=v=>v?new Date(v+'T12:00:00').toLocaleDateString('es-AR'):'—';
+const date=v=>{
+ if(!v)return '—';
+ const s=String(v).slice(0,10);
+ const [y,m,d]=s.split('-');
+ return y&&m&&d?`${d}-${m}-${y}`:v;
+};
 
 async function init(){
  const {data:{user}}=await sb.auth.getUser(); if(!user){location.href='login.html';return}
@@ -95,8 +100,8 @@ window.showCheque=async id=>{
     <div class="kv"><span>Match</span><b>${match}</b></div>
     <div class="kv"><span>PDF carga</span><b id="pdfCarga">${x.pdf_path?'Generando acceso...':'—'}</b></div>
     <label style="display:block;color:#777;font-size:11px;margin-top:14px">MOTIVO / OBSERVACIÓN</label>
-    <textarea id="motivo" placeholder="Obligatorio si se rechaza"></textarea>
-    <div class="actions"><button class="btn accept" onclick="resolver('ACEPTADO')">ACEPTAR</button><button class="btn reject" onclick="resolver('RECHAZADO')">RECHAZAR</button></div>
+    <textarea id="motivo" placeholder="Obligatorio si NO se acepta"></textarea>
+    <div class="actions"><button class="btn accept" onclick="resolver('ACEPTADO')">ACEPTAR</button><button class="btn reject" onclick="resolver('RECHAZADO')">NO ACEPTAR</button></div>
   </div>
  </div>`;
  if(x.pdf_path){
@@ -112,8 +117,8 @@ window.showCheque=async id=>{
 window.resolver=async estado=>{
  if(!currentCheque)return;
  const motivo=document.getElementById('motivo').value.trim();
- if(estado==='RECHAZADO'&&!motivo){alert('Indicá el motivo del rechazo');return}
- if(!confirm(estado==='ACEPTADO'?'¿Aceptar este cheque?':'¿Rechazar este cheque?'))return;
+ if(estado==='RECHAZADO'&&!motivo){alert('Indicá el motivo por el cual NO se acepta');return}
+ if(!confirm(estado==='ACEPTADO'?'¿Aceptar este cheque?':'¿Marcar este cheque como NO ACEPTADO?'))return;
  const ahora=new Date().toISOString();
 
  const cambios={
@@ -127,7 +132,7 @@ window.resolver=async estado=>{
  if(estado==='RECHAZADO'){
    cambios.vendedor_notificado=false;
    cambios.vendedor_notificado_fecha=null;
-   cambios.vendedor_gestion_estado='PENDIENTE';
+   cambios.vendedor_gestion_estado=null;
    cambios.vendedor_gestion_fecha=null;
    cambios.vendedor_gestion_observacion=null;
  }else{
@@ -145,7 +150,7 @@ window.resolver=async estado=>{
  if(error){alert(error.message);return}
  await sb.from('cheques_auditoria').insert({
    cheque_id:currentCheque.id,user_id:currentUser.id,usuario_nombre:perfil.nombre,
-   accion:estado==='ACEPTADO'?'AUTORIZAR_CHEQUE':'RECHAZAR_CHEQUE',
+   accion:estado==='ACEPTADO'?'AUTORIZAR_CHEQUE':'NO_ACEPTAR_CHEQUE',
    estado_anterior:'PENDIENTE_AUTORIZACION',estado_nuevo:estado,detalle:{motivo}
  });
  document.getElementById('detail').className='empty';

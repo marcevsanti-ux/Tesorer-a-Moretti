@@ -84,10 +84,10 @@ textarea{min-height:70px}
 .rechazo-item h4{margin:0 0 6px;font-size:13px}
 .rechazo-item .meta{font-size:11px;color:#c7a3a3;line-height:1.55}
 .rechazo-item .motivo{margin-top:8px;padding:9px;border-radius:8px;background:#260d0f;color:#fecaca;font-size:12px;line-height:1.45}
-.rechazo-item textarea{min-height:62px;margin-top:9px}
-.rechazo-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
-.btn-manage{background:#7c2d12;color:#fff}
-.btn-done{background:#166534;color:#fff}
+.
+.rechazo-actions{margin-top:9px}
+.btn-manage{display:none}
+.btn-done{background:#166534;color:#fff;width:100%}
 .gestion-badge{display:inline-block;padding:4px 7px;border-radius:99px;font-size:9px;font-weight:900;background:#3f3f46;color:#ddd;margin-top:7px}
 </style>
 </head>
@@ -96,7 +96,7 @@ textarea{min-height:70px}
 <header>
   <div>
     <div class="brand">MORETTI · <b>COBRANZAS</b></div>
-    <div class="sub">Carga mobile de cheques · <strong>v1.6</strong></div>
+    <div class="sub">Carga mobile de cheques · <strong>v1.7</strong></div>
   </div>
 
   <div style="text-align:right">
@@ -112,11 +112,11 @@ textarea{min-height:70px}
 
   <div id="gestionRechazos" class="rechazos-card">
     <div class="rechazos-head">
-      <strong>🔴 Cheques rechazados para gestionar</strong>
+      <strong>🔴 Cheques NO ACEPTADOS</strong>
       <div id="rechazosCount" class="rechazo-count">0</div>
     </div>
     <div class="info" style="color:#e7b8b8">
-      Andrés rechazó uno o más cheques. Revisalos con el cliente y registrá la gestión realizada.
+      Tenés uno o más cheques NO ACEPTADOS. Revisá el motivo informado y comunicate con el cliente.
     </div>
     <div id="rechazosLista"></div>
   </div>
@@ -163,10 +163,10 @@ textarea{min-height:70px}
     <div class="title">3. Ingrese N° Remito / Factura</div>
 
     <label>Número de remito / factura</label>
-    <input id="remito" inputmode="numeric" maxlength="7" placeholder="XX-XXXX" autocomplete="off">
+    <input id="remito" inputmode="numeric" maxlength="8" placeholder="XX-XXXXX" autocomplete="off">
 
     <div class="info" style="margin-top:8px">
-      Formato: XX-XXXX. El mismo remito / factura puede tener uno o varios cheques. El cliente y el documento se mantienen mientras agregás cheques.
+      Formato: XX-XXXXX. El mismo remito / factura puede tener uno o varios cheques. El cliente y el documento se mantienen mientras agregás cheques.
     </div>
   </div>
 
@@ -300,7 +300,7 @@ function fechaAR(v){
   if(!v) return '—';
   const s=String(v).slice(0,10);
   const [y,m,d]=s.split('-');
-  return y&&m&&d ? `${d}/${m}/${y}` : v;
+  return y&&m&&d ? `${d}-${m}-${y}` : v;
 }
 
 function escapeHtml(value){
@@ -378,14 +378,14 @@ async function cargarGestionesRechazadas(){
 
   const {data,error}=await sb
     .from('cheques_recibidos')
-    .select('id,cliente_razon_social,cliente_cuit,remito,fecha_remito_factura,banco,numero_cheque,fecha_pago,importe,motivo_rechazo,autorizado_nombre,autorizado_fecha,vendedor_notificado,vendedor_gestion_estado,vendedor_gestion_observacion')
+    .select('id,cliente_razon_social,cliente_cuit,remito,fecha_remito_factura,banco,numero_cheque,fecha_pago,importe,motivo_rechazo,autorizado_nombre,autorizado_fecha,vendedor_notificado')
     .eq('creado_por',currentUser.id)
     .eq('estado','RECHAZADO')
-    .or('vendedor_gestion_estado.is.null,vendedor_gestion_estado.neq.GESTIONADO')
+    .eq('vendedor_notificado',false)
     .order('autorizado_fecha',{ascending:false});
 
   if(error){
-    console.error('Error cargando rechazos:',error);
+    console.error('Error cargando avisos:',error);
     return;
   }
 
@@ -404,108 +404,45 @@ async function cargarGestionesRechazadas(){
 
   card.style.display='block';
 
-  list.innerHTML=rows.map(x=>{
-    const estado=x.vendedor_gestion_estado||'PENDIENTE';
-    return `
-      <div class="rechazo-item">
-        <h4>${escapeHtml(x.cliente_razon_social||'Sin cliente')} · ${money(x.importe)}</h4>
-        <div class="meta">
-          Remito / Factura: <b>${escapeHtml(x.remito||'—')}</b>
-          · Fecha: ${fechaAR(x.fecha_remito_factura)}<br>
-          Cheque: <b>${escapeHtml(x.numero_cheque||'—')}</b>
-          · ${escapeHtml(x.banco||'Banco s/d')}
-          · Pago ${fechaAR(x.fecha_pago)}<br>
-          Rechazado por: ${escapeHtml(x.autorizado_nombre||'Autorizador')}
-          · ${x.autorizado_fecha ? new Date(x.autorizado_fecha).toLocaleString('es-AR') : ''}
-        </div>
-
-        <div class="motivo">
-          <b>Motivo del rechazo:</b><br>
-          ${escapeHtml(x.motivo_rechazo||'Sin motivo informado')}
-        </div>
-
-        <span class="gestion-badge">${escapeHtml(estado)}</span>
-
-        <textarea id="gestionObs_${x.id}" placeholder="Ej: Hablé con el cliente. Reemplazará el cheque mañana.">${escapeHtml(x.vendedor_gestion_observacion||'')}</textarea>
-
-        <div class="rechazo-actions">
-          <button class="btn btn-manage" onclick="tomarGestion('${x.id}')">Tomar gestión</button>
-          <button class="btn btn-done" onclick="cerrarGestion('${x.id}')">Gestión realizada</button>
-        </div>
+  list.innerHTML=rows.map(x=>`
+    <div class="rechazo-item">
+      <h4>${escapeHtml(x.cliente_razon_social||'Sin cliente')} · ${money(x.importe)}</h4>
+      <div class="meta">
+        Remito / Factura: <b>${escapeHtml(x.remito||'—')}</b>
+        · Fecha: ${fechaAR(x.fecha_remito_factura)}<br>
+        Cheque: <b>${escapeHtml(x.numero_cheque||'—')}</b>
+        · ${escapeHtml(x.banco||'Banco s/d')}
+        · Pago ${fechaAR(x.fecha_pago)}<br>
+        NO ACEPTADO por: ${escapeHtml(x.autorizado_nombre||'Autorizador')}
+        · ${x.autorizado_fecha ? new Date(x.autorizado_fecha).toLocaleString('es-AR') : ''}
       </div>
-    `;
-  }).join('');
 
-  const noVistos=rows.filter(x=>x.vendedor_notificado===false);
-  if(noVistos.length){
-    const ids=noVistos.map(x=>x.id);
-    const ahora=new Date().toISOString();
-    const {error:updateError}=await sb
-      .from('cheques_recibidos')
-      .update({vendedor_notificado:true,vendedor_notificado_fecha:ahora})
-      .in('id',ids);
+      <div class="motivo">
+        <b>Motivo:</b><br>
+        ${escapeHtml(x.motivo_rechazo||'Sin motivo informado')}
+      </div>
 
-    if(updateError){
-      console.error('Error marcando notificación:',updateError);
-    }
-  }
+      <div class="rechazo-actions">
+        <button class="btn btn-done" onclick="marcarAvisado('${x.id}')">AVISADO</button>
+      </div>
+    </div>
+  `).join('');
 }
 
-window.tomarGestion=async id=>{
-  const obs=document.getElementById(`gestionObs_${id}`)?.value.trim()||'';
-
-  const {error}=await sb
-    .from('cheques_recibidos')
-    .update({
-      vendedor_gestion_estado:'EN_GESTION',
-      vendedor_gestion_observacion:obs||null
-    })
-    .eq('id',id)
-    .eq('creado_por',currentUser.id);
-
-  if(error){
-    toast('No se pudo tomar la gestión: '+error.message);
-    return;
-  }
-
-  await sb.from('cheques_auditoria').insert({
-    cheque_id:id,
-    user_id:currentUser.id,
-    usuario_nombre:perfil?.nombre||currentUser.email,
-    accion:'TOMAR_GESTION_RECHAZO',
-    estado_anterior:'RECHAZADO',
-    estado_nuevo:'RECHAZADO',
-    detalle:{gestion_estado:'EN_GESTION',observacion:obs}
-  });
-
-  toast('Gestión tomada');
-  await cargarGestionesRechazadas();
-};
-
-window.cerrarGestion=async id=>{
-  const obs=document.getElementById(`gestionObs_${id}`)?.value.trim()||'';
-
-  if(!obs){
-    toast('Ingresá qué gestión realizaste con el cliente');
-    return;
-  }
-
-  if(!confirm('¿Marcar esta gestión como realizada?')) return;
-
+window.marcarAvisado=async id=>{
   const ahora=new Date().toISOString();
 
   const {error}=await sb
     .from('cheques_recibidos')
     .update({
-      vendedor_gestion_estado:'GESTIONADO',
-      vendedor_gestion_fecha:ahora,
-      vendedor_gestion_observacion:obs
+      vendedor_notificado:true,
+      vendedor_notificado_fecha:ahora
     })
     .eq('id',id)
     .eq('creado_por',currentUser.id);
 
   if(error){
-    toast('No se pudo cerrar la gestión: '+error.message);
+    toast('No se pudo registrar el aviso: '+error.message);
     return;
   }
 
@@ -513,16 +450,15 @@ window.cerrarGestion=async id=>{
     cheque_id:id,
     user_id:currentUser.id,
     usuario_nombre:perfil?.nombre||currentUser.email,
-    accion:'GESTION_RECHAZO_COMPLETADA',
+    accion:'VENDEDOR_AVISADO_NO_ACEPTADO',
     estado_anterior:'RECHAZADO',
     estado_nuevo:'RECHAZADO',
-    detalle:{gestion_estado:'GESTIONADO',observacion:obs}
+    detalle:{avisado_fecha:ahora}
   });
 
-  toast('Gestión registrada');
+  toast('Aviso registrado');
   await cargarGestionesRechazadas();
 };
-
 
 async function init(){
   const {data:{user}} = await sb.auth.getUser();
@@ -582,9 +518,9 @@ async function init(){
 
 
 
-/* MÁSCARA REMITO / FACTURA XX-XXXX */
+/* MÁSCARA REMITO / FACTURA XX-XXXXX */
 document.getElementById('remito').addEventListener('input', e => {
-  const digits = e.target.value.replace(/\D/g,'').slice(0,6);
+  const digits = e.target.value.replace(/\D/g,'').slice(0,7);
   e.target.value = digits.length > 2
     ? digits.slice(0,2) + '-' + digits.slice(2)
     : digits;
@@ -800,8 +736,8 @@ document.getElementById('btnAgregarCheque').onclick = async () => {
     return toast('Ingresá el número de remito / factura');
   }
 
-  if(!/^\d{2}-\d{4}$/.test(remito)){
-    return toast('El número debe tener formato XX-XXXX');
+  if(!/^\d{2}-\d{5}$/.test(remito)){
+    return toast('El número debe tener formato XX-XXXXX');
   }
 
   const fechaRemitoFactura =
@@ -880,7 +816,7 @@ document.getElementById('btnAgregarCheque').onclick = async () => {
 
     if(duplicadoBD){
       return toast(
-        `Cheque duplicado: ya existe en ${duplicadoBD.estado} · Remito ${duplicadoBD.remito || 's/d'}`
+        `Cheque duplicado: ya existe en ${duplicadoBD.estado==='RECHAZADO'?'NO ACEPTADO':duplicadoBD.estado} · Remito ${duplicadoBD.remito || 's/d'}`
       );
     }
   }catch(e){
@@ -943,8 +879,8 @@ function renderCheques(){
             ${escapeHtml(c.banco || 'Banco sin informar')}<br>
             ${escapeHtml(c.librador || '')}
             ${c.cuit_librador ? ' · ' + escapeHtml(c.cuit_librador) : ''}<br>
-            Emisión: ${escapeHtml(c.fecha_emision || '-')}
-            · Pago: ${escapeHtml(c.fecha_pago || '-')}<br>
+            Emisión: ${fechaAR(c.fecha_emision)}
+            · Pago: ${fechaAR(c.fecha_pago)}<br>
             <b>${money(c.importe)}</b>
           </small>
         </div>
@@ -1084,7 +1020,7 @@ async function generarPdfCarga(
 
   const lines = [
     `Remito / Factura: ${remito}`,
-    `Fecha Remito / Factura: ${document.getElementById('fechaRemitoFactura').value || ''}`,
+    `Fecha Remito / Factura: ${fechaAR(document.getElementById('fechaRemitoFactura').value)}`,
     `Cliente: ${selectedClient.razon_social || ''}`,
     `CUIT cliente: ${selectedClient.cuit || ''}`,
     `Vendedor: ${perfil?.nombre || currentUser?.email || ''}`,
@@ -1121,7 +1057,7 @@ async function generarPdfCarga(
       `${index + 1}. ${c.banco || 'Banco'} | ` +
       `Cheque ${c.numero_cheque || '-'} | ` +
       `${money(c.importe)} | ` +
-      `Pago ${c.fecha_pago || '-'}`;
+      `Pago ${fechaAR(c.fecha_pago)}`;
 
     const split =
       pdf.splitTextToSize(
@@ -1221,8 +1157,8 @@ document.getElementById('btnFinalizar').onclick = async () => {
     return toast('Ingresá el número de remito / factura');
   }
 
-  if(!/^\d{2}-\d{4}$/.test(remito)){
-    return toast('El número debe tener formato XX-XXXX');
+  if(!/^\d{2}-\d{5}$/.test(remito)){
+    return toast('El número debe tener formato XX-XXXXX');
   }
 
   const fechaRemitoFactura =
