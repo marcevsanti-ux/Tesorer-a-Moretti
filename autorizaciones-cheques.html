@@ -33,6 +33,7 @@ td{padding:10px 9px;border-bottom:1px solid #222;font-size:11px;vertical-align:m
 .muted{color:#777}.nowrap{white-space:nowrap}.obs{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .layout{display:grid;grid-template-columns:390px 1fr;gap:12px}.panel{background:var(--card);border:1px solid #222;border-radius:12px;overflow:hidden}.ph{padding:12px 14px;border-bottom:1px solid #262626;font-weight:900;font-size:12px}
 .list{max-height:calc(100vh - 260px);overflow:auto}.item{padding:12px 14px;border-bottom:1px solid #222;cursor:pointer}.item:hover,.item.active{background:#1a1a1a}.item .top{display:flex;justify-content:space-between;gap:8px}.item strong{font-size:12px}.item small{display:block;color:#777;margin-top:5px;line-height:1.45}.detail{padding:16px}.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}.photo{background:#0b0b0b;border:1px solid #222;border-radius:10px;min-height:350px;display:flex;align-items:center;justify-content:center}.photo img{max-width:100%;max-height:620px;object-fit:contain}.kv{display:grid;grid-template-columns:145px 1fr;border-bottom:1px solid #242424;padding:8px 0}.kv span{color:#777;font-size:10px;text-transform:uppercase}.kv b{font-size:12px}.actions{display:flex;gap:8px;margin-top:14px}.btn{flex:1;padding:12px;border:0;border-radius:8px;font-weight:900;cursor:pointer}.accept{background:#15803d;color:white}.reject{background:#b91c1c;color:white}
+.row-actions{display:flex;gap:6px;white-space:nowrap}.row-btn{border:0;border-radius:7px;padding:7px 9px;font-size:9px;font-weight:900;cursor:pointer}.row-btn.accept{background:#166534;color:#fff}.row-btn.reject{background:#991b1b;color:#fff}.row-btn:disabled{opacity:.35;cursor:not-allowed}
 textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-radius:8px;padding:10px;min-height:72px;margin-top:7px}
 .empty{padding:35px;text-align:center;color:#666}.overlay{position:fixed;inset:0;background:#000c;z-index:100;display:none;align-items:center;justify-content:center;padding:18px}.modal{width:min(1000px,96vw);max-height:92vh;overflow:auto;background:#111;border:1px solid #333;border-radius:14px}.modal-head{position:sticky;top:0;background:#111;border-bottom:1px solid #292929;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;z-index:2}.modal-body{padding:16px}.ticket-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}.mini{background:#171717;border:1px solid #292929;border-radius:9px;padding:10px}.mini small{font-size:9px;color:#777;text-transform:uppercase}.mini b{display:block;margin-top:4px;font-size:13px}
 .docs{display:flex;flex-wrap:wrap;gap:7px}.doc{background:#191919;border:1px solid #303030;border-radius:7px;padding:7px 9px;font-size:10px}
@@ -42,7 +43,7 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
 </head>
 <body>
 <header>
-  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v1.7</span></div>
+  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v1.8</span></div>
   <div class="header-right">
     <div id="user" class="user"></div>
     <button class="ghost" onclick="location.href='index.html'">Panel General</button>
@@ -86,7 +87,7 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
         <thead><tr>
           <th>Ticket</th><th>Recibido</th><th>Vendedor</th><th>Cliente</th><th>Fecha Rto/Fact.</th><th>N° Cheque</th>
           <th>CUIT Emisor</th><th>Razón Social Emisor</th><th>Banco</th><th>F. Emisión</th><th>F. Pago</th>
-          <th style="text-align:right">Importe</th><th>Días</th><th>Plazo</th><th>Semáforo</th><th>Estado</th><th>Obs.</th>
+          <th style="text-align:right">Importe</th><th>Días</th><th>Plazo</th><th>Semáforo</th><th>Estado</th><th>Obs.</th><th>Acciones</th>
         </tr></thead><tbody id="tbodyIngresos"></tbody>
       </table>
     </div></div>
@@ -117,6 +118,9 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let currentUser=null, perfil=null, currentCheque=null, rows=[], tolerancia=5, view='ingresos';
 
 const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:2}).format(Number(n||0));
+
+const puedeResolver=()=>perfil && perfil.activo!==false &&
+  ['AUTORIZADOR','TESORERIA','ADMIN'].includes(perfil.rol);
 const date=v=>{
   if(!v)return '—';
   const s=String(v).slice(0,10), p=s.split('-');
@@ -254,8 +258,16 @@ function renderIngresos(){
       <td>${semBadge(s)}</td>
       <td>${estadoBadge(x.estado)}</td>
       <td class="obs" title="${esc(obs)}">${esc(obs||'—')}</td>
+      <td>
+        ${x.estado==='PENDIENTE_AUTORIZACION' && puedeResolver()
+          ? `<div class="row-actions">
+               <button class="row-btn accept" onclick="resolverRapido('${x.id}','ACEPTADO')">ACEPTAR</button>
+               <button class="row-btn reject" onclick="resolverRapido('${x.id}','RECHAZADO')">NO ACEPTAR</button>
+             </div>`
+          : '<span class="muted">—</span>'}
+      </td>
     </tr>`;
-  }).join('') || '<tr><td colspan="17" class="empty">No hay registros para los filtros seleccionados.</td></tr>';
+  }).join('') || '<tr><td colspan="18" class="empty">No hay registros para los filtros seleccionados.</td></tr>';
 }
 function renderPendientes(){
   const p=rows.filter(x=>x.estado==='PENDIENTE_AUTORIZACION');
@@ -266,6 +278,74 @@ function renderPendientes(){
       <small>${esc(x.vendedor_nombre||'')} · ${esc(x.banco||'Banco s/d')} · Pago ${date(x.fecha_pago)}<br>${semBadge(s)}</small>
     </div>`;
   }).join('')||'<div class="empty">No hay cheques pendientes.</div>';
+}
+
+async function resolverRapido(id,estado){
+  if(!puedeResolver()){
+    alert('Tu usuario no tiene permiso para autorizar cheques.');
+    return;
+  }
+
+  const x=rows.find(c=>c.id===id);
+  if(!x)return;
+
+  if(x.estado!=='PENDIENTE_AUTORIZACION'){
+    alert('Este cheque ya fue resuelto.');
+    return;
+  }
+
+  let motivo='';
+
+  if(estado==='RECHAZADO'){
+    motivo=prompt('Motivo por el cual NO se acepta el cheque:')?.trim()||'';
+    if(!motivo){
+      alert('El motivo es obligatorio para NO ACEPTAR.');
+      return;
+    }
+  }
+
+  const texto = estado==='ACEPTADO'
+    ? `¿Aceptar el cheque ${x.numero_cheque||'s/n'} del ticket ${ticketOf(x)}?`
+    : `¿NO ACEPTAR el cheque ${x.numero_cheque||'s/n'} del ticket ${ticketOf(x)}?`;
+
+  if(!confirm(texto))return;
+
+  const ahora=new Date().toISOString();
+
+  const cambios={
+    estado,
+    autorizado_por:currentUser.id,
+    autorizado_nombre:perfil.nombre,
+    autorizado_fecha:ahora,
+    motivo_rechazo:estado==='RECHAZADO'?motivo:null,
+    vendedor_notificado:false,
+    vendedor_notificado_fecha:null,
+    vendedor_gestion_estado:null,
+    vendedor_gestion_fecha:null,
+    vendedor_gestion_observacion:null
+  };
+
+  const {error}=await sb
+    .from('cheques_recibidos')
+    .update(cambios)
+    .eq('id',id);
+
+  if(error){
+    alert('No se pudo actualizar el cheque: '+error.message);
+    return;
+  }
+
+  await sb.from('cheques_auditoria').insert({
+    cheque_id:id,
+    user_id:currentUser.id,
+    usuario_nombre:perfil.nombre,
+    accion:estado==='ACEPTADO'?'AUTORIZAR_CHEQUE':'NO_ACEPTAR_CHEQUE',
+    estado_anterior:'PENDIENTE_AUTORIZACION',
+    estado_nuevo:estado,
+    detalle:{motivo,ticket:ticketOf(x),origen:'TABLA_INGRESOS'}
+  });
+
+  await load();
 }
 
 async function showCheque(id){
@@ -359,7 +439,7 @@ function openTicket(ticket){
   document.getElementById('overlay').style.display='flex';
 }
 function closeTicket(){document.getElementById('overlay').style.display='none'}
-window.showCheque=showCheque;window.resolver=resolver;window.openTicket=openTicket;window.closeTicket=closeTicket;
+window.showCheque=showCheque;window.resolver=resolver;window.resolverRapido=resolverRapido;window.openTicket=openTicket;window.closeTicket=closeTicket;
 init();
 </script>
 
