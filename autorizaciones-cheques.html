@@ -17,6 +17,24 @@ header{min-height:64px;border-bottom:1px solid #222;display:flex;align-items:cen
 .header-right{display:flex;align-items:center;gap:10px}.user{color:#999;font-size:11px}.ghost{background:#181818;border:1px solid #333;color:#ddd;border-radius:8px;padding:8px 11px;cursor:pointer;font-weight:700;font-size:11px}
 main{padding:18px;max-width:1700px;margin:auto}
 .toolbar-top{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+.auth-summary{display:flex;align-items:stretch;gap:0;background:linear-gradient(180deg,#151515,#101010);border:1px solid #2a2a2a;border-radius:12px;min-width:430px;overflow:hidden;box-shadow:0 10px 30px #0005}
+.auth-summary .money-box,.auth-summary .count-box{padding:13px 18px;display:flex;flex-direction:column;justify-content:center}
+.auth-summary .money-box{min-width:285px}
+.auth-summary .count-box{min-width:145px;border-left:1px solid #303030}
+.auth-summary small{color:#8a8a8a;font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.auth-summary strong{font-size:24px;line-height:1.15;margin-top:4px}
+.auth-summary .money{color:#f8c44f}
+.auth-summary .count{color:#fff}
+.auth-summary .sub{font-size:10px;color:#6f6f6f;margin-top:3px}
+.bank-cell{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.bank-logo{width:27px;height:27px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:#fff;overflow:hidden;flex:0 0 auto;border:1px solid #333}
+.bank-logo img{width:100%;height:100%;object-fit:contain;padding:3px}
+.bank-fallback{font-size:9px;font-weight:900;color:#111;background:#fff;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.calc-date{display:inline-flex;flex-direction:column;gap:2px;padding:6px 8px;border-radius:8px;border:1px solid #285a86;background:#0d1d2b;white-space:nowrap}
+.calc-date b{color:#7dc4ff}
+.calc-date small{color:#6d99bd;font-size:8px;text-transform:uppercase;letter-spacing:.04em}
+.calc-days{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:34px;border:1px solid #555;border-radius:999px;font-weight:900}
+
 .tabs{display:flex;gap:6px}.tab{border:1px solid #2a2a2a;background:#111;color:#888;padding:9px 14px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
 .tab.active{background:#251012;border-color:#5b161b;color:#fff}
 .config{display:flex;align-items:center;gap:7px;background:#111;border:1px solid #252525;padding:6px 8px;border-radius:9px}
@@ -38,16 +56,30 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
 .empty{padding:35px;text-align:center;color:#666}.overlay{position:fixed;inset:0;background:#000c;z-index:100;display:none;align-items:center;justify-content:center;padding:18px}.modal{width:min(1000px,96vw);max-height:92vh;overflow:auto;background:#111;border:1px solid #333;border-radius:14px}.modal-head{position:sticky;top:0;background:#111;border-bottom:1px solid #292929;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;z-index:2}.modal-body{padding:16px}.ticket-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}.mini{background:#171717;border:1px solid #292929;border-radius:9px;padding:10px}.mini small{font-size:9px;color:#777;text-transform:uppercase}.mini b{display:block;margin-top:4px;font-size:13px}
 .docs{display:flex;flex-wrap:wrap;gap:7px}.doc{background:#191919;border:1px solid #303030;border-radius:7px;padding:7px 9px;font-size:10px}
 @media(max-width:1100px){.stats{grid-template-columns:repeat(2,1fr)}.layout,.grid{grid-template-columns:1fr}.ticket-grid{grid-template-columns:1fr 1fr}.list{max-height:320px}}
-@media(max-width:700px){main{padding:10px}.stats{grid-template-columns:1fr 1fr}.brand{font-size:15px}.header-right{flex-wrap:wrap}.filters input{min-width:100%}.config{width:100%}.ticket-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.auth-summary{min-width:100%;width:100%}.auth-summary .money-box{min-width:0;flex:1}.auth-summary .count-box{min-width:115px}main{padding:10px}.stats{grid-template-columns:1fr 1fr}.brand{font-size:15px}.header-right{flex-wrap:wrap}.filters input{min-width:100%}.config{width:100%}.ticket-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header>
-  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v1.8</span></div>
-  <div class="header-right">
-    <div id="user" class="user"></div>
-    <button class="ghost" onclick="location.href='index.html'">Panel General</button>
-    <button class="ghost" onclick="logout()">Salir</button>
+  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v1.9</span></div>
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end">
+    <div class="auth-summary" title="Importe y cantidad de cheques pendientes de decisión">
+      <div class="money-box">
+        <small>Monto pendiente a autorizar</small>
+        <strong class="money" id="headerPendingAmount">$ 0,00</strong>
+        <div class="sub">importe de cheques pendientes</div>
+      </div>
+      <div class="count-box">
+        <small>Cheques pendientes</small>
+        <strong class="count" id="headerPendingCount">0</strong>
+        <div class="sub" id="headerPendingLabel">cheques</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="user" class="user"></div>
+      <button class="ghost" onclick="location.href='index.html'">Panel General</button>
+      <button class="ghost" onclick="logout()">Salir</button>
+    </div>
   </div>
 </header>
 <main>
@@ -121,6 +153,38 @@ const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',ma
 
 const puedeResolver=()=>perfil && perfil.activo!==false &&
   ['AUTORIZADOR','TESORERIA','ADMIN'].includes(perfil.rol);
+
+const normalizarBanco=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+
+const bancoInfo=nombre=>{
+  const n=normalizarBanco(nombre);
+  const logos=[
+    {keys:['santander'],name:'Santander',url:'https://cdn.simpleicons.org/santander/EC0000'},
+    {keys:['bbva'],name:'BBVA',url:'https://cdn.simpleicons.org/bbva/004481'},
+    {keys:['galicia'],name:'Galicia',url:'https://logo.clearbit.com/bancogalicia.com'},
+    {keys:['macro'],name:'Macro',url:'https://logo.clearbit.com/macro.com.ar'},
+    {keys:['nacion','bna'],name:'Banco Nación',url:'https://logo.clearbit.com/bna.com.ar'},
+    {keys:['provincia','bapro'],name:'Banco Provincia',url:'https://logo.clearbit.com/bancoprovincia.com.ar'},
+    {keys:['icbc'],name:'ICBC',url:'https://logo.clearbit.com/icbc.com.ar'},
+    {keys:['credicoop'],name:'Credicoop',url:'https://logo.clearbit.com/bancocredicoop.coop'},
+    {keys:['supervielle'],name:'Supervielle',url:'https://logo.clearbit.com/supervielle.com.ar'},
+    {keys:['patagonia'],name:'Patagonia',url:'https://logo.clearbit.com/bancopatagonia.com.ar'},
+    {keys:['ciudad'],name:'Banco Ciudad',url:'https://logo.clearbit.com/bancociudad.com.ar'}
+  ];
+  const hit=logos.find(x=>x.keys.some(k=>n.includes(k)));
+  if(hit)return hit;
+  const initials=String(nombre||'Banco').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();
+  return {name:nombre||'Banco',url:null,initials:initials||'B'};
+};
+
+const bancoHtml=nombre=>{
+  const b=bancoInfo(nombre);
+  const initials=esc((b.initials||String(b.name||'B').slice(0,2)).toUpperCase());
+  const logo=b.url
+    ? `<div class="bank-logo"><img src="${b.url}" alt="${esc(b.name)}" onerror="this.parentElement.innerHTML='<span class=&quot;bank-fallback&quot;>${initials}</span>'"></div>`
+    : `<div class="bank-logo"><span class="bank-fallback">${initials}</span></div>`;
+  return `<div class="bank-cell">${logo}<span>${esc(nombre||'—')}</span></div>`;
+};
 const date=v=>{
   if(!v)return '—';
   const s=String(v).slice(0,10), p=s.split('-');
@@ -212,11 +276,18 @@ async function load(){
 function renderStats(){
   const today=new Date().toISOString().slice(0,10);
   const todayRows=rows.filter(x=>(x.created_at||'').slice(0,10)===today);
+  const pendingRows=rows.filter(x=>x.estado==='PENDIENTE_AUTORIZACION');
+  const pendingAmount=pendingRows.reduce((acc,x)=>acc+Number(x.importe||0),0);
+
   document.getElementById('sTickets').textContent=new Set(todayRows.map(ticketOf)).size;
   document.getElementById('sToday').textContent=todayRows.length;
-  document.getElementById('sPending').textContent=rows.filter(x=>x.estado==='PENDIENTE_AUTORIZACION').length;
+  document.getElementById('sPending').textContent=pendingRows.length;
   document.getElementById('sTol').textContent=rows.filter(x=>semaforo(x).code==='AMBER').length;
   document.getElementById('sOut').textContent=rows.filter(x=>semaforo(x).code==='RED').length;
+
+  document.getElementById('headerPendingAmount').textContent=money(pendingAmount);
+  document.getElementById('headerPendingCount').textContent=pendingRows.length;
+  document.getElementById('headerPendingLabel').textContent=pendingRows.length===1?'cheque':'cheques';
 }
 function setView(v){
   view=v;
@@ -245,15 +316,25 @@ function renderIngresos(){
       <td class="nowrap">${date(x.created_at)}</td>
       <td>${esc(x.vendedor_nombre||'—')}</td>
       <td><b>${esc(x.cliente_razon_social||'—')}</b></td>
-      <td class="nowrap"><b>${date(fechaDocumento(x))}</b></td>
+      <td class="nowrap">
+        <span class="calc-date" title="Fecha base del cálculo">
+          <b>${date(fechaDocumento(x))}</b>
+          <small>Rto / Fact.</small>
+        </span>
+      </td>
       <td class="mono">${esc(x.numero_cheque||'—')}</td>
       <td class="mono">${esc(x.cuit_librador||'—')}</td>
       <td>${esc(x.librador||'—')}</td>
-      <td>${esc(x.banco||'—')}</td>
+      <td>${bancoHtml(x.banco)}</td>
       <td class="nowrap">${date(x.fecha_emision)}</td>
-      <td class="nowrap">${date(x.fecha_pago)}</td>
+      <td class="nowrap">
+        <span class="calc-date" title="Fecha final del cálculo">
+          <b>${date(x.fecha_pago)}</b>
+          <small>Fecha pago</small>
+        </span>
+      </td>
       <td class="amount">${money(x.importe)}</td>
-      <td class="mono">${s.dias==null?'—':s.dias}</td>
+      <td class="mono"><span class="calc-days" title="Fecha Pago − Fecha Rto/Factura">${s.dias==null?'—':s.dias}</span></td>
       <td class="mono">${x.plazo_esperado==null?'—':x.plazo_esperado+'d'}</td>
       <td>${semBadge(s)}</td>
       <td>${estadoBadge(x.estado)}</td>
@@ -369,13 +450,13 @@ async function showCheque(id){
       <div class="kv"><span>Cliente</span><b>${esc(x.cliente_razon_social||'—')}</b></div>
       <div class="kv"><span>Vendedor</span><b>${esc(x.vendedor_nombre||'—')}</b></div>
       <div class="kv"><span>Documentos</span><b>${docs.length?docs.map(d=>`${esc(d.numero)} (${date(d.fecha)})`).join(' · '):esc(x.remito||'—')}</b></div>
-      <div class="kv"><span>Banco</span><b>${esc(x.banco||'—')}</b></div>
+      <div class="kv"><span>Banco</span><b>${bancoHtml(x.banco)}</b></div>
       <div class="kv"><span>Cheque</span><b>${esc(x.numero_cheque||'—')}</b></div>
       <div class="kv"><span>CUIT Emisor</span><b>${esc(x.cuit_librador||'—')}</b></div>
       <div class="kv"><span>Emisor</span><b>${esc(x.librador||'—')}</b></div>
       <div class="kv"><span>Fecha emisión</span><b>${date(x.fecha_emision)}</b></div>
-      <div class="kv"><span>Fecha Rto/Factura</span><b>${date(fechaDocumento(x))}</b></div>
-      <div class="kv"><span>Fecha pago</span><b>${date(x.fecha_pago)}</b></div>
+      <div class="kv"><span>Fecha Rto/Factura</span><b><span class="calc-date"><b>${date(fechaDocumento(x))}</b><small>Fecha base</small></span></b></div>
+      <div class="kv"><span>Fecha pago</span><b><span class="calc-date"><b>${date(x.fecha_pago)}</b><small>Fecha pago</small></span></b></div>
       <div class="kv"><span>Importe</span><b>${money(x.importe)}</b></div>
       <div class="kv"><span>Plazo esperado</span><b>${x.plazo_esperado==null?'—':x.plazo_esperado+' días'} + ${tolerancia} días tolerancia</b></div>
       <div class="kv"><span>Días reales</span><b>${s.dias==null?'—':s.dias+' días'} <span class="muted" style="font-weight:400">(Fecha pago − Fecha Rto/Factura)</span></b></div>
@@ -432,7 +513,7 @@ function openTicket(ticket){
     <div class="table-wrap"><div class="table-scroll" style="max-height:420px"><table style="min-width:1050px">
       <thead><tr><th>Cheque</th><th>Banco</th><th>Emisor</th><th>Pago</th><th style="text-align:right">Importe</th><th>Plazo</th><th>Semáforo</th><th>Estado</th><th>Obs.</th></tr></thead>
       <tbody>${group.map(x=>{const s=semaforo(x);const obs=x.motivo_rechazo||x.observaciones_vendedor||'';return `<tr>
-        <td class="mono">${esc(x.numero_cheque||'—')}</td><td>${esc(x.banco||'—')}</td><td>${esc(x.librador||'—')}</td><td>${date(x.fecha_pago)}</td>
+        <td class="mono">${esc(x.numero_cheque||'—')}</td><td>${bancoHtml(x.banco)}</td><td>${esc(x.librador||'—')}</td><td>${date(x.fecha_pago)}</td>
         <td class="amount">${money(x.importe)}</td><td>${x.plazo_esperado==null?'—':x.plazo_esperado+'d'}</td><td>${semBadge(s)}</td><td>${estadoBadge(x.estado)}</td><td class="obs">${esc(obs||'—')}</td>
       </tr>`}).join('')}</tbody>
     </table></div></div>`;
