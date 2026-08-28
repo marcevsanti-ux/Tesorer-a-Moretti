@@ -42,7 +42,7 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
 </head>
 <body>
 <header>
-  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v1.6</span></div>
+  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v1.7</span></div>
   <div class="header-right">
     <div id="user" class="user"></div>
     <button class="ghost" onclick="location.href='index.html'">Panel General</button>
@@ -84,7 +84,7 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
     <div class="table-wrap"><div class="table-scroll">
       <table>
         <thead><tr>
-          <th>Ticket</th><th>Recibido</th><th>Vendedor</th><th>Cliente</th><th>N° Cheque</th>
+          <th>Ticket</th><th>Recibido</th><th>Vendedor</th><th>Cliente</th><th>Fecha Rto/Fact.</th><th>N° Cheque</th>
           <th>CUIT Emisor</th><th>Razón Social Emisor</th><th>Banco</th><th>F. Emisión</th><th>F. Pago</th>
           <th style="text-align:right">Importe</th><th>Días</th><th>Plazo</th><th>Semáforo</th><th>Estado</th><th>Obs.</th>
         </tr></thead><tbody id="tbodyIngresos"></tbody>
@@ -128,10 +128,24 @@ const dayDiff=(from,to)=>{
   const a=new Date(String(from).slice(0,10)+'T12:00:00'), b=new Date(String(to).slice(0,10)+'T12:00:00');
   return Math.round((b-a)/86400000);
 };
+
+const fechaDocumento=x=>{
+  if(x.fecha_remito_factura) return x.fecha_remito_factura;
+
+  const docs=Array.isArray(x.documentos_rendicion)
+    ? x.documentos_rendicion
+    : [];
+
+  return docs.length===1 && docs[0]?.fecha
+    ? docs[0].fecha
+    : null;
+};
+
 const ticketOf=x=>x.ticket_numero || (x.lote_carga_id ? 'LEG-'+String(x.lote_carga_id).slice(0,8).toUpperCase() : 'SIN-TICKET');
 
 function semaforo(x){
-  const dias=dayDiff(x.created_at,x.fecha_pago);
+  // v1.7: días reales = fecha de pago - fecha del remito/factura
+  const dias=dayDiff(fechaDocumento(x),x.fecha_pago);
   const plazo=Number(x.plazo_esperado);
   if(dias==null || ![0,30,60,90].includes(plazo)) return {code:'NA',cls:'',label:'Sin plazo',dias,extra:null};
   if(dias<=plazo) return {code:'GREEN',cls:'green',label:`Dentro · ${Math.max(0,plazo-dias)}d margen`,dias,extra:0};
@@ -227,6 +241,7 @@ function renderIngresos(){
       <td class="nowrap">${date(x.created_at)}</td>
       <td>${esc(x.vendedor_nombre||'—')}</td>
       <td><b>${esc(x.cliente_razon_social||'—')}</b></td>
+      <td class="nowrap"><b>${date(fechaDocumento(x))}</b></td>
       <td class="mono">${esc(x.numero_cheque||'—')}</td>
       <td class="mono">${esc(x.cuit_librador||'—')}</td>
       <td>${esc(x.librador||'—')}</td>
@@ -240,7 +255,7 @@ function renderIngresos(){
       <td>${estadoBadge(x.estado)}</td>
       <td class="obs" title="${esc(obs)}">${esc(obs||'—')}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="16" class="empty">No hay registros para los filtros seleccionados.</td></tr>';
+  }).join('') || '<tr><td colspan="17" class="empty">No hay registros para los filtros seleccionados.</td></tr>';
 }
 function renderPendientes(){
   const p=rows.filter(x=>x.estado==='PENDIENTE_AUTORIZACION');
@@ -279,10 +294,11 @@ async function showCheque(id){
       <div class="kv"><span>CUIT Emisor</span><b>${esc(x.cuit_librador||'—')}</b></div>
       <div class="kv"><span>Emisor</span><b>${esc(x.librador||'—')}</b></div>
       <div class="kv"><span>Fecha emisión</span><b>${date(x.fecha_emision)}</b></div>
+      <div class="kv"><span>Fecha Rto/Factura</span><b>${date(fechaDocumento(x))}</b></div>
       <div class="kv"><span>Fecha pago</span><b>${date(x.fecha_pago)}</b></div>
       <div class="kv"><span>Importe</span><b>${money(x.importe)}</b></div>
       <div class="kv"><span>Plazo esperado</span><b>${x.plazo_esperado==null?'—':x.plazo_esperado+' días'} + ${tolerancia} días tolerancia</b></div>
-      <div class="kv"><span>Días reales</span><b>${s.dias==null?'—':s.dias+' días'}</b></div>
+      <div class="kv"><span>Días reales</span><b>${s.dias==null?'—':s.dias+' días'} <span class="muted" style="font-weight:400">(Fecha pago − Fecha Rto/Factura)</span></b></div>
       <div class="kv"><span>PDF carga</span><b id="pdfCarga">${x.pdf_path?'Generando acceso...':'—'}</b></div>
       <label style="display:block;color:#777;font-size:10px;margin-top:12px">MOTIVO / OBSERVACIÓN</label>
       <textarea id="motivo" placeholder="Obligatorio si NO se acepta">${esc(x.observaciones_vendedor||'')}</textarea>
