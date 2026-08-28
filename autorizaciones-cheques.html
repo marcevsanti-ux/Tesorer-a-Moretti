@@ -34,6 +34,14 @@ main{padding:18px;max-width:1700px;margin:auto}
 .calc-date b{color:#7dc4ff}
 .calc-date small{color:#6d99bd;font-size:8px;text-transform:uppercase;letter-spacing:.04em}
 .calc-days{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:34px;border:1px solid #555;border-radius:999px;font-weight:900}
+.ticket-merged{vertical-align:middle!important;background:#101010!important;border-right:2px solid #343434!important;min-width:110px}
+.ticket-merged .ticket-box{display:flex;flex-direction:column;gap:5px}
+.ticket-merged .ticket-id{font-weight:950;font-size:11px;color:#fff}
+.ticket-merged .ticket-count{font-size:9px;color:#72b7ff;font-weight:800}
+.ticket-start td{border-top:2px solid #343434}
+.ticket-end td{border-bottom:2px solid #343434}
+.slot-badge{display:inline-flex;align-items:center;justify-content:center;min-width:46px;padding:5px 8px;border-radius:7px;background:#202020;border:1px solid #383838;font-weight:900;font-size:10px;white-space:nowrap}
+
 
 .tabs{display:flex;gap:6px}.tab{border:1px solid #2a2a2a;background:#111;color:#888;padding:9px 14px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
 .tab.active{background:#251012;border-color:#5b161b;color:#fff}
@@ -61,7 +69,7 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
 </head>
 <body>
 <header>
-  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v1.9</span></div>
+  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v2.0</span></div>
   <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end">
     <div class="auth-summary" title="Importe y cantidad de cheques pendientes de decisión">
       <div class="money-box">
@@ -119,7 +127,7 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
         <thead><tr>
           <th>Ticket</th><th>Recibido</th><th>Vendedor</th><th>Cliente</th><th>Fecha Rto/Fact.</th><th>N° Cheque</th>
           <th>CUIT Emisor</th><th>Razón Social Emisor</th><th>Banco</th><th>F. Emisión</th><th>F. Pago</th>
-          <th style="text-align:right">Importe</th><th>Días</th><th>Plazo</th><th>Semáforo</th><th>Estado</th><th>Obs.</th><th>Acciones</th>
+          <th style="text-align:right">Importe</th><th>Días</th><th>Plazo auditado</th><th>Semáforo</th><th>Estado</th><th>Obs.</th><th>Acciones</th>
         </tr></thead><tbody id="tbodyIngresos"></tbody>
       </table>
     </div></div>
@@ -211,15 +219,60 @@ const fechaDocumento=x=>{
 
 const ticketOf=x=>x.ticket_numero || (x.lote_carga_id ? 'LEG-'+String(x.lote_carga_id).slice(0,8).toUpperCase() : 'SIN-TICKET');
 
-function semaforo(x){
-  // v1.7: días reales = fecha de pago - fecha del remito/factura
+
+function auditarPlazo(x,plazoAsignado){
   const dias=dayDiff(fechaDocumento(x),x.fecha_pago);
-  const plazo=Number(x.plazo_esperado);
-  if(dias==null || ![0,30,60,90].includes(plazo)) return {code:'NA',cls:'',label:'Sin plazo',dias,extra:null};
-  if(dias<=plazo) return {code:'GREEN',cls:'green',label:`Dentro · ${Math.max(0,plazo-dias)}d margen`,dias,extra:0};
-  if(dias<=plazo+tolerancia) return {code:'AMBER',cls:'amber',label:`Tolerancia · +${dias-plazo}d`,dias,extra:dias-plazo};
-  return {code:'RED',cls:'red',label:`Excedido · +${dias-(plazo+tolerancia)}d`,dias,extra:dias-(plazo+tolerancia)};
+
+  if(dias==null || ![30,60,90].includes(Number(plazoAsignado))){
+    return {code:'NA',cls:'',label:'Sin auditoría',dias,extra:null,plazo:plazoAsignado??null};
+  }
+
+  const plazo=Number(plazoAsignado);
+
+  if(dias<=plazo){
+    return {code:'GREEN',cls:'green',label:`Cumple ${plazo}d · ${Math.max(0,plazo-dias)}d margen`,dias,extra:0,plazo};
+  }
+
+  if(dias<=plazo+tolerancia){
+    return {code:'AMBER',cls:'amber',label:`${plazo}d + tolerancia · +${dias-plazo}d`,dias,extra:dias-plazo,plazo};
+  }
+
+  return {code:'RED',cls:'red',label:`Excede ${plazo}d · +${dias-(plazo+tolerancia)}d`,dias,extra:dias-(plazo+tolerancia),plazo};
 }
+
+function prepararAuditoriaTickets(data){
+  const byTicket=new Map();
+
+  for(const x of data){
+    const t=ticketOf(x);
+    if(!byTicket.has(t)) byTicket.set(t,[]);
+    byTicket.get(t).push(x);
+  }
+
+  for(const [ticket,group] of byTicket.entries()){
+    group.sort((a,b)=>String(a.fecha_pago||'9999-12-31').localeCompare(String(b.fecha_pago||'9999-12-31')));
+
+    group.forEach((x,idx)=>{
+      const plazo=[30,60,90][idx] ?? null;
+      x.__ticket_index=idx;
+      x.__ticket_count=group.length;
+      x.__plazo_asignado=plazo;
+      x.__audit=plazo
+        ? auditarPlazo(x,plazo)
+        : {
+            code:'RED',
+            cls:'red',
+            label:'Fuera esquema 30/60/90',
+            dias:dayDiff(fechaDocumento(x),x.fecha_pago),
+            extra:null,
+            plazo:null
+          };
+    });
+  }
+
+  return byTicket;
+}
+
 function estadoBadge(e){
   if(e==='ACEPTADO')return '<span class="badge ok">ACEPTADO</span>';
   if(e==='RECHAZADO')return '<span class="badge bad">NO ACEPTADO</span>';
@@ -273,7 +326,10 @@ async function load(){
   rows=data||[];
   renderStats();renderIngresos();renderPendientes();
 }
+
 function renderStats(){
+  prepararAuditoriaTickets(rows);
+
   const today=new Date().toISOString().slice(0,10);
   const todayRows=rows.filter(x=>(x.created_at||'').slice(0,10)===today);
   const pendingRows=rows.filter(x=>x.estado==='PENDIENTE_AUTORIZACION');
@@ -282,13 +338,14 @@ function renderStats(){
   document.getElementById('sTickets').textContent=new Set(todayRows.map(ticketOf)).size;
   document.getElementById('sToday').textContent=todayRows.length;
   document.getElementById('sPending').textContent=pendingRows.length;
-  document.getElementById('sTol').textContent=rows.filter(x=>semaforo(x).code==='AMBER').length;
-  document.getElementById('sOut').textContent=rows.filter(x=>semaforo(x).code==='RED').length;
+  document.getElementById('sTol').textContent=rows.filter(x=>x.__audit?.code==='AMBER').length;
+  document.getElementById('sOut').textContent=rows.filter(x=>x.__audit?.code==='RED').length;
 
   document.getElementById('headerPendingAmount').textContent=money(pendingAmount);
   document.getElementById('headerPendingCount').textContent=pendingRows.length;
   document.getElementById('headerPendingLabel').textContent=pendingRows.length===1?'cheque':'cheques';
 }
+
 function setView(v){
   view=v;
   document.getElementById('viewIngresos').style.display=v==='ingresos'?'block':'none';
@@ -296,64 +353,93 @@ function setView(v){
   document.getElementById('tabIngresos').classList.toggle('active',v==='ingresos');
   document.getElementById('tabPendientes').classList.toggle('active',v==='pendientes');
 }
+
 function renderIngresos(){
   const q=(document.getElementById('q').value||'').toLowerCase().trim();
   const fs=document.getElementById('fSem').value;
   const fe=document.getElementById('fEstado').value;
 
-  const filtered=rows.filter(x=>{
-    const s=semaforo(x);
-    const hay=[ticketOf(x),x.vendedor_nombre,x.cliente_razon_social,x.numero_cheque,x.banco,x.cuit_librador,x.librador]
-      .some(v=>String(v||'').toLowerCase().includes(q));
-    return (!q||hay)&&(!fs||s.code===fs)&&(!fe||x.estado===fe);
-  });
+  const groups=prepararAuditoriaTickets(rows);
+  let html='';
 
-  document.getElementById('tbodyIngresos').innerHTML=filtered.map(x=>{
-    const s=semaforo(x);
-    const obs=x.motivo_rechazo||x.observaciones_vendedor||'';
-    return `<tr>
-      <td class="ticket"><button onclick="openTicket('${esc(ticketOf(x))}')">${esc(ticketOf(x))}</button></td>
-      <td class="nowrap">${date(x.created_at)}</td>
-      <td>${esc(x.vendedor_nombre||'—')}</td>
-      <td><b>${esc(x.cliente_razon_social||'—')}</b></td>
-      <td class="nowrap">
-        <span class="calc-date" title="Fecha base del cálculo">
-          <b>${date(fechaDocumento(x))}</b>
-          <small>Rto / Fact.</small>
-        </span>
-      </td>
-      <td class="mono">${esc(x.numero_cheque||'—')}</td>
-      <td class="mono">${esc(x.cuit_librador||'—')}</td>
-      <td>${esc(x.librador||'—')}</td>
-      <td>${bancoHtml(x.banco)}</td>
-      <td class="nowrap">${date(x.fecha_emision)}</td>
-      <td class="nowrap">
-        <span class="calc-date" title="Fecha final del cálculo">
-          <b>${date(x.fecha_pago)}</b>
-          <small>Fecha pago</small>
-        </span>
-      </td>
-      <td class="amount">${money(x.importe)}</td>
-      <td class="mono"><span class="calc-days" title="Fecha Pago − Fecha Rto/Factura">${s.dias==null?'—':s.dias}</span></td>
-      <td class="mono">${x.plazo_esperado==null?'—':x.plazo_esperado+'d'}</td>
-      <td>${semBadge(s)}</td>
-      <td>${estadoBadge(x.estado)}</td>
-      <td class="obs" title="${esc(obs)}">${esc(obs||'—')}</td>
-      <td>
-        ${x.estado==='PENDIENTE_AUTORIZACION' && puedeResolver()
-          ? `<div class="row-actions">
-               <button class="row-btn accept" onclick="resolverRapido('${x.id}','ACEPTADO')">ACEPTAR</button>
-               <button class="row-btn reject" onclick="resolverRapido('${x.id}','RECHAZADO')">NO ACEPTAR</button>
-             </div>`
-          : '<span class="muted">—</span>'}
-      </td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="18" class="empty">No hay registros para los filtros seleccionados.</td></tr>';
+  for(const [ticket,groupOriginal] of groups.entries()){
+    const group=[...groupOriginal].sort((a,b)=>a.__ticket_index-b.__ticket_index);
+
+    const visibles=group.filter(x=>{
+      const s=x.__audit;
+      const hay=[ticketOf(x),x.vendedor_nombre,x.cliente_razon_social,x.numero_cheque,x.banco,x.cuit_librador,x.librador]
+        .some(v=>String(v||'').toLowerCase().includes(q));
+
+      return (!q||hay)&&(!fs||s?.code===fs)&&(!fe||x.estado===fe);
+    });
+
+    if(!visibles.length) continue;
+
+    visibles.forEach((x,idx)=>{
+      const s=x.__audit || {code:'NA',cls:'',label:'Sin auditoría',dias:null};
+      const obs=x.motivo_rechazo||x.observaciones_vendedor||'';
+      const isFirst=idx===0;
+      const isLast=idx===visibles.length-1;
+
+      html += `<tr class="${isFirst?'ticket-start ':''}${isLast?'ticket-end':''}">`;
+
+      if(isFirst){
+        html += `
+          <td class="ticket ticket-merged" rowspan="${visibles.length}">
+            <div class="ticket-box">
+              <button class="ticket-id" onclick="openTicket('${esc(ticket)}')">${esc(ticket)}</button>
+              <span class="ticket-count">${group.length} cheque${group.length===1?'':'s'}</span>
+            </div>
+          </td>`;
+      }
+
+      html += `
+        <td class="nowrap">${date(x.created_at)}</td>
+        <td>${esc(x.vendedor_nombre||'—')}</td>
+        <td><b>${esc(x.cliente_razon_social||'—')}</b></td>
+        <td class="nowrap">
+          <span class="calc-date" title="Fecha base del cálculo">
+            <b>${date(fechaDocumento(x))}</b>
+            <small>Rto / Fact.</small>
+          </span>
+        </td>
+        <td class="mono">${esc(x.numero_cheque||'—')}</td>
+        <td class="mono">${esc(x.cuit_librador||'—')}</td>
+        <td>${esc(x.librador||'—')}</td>
+        <td>${bancoHtml(x.banco)}</td>
+        <td class="nowrap">${date(x.fecha_emision)}</td>
+        <td class="nowrap">
+          <span class="calc-date" title="Fecha final del cálculo">
+            <b>${date(x.fecha_pago)}</b>
+            <small>Fecha pago</small>
+          </span>
+        </td>
+        <td class="amount">${money(x.importe)}</td>
+        <td class="mono"><span class="calc-days" title="Fecha Pago − Fecha Rto/Factura">${s.dias==null?'—':s.dias}</span></td>
+        <td><span class="slot-badge">${x.__plazo_asignado ? x.__plazo_asignado+'d' : 'FUERA'}</span></td>
+        <td>${semBadge(s)}</td>
+        <td>${estadoBadge(x.estado)}</td>
+        <td class="obs" title="${esc(obs)}">${esc(obs||'—')}</td>
+        <td>
+          ${x.estado==='PENDIENTE_AUTORIZACION' && puedeResolver()
+            ? `<div class="row-actions">
+                 <button class="row-btn accept" onclick="resolverRapido('${x.id}','ACEPTADO')">ACEPTAR</button>
+                 <button class="row-btn reject" onclick="resolverRapido('${x.id}','RECHAZADO')">NO ACEPTAR</button>
+               </div>`
+            : '<span class="muted">—</span>'}
+        </td>
+      </tr>`;
+    });
+  }
+
+  document.getElementById('tbodyIngresos').innerHTML =
+    html || '<tr><td colspan="18" class="empty">No hay registros para los filtros seleccionados.</td></tr>';
 }
+
 function renderPendientes(){
   const p=rows.filter(x=>x.estado==='PENDIENTE_AUTORIZACION');
   document.getElementById('list').innerHTML=p.map(x=>{
-    const s=semaforo(x);
+    prepararAuditoriaTickets(rows); const s=x.__audit || {code:'NA',cls:'',label:'Sin auditoría',dias:null};
     return `<div class="item" onclick="showCheque('${x.id}')">
       <div class="top"><strong>${esc(ticketOf(x))} · ${esc(x.cliente_razon_social||'Sin cliente')}</strong><span class="amount">${money(x.importe)}</span></div>
       <small>${esc(x.vendedor_nombre||'')} · ${esc(x.banco||'Banco s/d')} · Pago ${date(x.fecha_pago)}<br>${semBadge(s)}</small>
@@ -436,7 +522,7 @@ async function showCheque(id){
     const {data}=await sb.storage.from('cheques').createSignedUrl(x.foto_path,600);
     if(data?.signedUrl)image=`<img src="${data.signedUrl}">`;
   }
-  const s=semaforo(x);
+  prepararAuditoriaTickets(rows); const s=x.__audit || {code:'NA',cls:'',label:'Sin auditoría',dias:null};
   const docs=Array.isArray(x.documentos_rendicion)?x.documentos_rendicion:[];
   document.getElementById('detail').className='detail';
   document.getElementById('detail').innerHTML=`
@@ -458,7 +544,7 @@ async function showCheque(id){
       <div class="kv"><span>Fecha Rto/Factura</span><b><span class="calc-date"><b>${date(fechaDocumento(x))}</b><small>Fecha base</small></span></b></div>
       <div class="kv"><span>Fecha pago</span><b><span class="calc-date"><b>${date(x.fecha_pago)}</b><small>Fecha pago</small></span></b></div>
       <div class="kv"><span>Importe</span><b>${money(x.importe)}</b></div>
-      <div class="kv"><span>Plazo esperado</span><b>${x.plazo_esperado==null?'—':x.plazo_esperado+' días'} + ${tolerancia} días tolerancia</b></div>
+      <div class="kv"><span>Plazo auditado</span><b>${x.__plazo_asignado ? x.__plazo_asignado+' días' : 'Fuera del esquema 30/60/90'} + ${tolerancia} días tolerancia</b></div>
       <div class="kv"><span>Días reales</span><b>${s.dias==null?'—':s.dias+' días'} <span class="muted" style="font-weight:400">(Fecha pago − Fecha Rto/Factura)</span></b></div>
       <div class="kv"><span>PDF carga</span><b id="pdfCarga">${x.pdf_path?'Generando acceso...':'—'}</b></div>
       <label style="display:block;color:#777;font-size:10px;margin-top:12px">MOTIVO / OBSERVACIÓN</label>
@@ -512,9 +598,9 @@ function openTicket(ticket){
     </div>
     <div class="table-wrap"><div class="table-scroll" style="max-height:420px"><table style="min-width:1050px">
       <thead><tr><th>Cheque</th><th>Banco</th><th>Emisor</th><th>Pago</th><th style="text-align:right">Importe</th><th>Plazo</th><th>Semáforo</th><th>Estado</th><th>Obs.</th></tr></thead>
-      <tbody>${group.map(x=>{const s=semaforo(x);const obs=x.motivo_rechazo||x.observaciones_vendedor||'';return `<tr>
+      <tbody>${group.map(x=>{prepararAuditoriaTickets(rows); const s=x.__audit || {code:'NA',cls:'',label:'Sin auditoría',dias:null};const obs=x.motivo_rechazo||x.observaciones_vendedor||'';return `<tr>
         <td class="mono">${esc(x.numero_cheque||'—')}</td><td>${bancoHtml(x.banco)}</td><td>${esc(x.librador||'—')}</td><td>${date(x.fecha_pago)}</td>
-        <td class="amount">${money(x.importe)}</td><td>${x.plazo_esperado==null?'—':x.plazo_esperado+'d'}</td><td>${semBadge(s)}</td><td>${estadoBadge(x.estado)}</td><td class="obs">${esc(obs||'—')}</td>
+        <td class="amount">${money(x.importe)}</td><td>${x.__plazo_asignado ? x.__plazo_asignado+'d' : 'FUERA'}</td><td>${semBadge(s)}</td><td>${estadoBadge(x.estado)}</td><td class="obs">${esc(obs||'—')}</td>
       </tr>`}).join('')}</tbody>
     </table></div></div>`;
   document.getElementById('overlay').style.display='flex';
