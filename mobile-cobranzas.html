@@ -98,7 +98,7 @@ textarea{min-height:70px}
 <header>
   <div>
     <div class="brand">MORETTI · <b>COBRANZAS</b></div>
-    <div class="sub">Carga mobile de cheques · <strong>v1.9</strong></div>
+    <div class="sub">Carga mobile de cheques · <strong>v1.11</strong></div>
   </div>
 
   <div style="text-align:right">
@@ -176,11 +176,11 @@ textarea{min-height:70px}
     </div>
 
     <button id="btnAgregarDocumento" class="btn btn-dark" style="margin-top:10px">
-      + Agregar remito / factura
+      Confirmar remito / factura
     </button>
 
     <div class="info" style="margin-top:8px">
-      Podés agregar todos los remitos / facturas incluidos en esta rendición. Formato: XX-XXXXX.
+      Podés agregar uno o varios remitos / facturas dentro del mismo ticket. Formato: XX-XXXXX.
     </div>
 
     <div id="listaDocumentos" style="margin-top:10px">
@@ -583,9 +583,15 @@ document.getElementById('btnAgregarDocumento').onclick = () => {
 
 function renderDocumentos(){
   const box = document.getElementById('listaDocumentos');
+  const btnAgregar = document.getElementById('btnAgregarDocumento');
+
+  if(btnAgregar){
+    btnAgregar.disabled = false;
+    btnAgregar.textContent = '+ Agregar remito / factura';
+  }
 
   if(!documentosPendientes.length){
-    box.innerHTML = '<div class="info">Todavía no agregaste remitos / facturas.</div>';
+    box.innerHTML = '<div class="info">Todavía no confirmaste el remito / factura.</div>';
     if(!chequesPendientes.length){
       document.getElementById('clienteBuscar').disabled = false;
     }
