@@ -1,163 +1,351 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Moretti · Autorización de Cheques</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<title>Moretti · Ingresos y Autorización de Cheques</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--red:#D4000A;--bg:#080808;--card:#141414;--line:#292929;--txt:#eee;--mut:#888;--green:#22c55e;--amber:#f59e0b}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:Arial,Helvetica,sans-serif}
-header{height:62px;border-bottom:1px solid #222;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;background:#080808f5;z-index:5}
-.brand{font-size:20px;font-weight:900}.brand b{color:var(--red)}.user{color:#888;font-size:12px}
-main{padding:20px;max-width:1500px;margin:auto}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-.stat{background:var(--card);border:1px solid #222;border-radius:12px;padding:14px}.stat small{color:#777;text-transform:uppercase;font-size:10px;font-weight:800}.stat strong{display:block;font-size:28px;margin-top:5px}
-.layout{display:grid;grid-template-columns:390px 1fr;gap:14px}.panel{background:var(--card);border:1px solid #222;border-radius:13px;overflow:hidden}.ph{padding:13px 15px;border-bottom:1px solid #252525;font-weight:800}.list{max-height:calc(100vh - 180px);overflow:auto}
-.item{padding:13px 15px;border-bottom:1px solid #222;cursor:pointer}.item:hover,.item.active{background:#1b1b1b}.item .top{display:flex;justify-content:space-between;gap:10px}.item strong{font-size:13px}.item small{display:block;color:#777;margin-top:5px}.amount{font-weight:900;color:white;white-space:nowrap}
-.detail{padding:18px}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}.photo{background:#0b0b0b;border:1px solid #222;border-radius:10px;min-height:380px;display:flex;align-items:center;justify-content:center}.photo img{max-width:100%;max-height:620px;object-fit:contain}.kv{display:grid;grid-template-columns:145px 1fr;border-bottom:1px solid #242424;padding:9px 0}.kv span{color:#777;font-size:11px;text-transform:uppercase}.kv b{font-size:13px}.badge{display:inline-block;padding:5px 8px;border-radius:99px;font-size:10px;font-weight:900}.pending{background:#422006;color:#fcd34d}.ok{background:#052e16;color:#86efac}.bad{background:#450a0a;color:#fca5a5}
-.actions{display:flex;gap:10px;margin-top:16px}.btn{flex:1;padding:14px;border:0;border-radius:9px;font-weight:900;cursor:pointer}.accept{background:#15803d;color:white}.reject{background:#b91c1c;color:white}.empty{padding:35px;text-align:center;color:#666}
-textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-radius:8px;padding:10px;min-height:80px;margin-top:8px}
-@media(max-width:900px){.stats{grid-template-columns:1fr 1fr}.layout,.grid{grid-template-columns:1fr}.list{max-height:300px}}
+:root{
+  --red:#d4000a;--red2:#a8000a;--bg:#080808;--card:#131313;--card2:#191919;--line:#292929;
+  --txt:#f2f2f2;--mut:#858585;--green:#22c55e;--amber:#f59e0b;--danger:#ef4444;--blue:#60a5fa
+}
+*{box-sizing:border-box}html,body{min-height:100%}body{margin:0;background:var(--bg);color:var(--txt);font-family:Inter,Arial,Helvetica,sans-serif}
+header{min-height:64px;border-bottom:1px solid #222;display:flex;align-items:center;justify-content:space-between;padding:10px 22px;position:sticky;top:0;background:#080808f5;z-index:20;backdrop-filter:blur(10px)}
+.brand{font-size:19px;font-weight:900;letter-spacing:.02em}.brand b{color:var(--red)}.ver{font-size:9px;color:#777;border:1px solid #333;padding:3px 6px;border-radius:5px;margin-left:8px}
+.header-right{display:flex;align-items:center;gap:10px}.user{color:#999;font-size:11px}.ghost{background:#181818;border:1px solid #333;color:#ddd;border-radius:8px;padding:8px 11px;cursor:pointer;font-weight:700;font-size:11px}
+main{padding:18px;max-width:1700px;margin:auto}
+.toolbar-top{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+.tabs{display:flex;gap:6px}.tab{border:1px solid #2a2a2a;background:#111;color:#888;padding:9px 14px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
+.tab.active{background:#251012;border-color:#5b161b;color:#fff}
+.config{display:flex;align-items:center;gap:7px;background:#111;border:1px solid #252525;padding:6px 8px;border-radius:9px}
+.config label{font-size:10px;color:#777;font-weight:800;text-transform:uppercase}.config input{width:58px;background:#1b1b1b;color:#fff;border:1px solid #333;border-radius:6px;padding:7px;text-align:center;font-weight:900}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid #222;border-radius:12px;padding:13px}.stat small{color:#777;text-transform:uppercase;font-size:9px;font-weight:900;letter-spacing:.08em}.stat strong{display:block;font-size:25px;margin-top:5px}.stat .sub{font-size:10px;color:#666;margin-top:4px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.filters input,.filters select{background:#151515;color:#eee;border:1px solid #2d2d2d;border-radius:8px;padding:9px 11px;font-size:11px}
+.filters input{min-width:280px;flex:1}.filters select{min-width:130px}
+.table-wrap{background:var(--card);border:1px solid #222;border-radius:12px;overflow:hidden}.table-scroll{overflow:auto;max-height:calc(100vh - 285px)}
+table{width:100%;border-collapse:collapse;min-width:1520px}thead{position:sticky;top:0;z-index:4}th{background:#1a1a1a;color:#777;text-transform:uppercase;letter-spacing:.06em;font-size:9px;text-align:left;padding:10px 9px;border-bottom:1px solid #2d2d2d;white-space:nowrap}
+td{padding:10px 9px;border-bottom:1px solid #222;font-size:11px;vertical-align:middle}tr:hover td{background:#171717}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.amount{text-align:right;font-weight:900;white-space:nowrap}.ticket{font-weight:900;color:#fff;white-space:nowrap}.ticket button{all:unset;cursor:pointer;color:#fff;border-bottom:1px dashed #555}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:99px;font-size:9px;font-weight:900;white-space:nowrap}.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.green{background:#052e16;color:#86efac}.amber{background:#422006;color:#fcd34d}.red{background:#450a0a;color:#fca5a5}.pending{background:#422006;color:#fcd34d}.ok{background:#052e16;color:#86efac}.bad{background:#450a0a;color:#fca5a5}
+.muted{color:#777}.nowrap{white-space:nowrap}.obs{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.layout{display:grid;grid-template-columns:390px 1fr;gap:12px}.panel{background:var(--card);border:1px solid #222;border-radius:12px;overflow:hidden}.ph{padding:12px 14px;border-bottom:1px solid #262626;font-weight:900;font-size:12px}
+.list{max-height:calc(100vh - 260px);overflow:auto}.item{padding:12px 14px;border-bottom:1px solid #222;cursor:pointer}.item:hover,.item.active{background:#1a1a1a}.item .top{display:flex;justify-content:space-between;gap:8px}.item strong{font-size:12px}.item small{display:block;color:#777;margin-top:5px;line-height:1.45}.detail{padding:16px}.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}.photo{background:#0b0b0b;border:1px solid #222;border-radius:10px;min-height:350px;display:flex;align-items:center;justify-content:center}.photo img{max-width:100%;max-height:620px;object-fit:contain}.kv{display:grid;grid-template-columns:145px 1fr;border-bottom:1px solid #242424;padding:8px 0}.kv span{color:#777;font-size:10px;text-transform:uppercase}.kv b{font-size:12px}.actions{display:flex;gap:8px;margin-top:14px}.btn{flex:1;padding:12px;border:0;border-radius:8px;font-weight:900;cursor:pointer}.accept{background:#15803d;color:white}.reject{background:#b91c1c;color:white}
+textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-radius:8px;padding:10px;min-height:72px;margin-top:7px}
+.empty{padding:35px;text-align:center;color:#666}.overlay{position:fixed;inset:0;background:#000c;z-index:100;display:none;align-items:center;justify-content:center;padding:18px}.modal{width:min(1000px,96vw);max-height:92vh;overflow:auto;background:#111;border:1px solid #333;border-radius:14px}.modal-head{position:sticky;top:0;background:#111;border-bottom:1px solid #292929;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;z-index:2}.modal-body{padding:16px}.ticket-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}.mini{background:#171717;border:1px solid #292929;border-radius:9px;padding:10px}.mini small{font-size:9px;color:#777;text-transform:uppercase}.mini b{display:block;margin-top:4px;font-size:13px}
+.docs{display:flex;flex-wrap:wrap;gap:7px}.doc{background:#191919;border:1px solid #303030;border-radius:7px;padding:7px 9px;font-size:10px}
+@media(max-width:1100px){.stats{grid-template-columns:repeat(2,1fr)}.layout,.grid{grid-template-columns:1fr}.ticket-grid{grid-template-columns:1fr 1fr}.list{max-height:320px}}
+@media(max-width:700px){main{padding:10px}.stats{grid-template-columns:1fr 1fr}.brand{font-size:15px}.header-right{flex-wrap:wrap}.filters input{min-width:100%}.config{width:100%}.ticket-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<header><div class="brand">MORETTI · <b>AUTORIZACIÓN DE CHEQUES</b> <span style="font-size:10px;color:#777">v1.5</span></div><div id="user" class="user"></div></header>
+<header>
+  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v1.6</span></div>
+  <div class="header-right">
+    <div id="user" class="user"></div>
+    <button class="ghost" onclick="location.href='index.html'">Panel General</button>
+    <button class="ghost" onclick="logout()">Salir</button>
+  </div>
+</header>
 <main>
-<div class="stats">
- <div class="stat"><small>Pendientes</small><strong id="sPending">0</strong></div>
- <div class="stat"><small>Aceptados hoy</small><strong id="sOk">0</strong></div>
- <div class="stat"><small>NO ACEPTADOS hoy</small><strong id="sBad">0</strong></div>
- <div class="stat"><small>Total pendiente</small><strong id="sAmount">$ 0</strong></div>
-</div>
-<div class="layout">
- <section class="panel"><div class="ph">Pendientes de revisión</div><div id="list" class="list"></div></section>
- <section class="panel"><div class="ph">Detalle</div><div id="detail" class="empty">Seleccioná un cheque.</div></section>
-</div>
+  <div class="toolbar-top">
+    <div class="tabs">
+      <button class="tab active" id="tabIngresos" onclick="setView('ingresos')">Ingresos / Tickets</button>
+      <button class="tab" id="tabPendientes" onclick="setView('pendientes')">Pendientes de autorización</button>
+    </div>
+    <div class="config">
+      <label>Tolerancia</label>
+      <input id="tolInput" type="number" min="0" max="30" value="5">
+      <span class="muted" style="font-size:10px">días</span>
+      <button class="ghost" id="btnTol" onclick="guardarTolerancia()">Guardar</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><small>Tickets hoy</small><strong id="sTickets">0</strong><div class="sub">rendiciones recibidas</div></div>
+    <div class="stat"><small>Cheques hoy</small><strong id="sToday">0</strong><div class="sub">registros ingresados</div></div>
+    <div class="stat"><small>Pendientes</small><strong id="sPending">0</strong><div class="sub">esperando decisión</div></div>
+    <div class="stat"><small>En tolerancia</small><strong id="sTol">0</strong><div class="sub">amarillo</div></div>
+    <div class="stat"><small>Fuera de plazo</small><strong id="sOut">0</strong><div class="sub">rojo</div></div>
+  </div>
+
+  <section id="viewIngresos">
+    <div class="filters">
+      <input id="q" placeholder="Buscar ticket, cliente, vendedor, cheque, banco, CUIT..." oninput="renderIngresos()">
+      <select id="fSem" onchange="renderIngresos()">
+        <option value="">Todos los semáforos</option><option value="GREEN">🟢 Dentro</option><option value="AMBER">🟡 Tolerancia</option><option value="RED">🔴 Excedido</option>
+      </select>
+      <select id="fEstado" onchange="renderIngresos()">
+        <option value="">Todos los estados</option><option value="PENDIENTE_AUTORIZACION">Pendiente</option><option value="ACEPTADO">Aceptado</option><option value="RECHAZADO">No aceptado</option>
+      </select>
+    </div>
+    <div class="table-wrap"><div class="table-scroll">
+      <table>
+        <thead><tr>
+          <th>Ticket</th><th>Recibido</th><th>Vendedor</th><th>Cliente</th><th>N° Cheque</th>
+          <th>CUIT Emisor</th><th>Razón Social Emisor</th><th>Banco</th><th>F. Emisión</th><th>F. Pago</th>
+          <th style="text-align:right">Importe</th><th>Días</th><th>Plazo</th><th>Semáforo</th><th>Estado</th><th>Obs.</th>
+        </tr></thead><tbody id="tbodyIngresos"></tbody>
+      </table>
+    </div></div>
+  </section>
+
+  <section id="viewPendientes" style="display:none">
+    <div class="layout">
+      <section class="panel"><div class="ph">Pendientes de revisión</div><div id="list" class="list"></div></section>
+      <section class="panel"><div class="ph">Detalle</div><div id="detail" class="empty">Seleccioná un cheque.</div></section>
+    </div>
+  </section>
 </main>
+
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeTicket()">
+  <div class="modal">
+    <div class="modal-head"><b id="modalTitle">Ticket</b><button class="ghost" onclick="closeTicket()">Cerrar</button></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL='https://qqmzhwifrkgfrgewmpig.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxbXpod2lmcmtnZnJnZXdtcGlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2OTg4MzcsImV4cCI6MjA4OTI3NDgzN30.4W-n_WLRvcrE385qv0Phil4PrHrb1twpsZvxxIHodeg';
+</script>
+
+<script>
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-let currentUser,perfil,currentCheque;
-const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(Number(n||0));
+let currentUser=null, perfil=null, currentCheque=null, rows=[], tolerancia=5, view='ingresos';
+
+const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:2}).format(Number(n||0));
 const date=v=>{
- if(!v)return '—';
- const s=String(v).slice(0,10);
- const [y,m,d]=s.split('-');
- return y&&m&&d?`${d}-${m}-${y}`:v;
+  if(!v)return '—';
+  const s=String(v).slice(0,10), p=s.split('-');
+  return p.length===3?`${p[2]}-${p[1]}-${p[0]}`:s;
 };
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const dayDiff=(from,to)=>{
+  if(!from||!to)return null;
+  const a=new Date(String(from).slice(0,10)+'T12:00:00'), b=new Date(String(to).slice(0,10)+'T12:00:00');
+  return Math.round((b-a)/86400000);
+};
+const ticketOf=x=>x.ticket_numero || (x.lote_carga_id ? 'LEG-'+String(x.lote_carga_id).slice(0,8).toUpperCase() : 'SIN-TICKET');
+
+function semaforo(x){
+  const dias=dayDiff(x.created_at,x.fecha_pago);
+  const plazo=Number(x.plazo_esperado);
+  if(dias==null || ![0,30,60,90].includes(plazo)) return {code:'NA',cls:'',label:'Sin plazo',dias,extra:null};
+  if(dias<=plazo) return {code:'GREEN',cls:'green',label:`Dentro · ${Math.max(0,plazo-dias)}d margen`,dias,extra:0};
+  if(dias<=plazo+tolerancia) return {code:'AMBER',cls:'amber',label:`Tolerancia · +${dias-plazo}d`,dias,extra:dias-plazo};
+  return {code:'RED',cls:'red',label:`Excedido · +${dias-(plazo+tolerancia)}d`,dias,extra:dias-(plazo+tolerancia)};
+}
+function estadoBadge(e){
+  if(e==='ACEPTADO')return '<span class="badge ok">ACEPTADO</span>';
+  if(e==='RECHAZADO')return '<span class="badge bad">NO ACEPTADO</span>';
+  return '<span class="badge pending">PENDIENTE</span>';
+}
+function semBadge(s){
+  if(s.code==='NA')return '<span class="badge" style="background:#222;color:#999">SIN PLAZO</span>';
+  return `<span class="badge ${s.cls}"><span class="dot"></span>${esc(s.label)}</span>`;
+}
 
 async function init(){
- const {data:{user}}=await sb.auth.getUser(); if(!user){location.href='login.html';return}
- currentUser=user;
- const {data}=await sb.from('cheques_perfiles').select('*').eq('user_id',user.id).single(); perfil=data;
- if(!perfil || !['AUTORIZADOR','TESORERIA','ADMIN'].includes(perfil.rol)){alert('Sin permiso de autorización');return}
- document.getElementById('user').textContent=perfil.nombre+' · '+perfil.rol;
- await load();
+  const {data:{user}}=await sb.auth.getUser();
+  if(!user){location.href='login.html?return=autorizaciones-cheques.html';return}
+  currentUser=user;
+
+  const {data}=await sb.from('cheques_perfiles').select('*').eq('user_id',user.id).single();
+  perfil=data;
+  if(!perfil || !['AUTORIZADOR','TESORERIA','ADMIN'].includes(perfil.rol)){
+    alert('Sin permiso de autorización'); location.href='index.html'; return;
+  }
+  document.getElementById('user').textContent=`${perfil.nombre} · ${perfil.rol}`;
+
+  const canConfig=['ADMIN','TESORERIA'].includes(perfil.rol);
+  document.getElementById('tolInput').disabled=!canConfig;
+  document.getElementById('btnTol').style.display=canConfig?'inline-block':'none';
+
+  await loadConfig();
+  await load();
 }
+async function logout(){await sb.auth.signOut();location.href='login.html?return=autorizaciones-cheques.html'}
+
+async function loadConfig(){
+  const {data}=await sb.from('cheques_configuracion').select('*').eq('clave','tolerancia_dias').maybeSingle();
+  if(data?.valor_int!=null)tolerancia=Number(data.valor_int);
+  document.getElementById('tolInput').value=tolerancia;
+}
+async function guardarTolerancia(){
+  const n=Number(document.getElementById('tolInput').value);
+  if(!Number.isInteger(n)||n<0||n>30){alert('Ingresá una tolerancia entre 0 y 30 días');return}
+  const {error}=await sb.from('cheques_configuracion').update({
+    valor_int:n,updated_at:new Date().toISOString(),updated_by:currentUser.id
+  }).eq('clave','tolerancia_dias');
+  if(error){alert(error.message);return}
+  tolerancia=n; renderStats(); renderIngresos();
+  alert(`Tolerancia actualizada a ${n} días`);
+}
+
 async function load(){
- const {data,error}=await sb.from('cheques_recibidos').select('*').order('created_at',{ascending:false});
- if(error){alert(error.message);return}
- const p=data.filter(x=>x.estado==='PENDIENTE_AUTORIZACION');
- const today=new Date().toISOString().slice(0,10);
- document.getElementById('sPending').textContent=p.length;
- document.getElementById('sOk').textContent=data.filter(x=>x.estado==='ACEPTADO' && (x.autorizado_fecha||'').slice(0,10)===today).length;
- document.getElementById('sBad').textContent=data.filter(x=>x.estado==='RECHAZADO' && (x.autorizado_fecha||'').slice(0,10)===today).length;
- document.getElementById('sAmount').textContent=money(p.reduce((a,x)=>a+Number(x.importe||0),0));
- document.getElementById('list').innerHTML=p.map(x=>`
- <div class="item" onclick="showCheque('${x.id}')">
-  <div class="top"><strong>${x.cliente_razon_social||'Sin cliente'}</strong><span class="amount">${money(x.importe)}</span></div>
-  <small>${x.vendedor_nombre||''} · ${x.banco||'Banco s/d'} · Pago ${date(x.fecha_pago)}</small>
- </div>`).join('')||'<div class="empty">No hay cheques pendientes.</div>';
- window._cheques=data;
+  const {data,error}=await sb.from('cheques_recibidos').select('*').order('created_at',{ascending:false});
+  if(error){alert(error.message);return}
+  rows=data||[];
+  renderStats();renderIngresos();renderPendientes();
 }
-window.showCheque=async id=>{
- const x=window._cheques.find(c=>c.id===id);currentCheque=x;
- let image='';
- if(x.foto_path){
-   const {data}=await sb.storage.from('cheques').createSignedUrl(x.foto_path,600);
-   if(data?.signedUrl)image=`<img src="${data.signedUrl}">`;
- }
- const match=x.match_score==null?'Sin calcular':`${x.match_score}% · ${x.match_estado||''}`;
- document.getElementById('detail').className='detail';
- document.getElementById('detail').innerHTML=`
- <div class="grid">
-  <div class="photo">${image||'Sin imagen disponible'}</div>
-  <div>
-    <span class="badge pending">PENDIENTE</span>
-    <div class="kv"><span>Cliente</span><b>${x.cliente_razon_social||'—'}</b></div>
-    <div class="kv"><span>CUIT</span><b>${x.cliente_cuit||'—'}</b></div>
-    <div class="kv"><span>Código Clarity</span><b>${x.codigo_cliente||'—'}</b></div>
-    <div class="kv"><span>Remito / Factura</span><b>${x.remito||'—'}</b></div>
-    <div class="kv"><span>Fecha Remito / Factura</span><b>${date(x.fecha_remito_factura)}</b></div>
-    <div class="kv"><span>Vendedor</span><b>${x.vendedor_nombre||'—'}</b></div>
-    <div class="kv"><span>Banco</span><b>${x.banco||'—'}</b></div>
-    <div class="kv"><span>Cheque</span><b>${x.numero_cheque||'—'}</b></div>
-    <div class="kv"><span>Fecha emisión</span><b>${date(x.fecha_emision)}</b></div>
-    <div class="kv"><span>Fecha pago</span><b>${date(x.fecha_pago)}</b></div>
-    <div class="kv"><span>Importe</span><b>${money(x.importe)}</b></div>
-    <div class="kv"><span>Librador</span><b>${x.librador||'—'}</b></div>
-    <div class="kv"><span>Factura sugerida</span><b>${x.factura_sugerida||'—'} ${x.factura_sugerida_importe?(' · '+money(x.factura_sugerida_importe)):''}</b></div>
-    <div class="kv"><span>Match</span><b>${match}</b></div>
-    <div class="kv"><span>PDF carga</span><b id="pdfCarga">${x.pdf_path?'Generando acceso...':'—'}</b></div>
-    <label style="display:block;color:#777;font-size:11px;margin-top:14px">MOTIVO / OBSERVACIÓN</label>
-    <textarea id="motivo" placeholder="Obligatorio si NO se acepta"></textarea>
-    <div class="actions"><button class="btn accept" onclick="resolver('ACEPTADO')">ACEPTAR</button><button class="btn reject" onclick="resolver('RECHAZADO')">NO ACEPTAR</button></div>
-  </div>
- </div>`;
- if(x.pdf_path){
-   const {data:pdfData,error:pdfError}=await sb.storage.from('cheques').createSignedUrl(x.pdf_path,600);
-   const el=document.getElementById('pdfCarga');
-   if(el){
-     el.innerHTML=(!pdfError && pdfData?.signedUrl)
-       ? `<a href="${pdfData.signedUrl}" target="_blank" rel="noopener" style="color:#fff">Abrir PDF</a>`
-       : 'No disponible';
-   }
- }
+function renderStats(){
+  const today=new Date().toISOString().slice(0,10);
+  const todayRows=rows.filter(x=>(x.created_at||'').slice(0,10)===today);
+  document.getElementById('sTickets').textContent=new Set(todayRows.map(ticketOf)).size;
+  document.getElementById('sToday').textContent=todayRows.length;
+  document.getElementById('sPending').textContent=rows.filter(x=>x.estado==='PENDIENTE_AUTORIZACION').length;
+  document.getElementById('sTol').textContent=rows.filter(x=>semaforo(x).code==='AMBER').length;
+  document.getElementById('sOut').textContent=rows.filter(x=>semaforo(x).code==='RED').length;
 }
-window.resolver=async estado=>{
- if(!currentCheque)return;
- const motivo=document.getElementById('motivo').value.trim();
- if(estado==='RECHAZADO'&&!motivo){alert('Indicá el motivo por el cual NO se acepta');return}
- if(!confirm(estado==='ACEPTADO'?'¿Aceptar este cheque?':'¿Marcar este cheque como NO ACEPTADO?'))return;
- const ahora=new Date().toISOString();
-
- const cambios={
-   estado,
-   autorizado_por:currentUser.id,
-   autorizado_nombre:perfil.nombre,
-   autorizado_fecha:ahora,
-   motivo_rechazo:estado==='RECHAZADO'?motivo:null
- };
-
- if(estado==='RECHAZADO'){
-   cambios.vendedor_notificado=false;
-   cambios.vendedor_notificado_fecha=null;
-   cambios.vendedor_gestion_estado=null;
-   cambios.vendedor_gestion_fecha=null;
-   cambios.vendedor_gestion_observacion=null;
- }else{
-   cambios.vendedor_notificado=false;
-   cambios.vendedor_notificado_fecha=null;
-   cambios.vendedor_gestion_estado=null;
-   cambios.vendedor_gestion_fecha=null;
-   cambios.vendedor_gestion_observacion=null;
- }
-
- const {error}=await sb
-   .from('cheques_recibidos')
-   .update(cambios)
-   .eq('id',currentCheque.id);
- if(error){alert(error.message);return}
- await sb.from('cheques_auditoria').insert({
-   cheque_id:currentCheque.id,user_id:currentUser.id,usuario_nombre:perfil.nombre,
-   accion:estado==='ACEPTADO'?'AUTORIZAR_CHEQUE':'NO_ACEPTAR_CHEQUE',
-   estado_anterior:'PENDIENTE_AUTORIZACION',estado_nuevo:estado,detalle:{motivo}
- });
- document.getElementById('detail').className='empty';
- document.getElementById('detail').textContent='Operación registrada.';
- currentCheque=null;await load();
+function setView(v){
+  view=v;
+  document.getElementById('viewIngresos').style.display=v==='ingresos'?'block':'none';
+  document.getElementById('viewPendientes').style.display=v==='pendientes'?'block':'none';
+  document.getElementById('tabIngresos').classList.toggle('active',v==='ingresos');
+  document.getElementById('tabPendientes').classList.toggle('active',v==='pendientes');
 }
+function renderIngresos(){
+  const q=(document.getElementById('q').value||'').toLowerCase().trim();
+  const fs=document.getElementById('fSem').value;
+  const fe=document.getElementById('fEstado').value;
+
+  const filtered=rows.filter(x=>{
+    const s=semaforo(x);
+    const hay=[ticketOf(x),x.vendedor_nombre,x.cliente_razon_social,x.numero_cheque,x.banco,x.cuit_librador,x.librador]
+      .some(v=>String(v||'').toLowerCase().includes(q));
+    return (!q||hay)&&(!fs||s.code===fs)&&(!fe||x.estado===fe);
+  });
+
+  document.getElementById('tbodyIngresos').innerHTML=filtered.map(x=>{
+    const s=semaforo(x);
+    const obs=x.motivo_rechazo||x.observaciones_vendedor||'';
+    return `<tr>
+      <td class="ticket"><button onclick="openTicket('${esc(ticketOf(x))}')">${esc(ticketOf(x))}</button></td>
+      <td class="nowrap">${date(x.created_at)}</td>
+      <td>${esc(x.vendedor_nombre||'—')}</td>
+      <td><b>${esc(x.cliente_razon_social||'—')}</b></td>
+      <td class="mono">${esc(x.numero_cheque||'—')}</td>
+      <td class="mono">${esc(x.cuit_librador||'—')}</td>
+      <td>${esc(x.librador||'—')}</td>
+      <td>${esc(x.banco||'—')}</td>
+      <td class="nowrap">${date(x.fecha_emision)}</td>
+      <td class="nowrap">${date(x.fecha_pago)}</td>
+      <td class="amount">${money(x.importe)}</td>
+      <td class="mono">${s.dias==null?'—':s.dias}</td>
+      <td class="mono">${x.plazo_esperado==null?'—':x.plazo_esperado+'d'}</td>
+      <td>${semBadge(s)}</td>
+      <td>${estadoBadge(x.estado)}</td>
+      <td class="obs" title="${esc(obs)}">${esc(obs||'—')}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="16" class="empty">No hay registros para los filtros seleccionados.</td></tr>';
+}
+function renderPendientes(){
+  const p=rows.filter(x=>x.estado==='PENDIENTE_AUTORIZACION');
+  document.getElementById('list').innerHTML=p.map(x=>{
+    const s=semaforo(x);
+    return `<div class="item" onclick="showCheque('${x.id}')">
+      <div class="top"><strong>${esc(ticketOf(x))} · ${esc(x.cliente_razon_social||'Sin cliente')}</strong><span class="amount">${money(x.importe)}</span></div>
+      <small>${esc(x.vendedor_nombre||'')} · ${esc(x.banco||'Banco s/d')} · Pago ${date(x.fecha_pago)}<br>${semBadge(s)}</small>
+    </div>`;
+  }).join('')||'<div class="empty">No hay cheques pendientes.</div>';
+}
+
+async function showCheque(id){
+  const x=rows.find(c=>c.id===id);currentCheque=x;if(!x)return;
+  let image='';
+  if(x.foto_path){
+    const {data}=await sb.storage.from('cheques').createSignedUrl(x.foto_path,600);
+    if(data?.signedUrl)image=`<img src="${data.signedUrl}">`;
+  }
+  const s=semaforo(x);
+  const docs=Array.isArray(x.documentos_rendicion)?x.documentos_rendicion:[];
+  document.getElementById('detail').className='detail';
+  document.getElementById('detail').innerHTML=`
+  <div class="grid">
+    <div class="photo">${image||'Sin imagen disponible'}</div>
+    <div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">
+        ${estadoBadge(x.estado)} ${semBadge(s)}
+      </div>
+      <div class="kv"><span>Ticket</span><b>${esc(ticketOf(x))}</b></div>
+      <div class="kv"><span>Cliente</span><b>${esc(x.cliente_razon_social||'—')}</b></div>
+      <div class="kv"><span>Vendedor</span><b>${esc(x.vendedor_nombre||'—')}</b></div>
+      <div class="kv"><span>Documentos</span><b>${docs.length?docs.map(d=>`${esc(d.numero)} (${date(d.fecha)})`).join(' · '):esc(x.remito||'—')}</b></div>
+      <div class="kv"><span>Banco</span><b>${esc(x.banco||'—')}</b></div>
+      <div class="kv"><span>Cheque</span><b>${esc(x.numero_cheque||'—')}</b></div>
+      <div class="kv"><span>CUIT Emisor</span><b>${esc(x.cuit_librador||'—')}</b></div>
+      <div class="kv"><span>Emisor</span><b>${esc(x.librador||'—')}</b></div>
+      <div class="kv"><span>Fecha emisión</span><b>${date(x.fecha_emision)}</b></div>
+      <div class="kv"><span>Fecha pago</span><b>${date(x.fecha_pago)}</b></div>
+      <div class="kv"><span>Importe</span><b>${money(x.importe)}</b></div>
+      <div class="kv"><span>Plazo esperado</span><b>${x.plazo_esperado==null?'—':x.plazo_esperado+' días'} + ${tolerancia} días tolerancia</b></div>
+      <div class="kv"><span>Días reales</span><b>${s.dias==null?'—':s.dias+' días'}</b></div>
+      <div class="kv"><span>PDF carga</span><b id="pdfCarga">${x.pdf_path?'Generando acceso...':'—'}</b></div>
+      <label style="display:block;color:#777;font-size:10px;margin-top:12px">MOTIVO / OBSERVACIÓN</label>
+      <textarea id="motivo" placeholder="Obligatorio si NO se acepta">${esc(x.observaciones_vendedor||'')}</textarea>
+      <div class="actions"><button class="btn accept" onclick="resolver('ACEPTADO')">ACEPTAR</button><button class="btn reject" onclick="resolver('RECHAZADO')">NO ACEPTAR</button></div>
+    </div>
+  </div>`;
+  if(x.pdf_path){
+    const {data:pdfData}=await sb.storage.from('cheques').createSignedUrl(x.pdf_path,600);
+    const el=document.getElementById('pdfCarga');
+    if(el)el.innerHTML=pdfData?.signedUrl?`<a href="${pdfData.signedUrl}" target="_blank" style="color:#fff">Abrir PDF</a>`:'No disponible';
+  }
+}
+async function resolver(estado){
+  if(!currentCheque)return;
+  const motivo=(document.getElementById('motivo').value||'').trim();
+  if(estado==='RECHAZADO'&&!motivo){alert('Indicá el motivo por el cual NO se acepta');return}
+  if(!confirm(estado==='ACEPTADO'?'¿Aceptar este cheque?':'¿Marcar este cheque como NO ACEPTADO?'))return;
+  const ahora=new Date().toISOString();
+  const cambios={
+    estado,autorizado_por:currentUser.id,autorizado_nombre:perfil.nombre,autorizado_fecha:ahora,
+    motivo_rechazo:estado==='RECHAZADO'?motivo:null,
+    vendedor_notificado:false,vendedor_notificado_fecha:null,vendedor_gestion_estado:null,vendedor_gestion_fecha:null,vendedor_gestion_observacion:null
+  };
+  const {error}=await sb.from('cheques_recibidos').update(cambios).eq('id',currentCheque.id);
+  if(error){alert(error.message);return}
+  await sb.from('cheques_auditoria').insert({
+    cheque_id:currentCheque.id,user_id:currentUser.id,usuario_nombre:perfil.nombre,
+    accion:estado==='ACEPTADO'?'AUTORIZAR_CHEQUE':'NO_ACEPTAR_CHEQUE',
+    estado_anterior:'PENDIENTE_AUTORIZACION',estado_nuevo:estado,detalle:{motivo,ticket:ticketOf(currentCheque)}
+  });
+  currentCheque=null;document.getElementById('detail').className='empty';document.getElementById('detail').textContent='Operación registrada.';
+  await load();
+}
+
+function openTicket(ticket){
+  const group=rows.filter(x=>ticketOf(x)===ticket);
+  if(!group.length)return;
+  const first=group[0], docs=Array.isArray(first.documentos_rendicion)?first.documentos_rendicion:[];
+  const total=group.reduce((s,x)=>s+Number(x.importe||0),0);
+  document.getElementById('modalTitle').textContent=ticket;
+  document.getElementById('modalBody').innerHTML=`
+    <div class="ticket-grid">
+      <div class="mini"><small>Cliente</small><b>${esc(first.cliente_razon_social||'—')}</b></div>
+      <div class="mini"><small>Vendedor</small><b>${esc(first.vendedor_nombre||'—')}</b></div>
+      <div class="mini"><small>Recibido</small><b>${date(first.created_at)}</b></div>
+      <div class="mini"><small>Total cheques</small><b>${group.length} · ${money(total)}</b></div>
+    </div>
+    <div style="margin-bottom:14px"><div class="muted" style="font-size:9px;text-transform:uppercase;font-weight:900;margin-bottom:7px">Remitos / Facturas</div>
+      <div class="docs">${docs.length?docs.map(d=>`<span class="doc">${esc(d.numero)} · ${date(d.fecha)}</span>`).join(''):`<span class="doc">${esc(first.remito||'Sin documentos')}</span>`}</div>
+    </div>
+    <div class="table-wrap"><div class="table-scroll" style="max-height:420px"><table style="min-width:1050px">
+      <thead><tr><th>Cheque</th><th>Banco</th><th>Emisor</th><th>Pago</th><th style="text-align:right">Importe</th><th>Plazo</th><th>Semáforo</th><th>Estado</th><th>Obs.</th></tr></thead>
+      <tbody>${group.map(x=>{const s=semaforo(x);const obs=x.motivo_rechazo||x.observaciones_vendedor||'';return `<tr>
+        <td class="mono">${esc(x.numero_cheque||'—')}</td><td>${esc(x.banco||'—')}</td><td>${esc(x.librador||'—')}</td><td>${date(x.fecha_pago)}</td>
+        <td class="amount">${money(x.importe)}</td><td>${x.plazo_esperado==null?'—':x.plazo_esperado+'d'}</td><td>${semBadge(s)}</td><td>${estadoBadge(x.estado)}</td><td class="obs">${esc(obs||'—')}</td>
+      </tr>`}).join('')}</tbody>
+    </table></div></div>`;
+  document.getElementById('overlay').style.display='flex';
+}
+function closeTicket(){document.getElementById('overlay').style.display='none'}
+window.showCheque=showCheque;window.resolver=resolver;window.openTicket=openTicket;window.closeTicket=closeTicket;
 init();
 </script>
+
 </body>
 </html>
