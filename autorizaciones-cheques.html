@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<title>Moretti · Ingresos y Autorización de Cheques v2.4</title>
+<title>Moretti · Ingresos y Autorización de Cheques v2.5</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
@@ -81,7 +81,7 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
 </head>
 <body>
 <header>
-  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v2.4</span></div>
+  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v2.5</span></div>
   <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end">
     <div class="auth-summary" title="Importe y cantidad de cheques pendientes de decisión">
       <div class="money-box">
@@ -119,7 +119,7 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
   <div class="stats">
     <div class="stat clickable" id="cardTicketsHoy" onclick="aplicarCardFiltro('TICKETS_HOY')" title="Filtrar tickets generados hoy"><small>Tickets hoy</small><strong id="sTickets">0</strong><div class="sub">rendiciones recibidas</div></div>
     <div class="stat clickable" id="cardChequesHoy" onclick="aplicarCardFiltro('CHEQUES_HOY')" title="Filtrar cheques ingresados hoy"><small>Cheques hoy</small><strong id="sToday">0</strong><div class="sub">registros ingresados</div></div>
-    <div class="stat clickable" id="cardPendientes" onclick="aplicarCardFiltro('PENDIENTES')" title="Filtrar cheques pendientes"><small>Pendientes</small><strong id="sPending">0</strong><div class="sub">sin decisión registrada</div></div>
+    <div class="stat clickable" id="cardPendientes" onclick="aplicarCardFiltro('PENDIENTES')" title="Filtrar cheques pendientes"><small>Pendientes</small><strong id="sPending">0</strong><div class="sub">pendientes de aceptar / no aceptar</div></div>
     <div class="stat clickable" id="cardTolerancia" onclick="aplicarCardFiltro('TOLERANCIA')" title="Filtrar cheques en tolerancia"><small>En tolerancia</small><strong id="sTol">0</strong><div class="sub">amarillo</div></div>
     <div class="stat clickable" id="cardFuera" onclick="aplicarCardFiltro('FUERA')" title="Filtrar cheques fuera de plazo"><small>Fuera de plazo</small><strong id="sOut">0</strong><div class="sub">rojo</div></div>
   </div>
@@ -175,6 +175,13 @@ const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',ma
 // sin importar si el semáforo está verde, amarillo o rojo.
 const puedeResolver=()=>perfil && perfil.activo!==false &&
   ['AUTORIZADOR','TESORERIA','ADMIN'].includes(perfil.rol);
+
+// Pendiente = cualquier cheque que todavía NO tenga una decisión final.
+// Esto incluye PENDIENTE_AUTORIZACION, PENDIENTE, null, vacío u otros estados no finales.
+const esPendiente=x=>{
+  const estado=String(x?.estado||'').trim().toUpperCase();
+  return !['ACEPTADO','RECHAZADO'].includes(estado);
+};
 
 const normalizarBanco=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -361,7 +368,7 @@ function renderStats(){
 
   // Card Pendientes: SOLO cheques todavía PENDIENTE_AUTORIZACION.
   // Así el número del card coincide exactamente con el filtro al hacer click.
-  const pendingRows=rows.filter(x=>x.estado==='PENDIENTE_AUTORIZACION');
+  const pendingRows=rows.filter(esPendiente);
 
   document.getElementById('sTickets').textContent=new Set(todayRows.map(ticketOf)).size;
   document.getElementById('sToday').textContent=todayRows.length;
@@ -415,7 +422,7 @@ function cumpleCardFiltro(x){
 
   if(cardFilter==='TICKETS_HOY') return fechaAlta===today;
   if(cardFilter==='CHEQUES_HOY') return fechaAlta===today;
-  if(cardFilter==='PENDIENTES') return x.estado==='PENDIENTE_AUTORIZACION';
+  if(cardFilter==='PENDIENTES') return esPendiente(x);
   if(cardFilter==='TOLERANCIA') return audit.code==='AMBER';
   if(cardFilter==='FUERA') return audit.code==='RED';
 
@@ -506,7 +513,7 @@ function renderIngresos(){
 }
 
 function renderPendientes(){
-  const p=rows.filter(x=>x.estado==='PENDIENTE_AUTORIZACION');
+  const p=rows.filter(esPendiente);
   document.getElementById('list').innerHTML=p.map(x=>{
     prepararAuditoriaTickets(rows); const s=x.__audit || {code:'NA',cls:'',label:'Sin auditoría',dias:null};
     return `<div class="item" onclick="showCheque('${x.id}')">
