@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<title>Moretti · Ingresos y Autorización de Cheques v2.6</title>
+<title>Moretti · Ingresos y Autorización de Cheques v2.7</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
@@ -81,7 +81,7 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
 </head>
 <body>
 <header>
-  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v2.6</span></div>
+  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v2.7</span></div>
   <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end">
     <div class="auth-summary" title="Importe y cantidad de cheques pendientes de decisión">
       <div class="money-box">
@@ -311,6 +311,35 @@ function dayClass(s){
   return 'day-red';
 }
 
+function semaforoPendiente(x){
+  const dias=dayDiff(fechaDocumento(x),x.fecha_pago);
+  if(dias==null) return {code:'NA',cls:'',label:'Sin auditoría',dias:null};
+
+  // Cada cheque se evalúa por sus días reales.
+  // 0-30 = cumple 30d
+  // 31-(30+tolerancia) = tolerancia 30d
+  // luego pasa al siguiente tramo solamente si está próximo al objetivo 60/90.
+  // Si quedó pasado del tramo anterior y todavía no llegó al siguiente objetivo,
+  // se muestra rojo para que Andrés lo detecte visualmente.
+  const objetivos=[30,60,90];
+  const objetivo=objetivos.find(p=>dias<=p+tolerancia);
+
+  if(!objetivo){
+    return {code:'RED',cls:'red',label:`Fuera de plazo · ${dias}d`,dias,plazo:90};
+  }
+
+  const minimoAnterior=objetivo===30 ? 0 : objetivo-30+tolerancia+1;
+  if(objetivo>30 && dias<objetivo-tolerancia){
+    return {code:'RED',cls:'red',label:`Desfasado · ${dias}d`,dias,plazo:objetivo};
+  }
+
+  if(dias<=objetivo){
+    return {code:'GREEN',cls:'green',label:`Cumple ${objetivo}d · ${dias}d`,dias,plazo:objetivo};
+  }
+
+  return {code:'AMBER',cls:'amber',label:`Tolerancia ${objetivo}d · ${dias}d`,dias,plazo:objetivo};
+}
+
 async function init(){
   const {data:{user}}=await sb.auth.getUser();
   if(!user){location.href='login.html?return=autorizaciones-cheques.html';return}
@@ -526,7 +555,7 @@ function renderIngresos(){
 function renderPendientes(){
   const p=rows.filter(esPendiente);
   document.getElementById('list').innerHTML=p.map(x=>{
-    prepararAuditoriaTickets(rows); const s=x.__audit || {code:'NA',cls:'',label:'Sin auditoría',dias:null};
+    const s=semaforoPendiente(x);
     return `<div class="item" onclick="showCheque('${x.id}')">
       <div class="top"><strong>${esc(ticketOf(x))} · ${esc(x.cliente_razon_social||'Sin cliente')}</strong><span class="amount">${money(x.importe)}</span></div>
       <small>${esc(x.vendedor_nombre||'')} · ${esc(x.banco||'Banco s/d')} · Pago ${date(x.fecha_pago)}<br>${semBadge(s)}</small>
