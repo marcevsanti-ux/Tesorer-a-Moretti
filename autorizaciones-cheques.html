@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<title>Moretti · Ingresos y Autorización de Cheques</title>
+<title>Moretti · Ingresos y Autorización de Cheques v2.1</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
@@ -42,6 +42,14 @@ main{padding:18px;max-width:1700px;margin:auto}
 .ticket-end td{border-bottom:2px solid #343434}
 .slot-badge{display:inline-flex;align-items:center;justify-content:center;min-width:46px;padding:5px 8px;border-radius:7px;background:#202020;border:1px solid #383838;font-weight:900;font-size:10px;white-space:nowrap}
 
+.seller-cell{display:flex;flex-direction:column;gap:3px;white-space:nowrap}
+.seller-cell .seller-name{font-weight:800;color:#fff}
+.seller-cell .ticket-date{font-size:9px;color:#777}
+.calc-days.day-green{border-color:#166534;background:#052e16;color:#86efac;box-shadow:0 0 0 4px #052e1655}
+.calc-days.day-amber{border-color:#a16207;background:#422006;color:#fcd34d;box-shadow:0 0 0 4px #42200655}
+.calc-days.day-red{border-color:#b91c1c;background:#450a0a;color:#fca5a5;box-shadow:0 0 0 4px #450a0a55}
+.calc-days.day-na{border-color:#555;background:#1a1a1a;color:#bbb}
+
 
 .tabs{display:flex;gap:6px}.tab{border:1px solid #2a2a2a;background:#111;color:#888;padding:9px 14px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
 .tab.active{background:#251012;border-color:#5b161b;color:#fff}
@@ -69,13 +77,13 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
 </head>
 <body>
 <header>
-  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v2.0</span></div>
+  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v2.1</span></div>
   <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end">
     <div class="auth-summary" title="Importe y cantidad de cheques pendientes de decisión">
       <div class="money-box">
         <small>Monto pendiente a autorizar</small>
         <strong class="money" id="headerPendingAmount">$ 0,00</strong>
-        <div class="sub">importe de cheques pendientes</div>
+        <div class="sub">suma de todos los cheques pendientes de decisión</div>
       </div>
       <div class="count-box">
         <small>Cheques pendientes</small>
@@ -127,7 +135,7 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
         <thead><tr>
           <th>Ticket</th><th>Recibido</th><th>Vendedor</th><th>Cliente</th><th>Fecha Rto/Fact.</th><th>N° Cheque</th>
           <th>CUIT Emisor</th><th>Razón Social Emisor</th><th>Banco</th><th>F. Emisión</th><th>F. Pago</th>
-          <th style="text-align:right">Importe</th><th>Días</th><th>Plazo auditado</th><th>Semáforo</th><th>Estado</th><th>Obs.</th><th>Acciones</th>
+          <th style="text-align:right">Importe</th><th>Días</th><th>Plazo auditado</th><th>Semáforo</th><th>Acciones</th>
         </tr></thead><tbody id="tbodyIngresos"></tbody>
       </table>
     </div></div>
@@ -159,6 +167,8 @@ let currentUser=null, perfil=null, currentCheque=null, rows=[], tolerancia=5, vi
 
 const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:2}).format(Number(n||0));
 
+// AUTORIZADOR, TESORERIA y ADMIN pueden resolver cualquier cheque pendiente,
+// sin importar si el semáforo está verde, amarillo o rojo.
 const puedeResolver=()=>perfil && perfil.activo!==false &&
   ['AUTORIZADOR','TESORERIA','ADMIN'].includes(perfil.rol);
 
@@ -283,6 +293,13 @@ function semBadge(s){
   return `<span class="badge ${s.cls}"><span class="dot"></span>${esc(s.label)}</span>`;
 }
 
+function dayClass(s){
+  if(!s || s.code==='NA') return 'day-na';
+  if(s.code==='GREEN') return 'day-green';
+  if(s.code==='AMBER') return 'day-amber';
+  return 'day-red';
+}
+
 async function init(){
   const {data:{user}}=await sb.auth.getUser();
   if(!user){location.href='login.html?return=autorizaciones-cheques.html';return}
@@ -332,6 +349,7 @@ function renderStats(){
 
   const today=new Date().toISOString().slice(0,10);
   const todayRows=rows.filter(x=>(x.created_at||'').slice(0,10)===today);
+  // Resumen superior: suma TODOS los cheques aún no resueltos.
   const pendingRows=rows.filter(x=>x.estado==='PENDIENTE_AUTORIZACION');
   const pendingAmount=pendingRows.reduce((acc,x)=>acc+Number(x.importe||0),0);
 
@@ -395,7 +413,12 @@ function renderIngresos(){
 
       html += `
         <td class="nowrap">${date(x.created_at)}</td>
-        <td>${esc(x.vendedor_nombre||'—')}</td>
+        <td>
+          <div class="seller-cell">
+            <span class="seller-name">${esc(x.vendedor_nombre||'—')}</span>
+            <span class="ticket-date">Ticket: ${date(x.created_at)}</span>
+          </div>
+        </td>
         <td><b>${esc(x.cliente_razon_social||'—')}</b></td>
         <td class="nowrap">
           <span class="calc-date" title="Fecha base del cálculo">
@@ -415,11 +438,9 @@ function renderIngresos(){
           </span>
         </td>
         <td class="amount">${money(x.importe)}</td>
-        <td class="mono"><span class="calc-days" title="Fecha Pago − Fecha Rto/Factura">${s.dias==null?'—':s.dias}</span></td>
+        <td class="mono"><span class="calc-days ${dayClass(s)}" title="Fecha Pago − Fecha Rto/Factura">${s.dias==null?'—':s.dias}</span></td>
         <td><span class="slot-badge">${x.__plazo_asignado ? x.__plazo_asignado+'d' : 'FUERA'}</span></td>
         <td>${semBadge(s)}</td>
-        <td>${estadoBadge(x.estado)}</td>
-        <td class="obs" title="${esc(obs)}">${esc(obs||'—')}</td>
         <td>
           ${x.estado==='PENDIENTE_AUTORIZACION' && puedeResolver()
             ? `<div class="row-actions">
@@ -433,7 +454,7 @@ function renderIngresos(){
   }
 
   document.getElementById('tbodyIngresos').innerHTML =
-    html || '<tr><td colspan="18" class="empty">No hay registros para los filtros seleccionados.</td></tr>';
+    html || '<tr><td colspan="16" class="empty">No hay registros para los filtros seleccionados.</td></tr>';
 }
 
 function renderPendientes(){
