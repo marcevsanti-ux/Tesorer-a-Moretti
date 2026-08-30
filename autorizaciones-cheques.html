@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<title>Moretti · Ingresos y Autorización de Cheques v2.1</title>
+<title>Moretti · Ingresos y Autorización de Cheques v2.2</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
@@ -77,16 +77,16 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
 </head>
 <body>
 <header>
-  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v2.1</span></div>
+  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v2.2</span></div>
   <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end">
     <div class="auth-summary" title="Importe y cantidad de cheques pendientes de decisión">
       <div class="money-box">
-        <small>Monto pendiente a autorizar</small>
+        <small>Monto total a autorizar</small>
         <strong class="money" id="headerPendingAmount">$ 0,00</strong>
-        <div class="sub">suma de todos los cheques pendientes de decisión</div>
+        <div class="sub">suma de todos los cheques cargados</div>
       </div>
       <div class="count-box">
-        <small>Cheques pendientes</small>
+        <small>Cheques cargados</small>
         <strong class="count" id="headerPendingCount">0</strong>
         <div class="sub" id="headerPendingLabel">cheques</div>
       </div>
@@ -133,9 +133,9 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
     <div class="table-wrap"><div class="table-scroll">
       <table>
         <thead><tr>
-          <th>Ticket</th><th>Recibido</th><th>Vendedor</th><th>Cliente</th><th>Fecha Rto/Fact.</th><th>N° Cheque</th>
+          <th>Ticket</th><th>Vendedor</th><th>Cliente</th><th>Fecha Rto/Fact.</th><th>N° Cheque</th>
           <th>CUIT Emisor</th><th>Razón Social Emisor</th><th>Banco</th><th>F. Emisión</th><th>F. Pago</th>
-          <th style="text-align:right">Importe</th><th>Días</th><th>Plazo auditado</th><th>Semáforo</th><th>Acciones</th>
+          <th style="text-align:right">Importe</th><th>Días</th><th>Plazo auditado</th><th>Acciones</th>
         </tr></thead><tbody id="tbodyIngresos"></tbody>
       </table>
     </div></div>
@@ -350,8 +350,11 @@ function renderStats(){
   const today=new Date().toISOString().slice(0,10);
   const todayRows=rows.filter(x=>(x.created_at||'').slice(0,10)===today);
   // Resumen superior: suma TODOS los cheques aún no resueltos.
-  const pendingRows=rows.filter(x=>x.estado==='PENDIENTE_AUTORIZACION');
-  const pendingAmount=pendingRows.reduce((acc,x)=>acc+Number(x.importe||0),0);
+  // Resumen superior v2.2:
+  // Totaliza TODOS los cheques cargados en la plataforma para esta vista,
+  // independientemente del estado que haya quedado de pruebas anteriores.
+  const pendingRows=rows;
+  const pendingAmount=rows.reduce((acc,x)=>acc+Number(x.importe||0),0);
 
   document.getElementById('sTickets').textContent=new Set(todayRows.map(ticketOf)).size;
   document.getElementById('sToday').textContent=todayRows.length;
@@ -412,7 +415,6 @@ function renderIngresos(){
       }
 
       html += `
-        <td class="nowrap">${date(x.created_at)}</td>
         <td>
           <div class="seller-cell">
             <span class="seller-name">${esc(x.vendedor_nombre||'—')}</span>
@@ -440,7 +442,6 @@ function renderIngresos(){
         <td class="amount">${money(x.importe)}</td>
         <td class="mono"><span class="calc-days ${dayClass(s)}" title="Fecha Pago − Fecha Rto/Factura">${s.dias==null?'—':s.dias}</span></td>
         <td><span class="slot-badge">${x.__plazo_asignado ? x.__plazo_asignado+'d' : 'FUERA'}</span></td>
-        <td>${semBadge(s)}</td>
         <td>
           ${x.estado==='PENDIENTE_AUTORIZACION' && puedeResolver()
             ? `<div class="row-actions">
@@ -454,7 +455,7 @@ function renderIngresos(){
   }
 
   document.getElementById('tbodyIngresos').innerHTML =
-    html || '<tr><td colspan="16" class="empty">No hay registros para los filtros seleccionados.</td></tr>';
+    html || '<tr><td colspan="14" class="empty">No hay registros para los filtros seleccionados.</td></tr>';
 }
 
 function renderPendientes(){
