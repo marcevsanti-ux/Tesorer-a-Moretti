@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<title>Moretti · Ingresos y Autorización de Cheques v2.2</title>
+<title>Moretti · Ingresos y Autorización de Cheques v2.3</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
@@ -56,7 +56,11 @@ main{padding:18px;max-width:1700px;margin:auto}
 .config{display:flex;align-items:center;gap:7px;background:#111;border:1px solid #252525;padding:6px 8px;border-radius:9px}
 .config label{font-size:10px;color:#777;font-weight:800;text-transform:uppercase}.config input{width:58px;background:#1b1b1b;color:#fff;border:1px solid #333;border-radius:6px;padding:7px;text-align:center;font-weight:900}
 .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
-.stat{background:var(--card);border:1px solid #222;border-radius:12px;padding:13px}.stat small{color:#777;text-transform:uppercase;font-size:9px;font-weight:900;letter-spacing:.08em}.stat strong{display:block;font-size:25px;margin-top:5px}.stat .sub{font-size:10px;color:#666;margin-top:4px}
+.stat{background:var(--card);border:1px solid #222;border-radius:12px;padding:13px;transition:.15s ease}
+.stat.clickable{cursor:pointer;user-select:none}
+.stat.clickable:hover{border-color:#444;transform:translateY(-1px);background:#171717}
+.stat.clickable.active-filter{border-color:#7a1b22;background:#211114;box-shadow:0 0 0 1px #7a1b22 inset}
+.stat small{color:#777;text-transform:uppercase;font-size:9px;font-weight:900;letter-spacing:.08em}.stat strong{display:block;font-size:25px;margin-top:5px}.stat .sub{font-size:10px;color:#666;margin-top:4px}
 .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.filters input,.filters select{background:#151515;color:#eee;border:1px solid #2d2d2d;border-radius:8px;padding:9px 11px;font-size:11px}
 .filters input{min-width:280px;flex:1}.filters select{min-width:130px}
 .table-wrap{background:var(--card);border:1px solid #222;border-radius:12px;overflow:hidden}.table-scroll{overflow:auto;max-height:calc(100vh - 285px)}
@@ -77,7 +81,7 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
 </head>
 <body>
 <header>
-  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v2.2</span></div>
+  <div class="brand">MORETTI · <b>INGRESOS / AUTORIZACIÓN DE CHEQUES</b><span class="ver">v2.3</span></div>
   <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end">
     <div class="auth-summary" title="Importe y cantidad de cheques pendientes de decisión">
       <div class="money-box">
@@ -113,11 +117,11 @@ textarea{width:100%;background:#1a1a1a;color:white;border:1px solid #333;border-
   </div>
 
   <div class="stats">
-    <div class="stat"><small>Tickets hoy</small><strong id="sTickets">0</strong><div class="sub">rendiciones recibidas</div></div>
-    <div class="stat"><small>Cheques hoy</small><strong id="sToday">0</strong><div class="sub">registros ingresados</div></div>
-    <div class="stat"><small>Pendientes</small><strong id="sPending">0</strong><div class="sub">esperando decisión</div></div>
-    <div class="stat"><small>En tolerancia</small><strong id="sTol">0</strong><div class="sub">amarillo</div></div>
-    <div class="stat"><small>Fuera de plazo</small><strong id="sOut">0</strong><div class="sub">rojo</div></div>
+    <div class="stat clickable" id="cardTicketsHoy" onclick="aplicarCardFiltro('TICKETS_HOY')" title="Filtrar tickets generados hoy"><small>Tickets hoy</small><strong id="sTickets">0</strong><div class="sub">rendiciones recibidas</div></div>
+    <div class="stat clickable" id="cardChequesHoy" onclick="aplicarCardFiltro('CHEQUES_HOY')" title="Filtrar cheques ingresados hoy"><small>Cheques hoy</small><strong id="sToday">0</strong><div class="sub">registros ingresados</div></div>
+    <div class="stat clickable" id="cardPendientes" onclick="aplicarCardFiltro('PENDIENTES')" title="Filtrar cheques pendientes"><small>Pendientes</small><strong id="sPending">0</strong><div class="sub">esperando decisión</div></div>
+    <div class="stat clickable" id="cardTolerancia" onclick="aplicarCardFiltro('TOLERANCIA')" title="Filtrar cheques en tolerancia"><small>En tolerancia</small><strong id="sTol">0</strong><div class="sub">amarillo</div></div>
+    <div class="stat clickable" id="cardFuera" onclick="aplicarCardFiltro('FUERA')" title="Filtrar cheques fuera de plazo"><small>Fuera de plazo</small><strong id="sOut">0</strong><div class="sub">rojo</div></div>
   </div>
 
   <section id="viewIngresos">
@@ -163,7 +167,7 @@ const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 <script>
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-let currentUser=null, perfil=null, currentCheque=null, rows=[], tolerancia=5, view='ingresos';
+let currentUser=null, perfil=null, currentCheque=null, rows=[], tolerancia=5, view='ingresos', cardFilter='';
 
 const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:2}).format(Number(n||0));
 
@@ -375,6 +379,46 @@ function setView(v){
   document.getElementById('tabPendientes').classList.toggle('active',v==='pendientes');
 }
 
+
+function aplicarCardFiltro(tipo){
+  cardFilter = cardFilter===tipo ? '' : tipo;
+
+  const map = {
+    TICKETS_HOY:'cardTicketsHoy',
+    CHEQUES_HOY:'cardChequesHoy',
+    PENDIENTES:'cardPendientes',
+    TOLERANCIA:'cardTolerancia',
+    FUERA:'cardFuera'
+  };
+
+  Object.values(map).forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.remove('active-filter');
+  });
+
+  if(cardFilter && map[cardFilter]){
+    document.getElementById(map[cardFilter])?.classList.add('active-filter');
+  }
+
+  renderIngresos();
+}
+
+function cumpleCardFiltro(x){
+  if(!cardFilter) return true;
+
+  const today = new Date().toISOString().slice(0,10);
+  const fechaAlta = String(x.created_at||'').slice(0,10);
+  const audit = x.__audit || {};
+
+  if(cardFilter==='TICKETS_HOY') return fechaAlta===today;
+  if(cardFilter==='CHEQUES_HOY') return fechaAlta===today;
+  if(cardFilter==='PENDIENTES') return x.estado==='PENDIENTE_AUTORIZACION';
+  if(cardFilter==='TOLERANCIA') return audit.code==='AMBER';
+  if(cardFilter==='FUERA') return audit.code==='RED';
+
+  return true;
+}
+
 function renderIngresos(){
   const q=(document.getElementById('q').value||'').toLowerCase().trim();
   const fs=document.getElementById('fSem').value;
@@ -391,7 +435,7 @@ function renderIngresos(){
       const hay=[ticketOf(x),x.vendedor_nombre,x.cliente_razon_social,x.numero_cheque,x.banco,x.cuit_librador,x.librador]
         .some(v=>String(v||'').toLowerCase().includes(q));
 
-      return (!q||hay)&&(!fs||s?.code===fs)&&(!fe||x.estado===fe);
+      return (!q||hay)&&(!fs||s?.code===fs)&&(!fe||x.estado===fe)&&cumpleCardFiltro(x);
     });
 
     if(!visibles.length) continue;
@@ -443,7 +487,7 @@ function renderIngresos(){
         <td class="mono"><span class="calc-days ${dayClass(s)}" title="Fecha Pago − Fecha Rto/Factura">${s.dias==null?'—':s.dias}</span></td>
         <td><span class="slot-badge">${x.__plazo_asignado ? x.__plazo_asignado+'d' : 'FUERA'}</span></td>
         <td>
-          ${x.estado==='PENDIENTE_AUTORIZACION' && puedeResolver()
+          ${puedeResolver()
             ? `<div class="row-actions">
                  <button class="row-btn accept" onclick="resolverRapido('${x.id}','ACEPTADO')">ACEPTAR</button>
                  <button class="row-btn reject" onclick="resolverRapido('${x.id}','RECHAZADO')">NO ACEPTAR</button>
@@ -478,10 +522,7 @@ async function resolverRapido(id,estado){
   const x=rows.find(c=>c.id===id);
   if(!x)return;
 
-  if(x.estado!=='PENDIENTE_AUTORIZACION'){
-    alert('Este cheque ya fue resuelto.');
-    return;
-  }
+  const estadoAnterior = x.estado || null;
 
   let motivo='';
 
@@ -494,8 +535,8 @@ async function resolverRapido(id,estado){
   }
 
   const texto = estado==='ACEPTADO'
-    ? `¿Aceptar el cheque ${x.numero_cheque||'s/n'} del ticket ${ticketOf(x)}?`
-    : `¿NO ACEPTAR el cheque ${x.numero_cheque||'s/n'} del ticket ${ticketOf(x)}?`;
+    ? `¿Marcar como ACEPTADO el cheque ${x.numero_cheque||'s/n'} del ticket ${ticketOf(x)}?`
+    : `¿Marcar como NO ACEPTADO el cheque ${x.numero_cheque||'s/n'} del ticket ${ticketOf(x)}?`;
 
   if(!confirm(texto))return;
 
@@ -529,7 +570,7 @@ async function resolverRapido(id,estado){
     user_id:currentUser.id,
     usuario_nombre:perfil.nombre,
     accion:estado==='ACEPTADO'?'AUTORIZAR_CHEQUE':'NO_ACEPTAR_CHEQUE',
-    estado_anterior:'PENDIENTE_AUTORIZACION',
+    estado_anterior:estadoAnterior,
     estado_nuevo:estado,
     detalle:{motivo,ticket:ticketOf(x),origen:'TABLA_INGRESOS'}
   });
@@ -628,7 +669,7 @@ function openTicket(ticket){
   document.getElementById('overlay').style.display='flex';
 }
 function closeTicket(){document.getElementById('overlay').style.display='none'}
-window.showCheque=showCheque;window.resolver=resolver;window.resolverRapido=resolverRapido;window.openTicket=openTicket;window.closeTicket=closeTicket;
+window.aplicarCardFiltro=aplicarCardFiltro;window.showCheque=showCheque;window.resolver=resolver;window.resolverRapido=resolverRapido;window.openTicket=openTicket;window.closeTicket=closeTicket;
 init();
 </script>
 
