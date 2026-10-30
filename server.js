@@ -229,11 +229,83 @@ async function invite(req, res) {
   }
 }
 
+
+const RAILWAY_TOKEN = process.env.RAILWAY_PROJECT_TOKEN || '';
+const CLARITY_SERVICE_ID = process.env.CLARITY_SYNC_SERVICE_ID || '';
+const RAILWAY_ENVIRONMENT_ID = process.env.RAILWAY_ENVIRONMENT_ID || '';
+let lastManualTrigger = 0;
+
+async function importarClarity(req, res) {
+  if (!valid || !RAILWAY_TOKEN || !CLARITY_SERVICE_ID || !RAILWAY_ENVIRONMENT_ID) {
+    return json(res, 503, { error: 'Importación manual aún no configurada en Railway' });
+  }
+  const authorization = req.headers.authorization || '';
+  if (!/^Bearer [A-Za-z0-9_.-]+$/.test(authorization)) {
+    return json(res, 401, { error: 'Sesión requerida' });
+  }
+  const jwt = authorization.slice(7);
+  try {
+    const identity = await sb('/auth/v1/user', ANON_KEY, {
+      headers: { Authorization: 'Bearer ' + jwt }
+    });
+    if (!identity.ok || !identity.data.id) {
+      return json(res, 401, { error: 'Sesión inválida' });
+    }
+    const perms = await sb(
+      '/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.' +
+        encodeURIComponent(identity.data.id),
+      ANON_KEY, { headers: { Authorization: 'Bearer ' + jwt } }
+    );
+    if (!perms.ok || !Array.isArray(perms.data) ||
+        !perms.data.some(x => x.rol === 'ADMIN' && x.activo)) {
+      return json(res, 403, { error: 'Solo administradores' });
+    }
+    if (Date.now() - lastManualTrigger < 120000) {
+      return json(res, 429, { error: 'Esperá dos minutos antes de volver a solicitar una importación' });
+    }
+    // Railway project tokens use Project-Access-Token, not Bearer.
+    const response = await fetch('https://backboard.railway.com/graphql/v2', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Project-Access-Token': RAILWAY_TOKEN
+      },
+      body: JSON.stringify({
+        query: 'mutation ($serviceId: String!, $environmentId: String!) { serviceInstanceRedeploy(serviceId: $serviceId, environmentId: $environmentId) }',
+        variables: {
+          serviceId: CLARITY_SERVICE_ID,
+          environmentId: RAILWAY_ENVIRONMENT_ID
+        }
+      }),
+      signal: AbortSignal.timeout(15000)
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result.errors?.length || !result.data?.serviceInstanceRedeploy) {
+      console.error('Railway manual trigger rejected', response.status,
+        (result.errors || []).map(x => x.message).join('; '));
+      return json(res, 502, { error: 'Railway no aceptó la ejecución. Revisar permisos y configuración.' });
+    }
+    lastManualTrigger = Date.now();
+    console.log('Clarity manual trigger accepted for admin', identity.data.id);
+    return json(res, 202, {
+      ok: true,
+      mensaje: 'Ejecución solicitada a Railway. La importación aún no ha finalizado.'
+    });
+  } catch (error) {
+    console.error('Clarity trigger error', error.message);
+    return json(res, 502, { error: 'No se pudo contactar Railway' });
+  }
+}
+
 http.createServer(async (req, res) => {
   const pathname = new NodeURL(
     req.url,
     'http://localhost'
   ).pathname;
+
+  if (pathname === '/api/clarity/importar' && req.method === 'POST') {
+    return importarClarity(req, res);
+  }
 
   if (
     pathname === '/api/usuarios/invitar' &&
