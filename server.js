@@ -17,7 +17,7 @@ const headers = {
 };
 function json(res,status,payload){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(payload));}
 async function sb(endpoint,key,options={}){
- const response=await fetch(URL.replace(/\\/$/,'')+endpoint,{...options,headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json',...(options.headers||{})},signal:AbortSignal.timeout(12000)});
+ const response=await fetch(URL.replace(new RegExp('/,{...options,headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json',...(options.headers||{})},signal:AbortSignal.timeout(12000)});),'')+endpoint,{...options,headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json',...(options.headers||{})},signal:AbortSignal.timeout(12000)});
  const data=await response.json().catch(()=>({}));
  return {ok:response.ok,status:response.status,data};
 }
