@@ -2,6 +2,7 @@
 'use strict';
 
 const { chromium } = require('playwright');
+const { sincronizar } = require('./clarity-supabase-sync');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -794,8 +795,8 @@ async function main() {
   }
 
   const browser = await chromium.launch({
-    headless: false,
-    slowMo: 70
+    headless: process.env.CLARITY_HEADLESS === 'true',
+    slowMo: process.env.CLARITY_HEADLESS === 'true' ? 0 : 70
   });
 
   const context = await browser.newContext({
@@ -940,9 +941,8 @@ async function main() {
       )
     );
 
-    console.log(
-      '\nSupabase: todavía no habilitado.'
-    );
+    const resultadoSync = await sincronizar(registros);
+    console.log('Resultado Supabase:', JSON.stringify(resultadoSync));
 
   } catch (error) {
     console.error(
