@@ -30,7 +30,7 @@ async function invite(req,res){
  try{for await(const chunk of req){body+=chunk;if(body.length>4096)return json(res,413,{error:'Solicitud demasiado grande'});}}catch{return json(res,400,{error:'Solicitud inválida'});}
  let input;try{input=JSON.parse(body)}catch{return json(res,400,{error:'JSON inválido'})}
  const email=String(input.email||'').trim().toLowerCase(),role=String(input.rol||'');
- if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||email.length>254||!['ADMIN','USUARIO'].includes(role))return json(res,400,{error:'Correo o rol inválido'});
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||!['ADMIN','USUARIO'].includes(role))return json(res,400,{error:'Correo o rol inválido'});
  try{
   const identity=await sb('/auth/v1/user',ANON_KEY,{headers:{Authorization:'Bearer '+jwt}});
   if(!identity.ok||!identity.data.id)return json(res,401,{error:'Sesión inválida'});
