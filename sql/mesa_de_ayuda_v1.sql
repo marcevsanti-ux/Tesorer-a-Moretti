@@ -77,6 +77,8 @@ create policy mesa_reclamos_update on public.mesa_reclamos for update to authent
 create policy mesa_seguimientos_read on public.mesa_seguimientos for select to authenticated using ((select public.mesa_es_usuario()));
 create policy mesa_seguimientos_insert on public.mesa_seguimientos for insert to authenticated with check ((select public.mesa_es_usuario()) and autor=(select auth.uid()));
 create policy mesa_auditoria_read on public.mesa_auditoria for select to authenticated using ((select public.mesa_es_admin()));
+-- Solo los administradores gestionan roles mediante el backend.
+-- El rol de usuario se asigna con service_role, no con claves en el navegador.
 create or replace function public.mesa_touch_audit() returns trigger language plpgsql security definer set search_path='' as $$
 begin
  if tg_op='UPDATE' then
@@ -93,7 +95,12 @@ begin
 end $$;
 create trigger mesa_ot_audit before insert or update on public.mesa_ot for each row execute function public.mesa_touch_audit();
 create trigger mesa_reclamos_audit before insert or update on public.mesa_reclamos for each row execute function public.mesa_touch_audit();
--- Alta de roles: primero invitar/crear usuarios desde Supabase Auth.
--- Luego reemplazar los UUID por los IDs reales:
--- insert into public.mesa_usuarios(user_id,rol) values ('UUID_MARCELO','ADMIN'),('UUID_VALERIA','USUARIO');
+-- Alta inicial de Marcelo, ya existente en auth.users (validar correo antes de ejecutar).
+-- Ejecutar solo después de crear todas las tablas y políticas:
+-- INSERT INTO public.mesa_usuarios(user_id,rol,activo)
+-- SELECT id,'ADMIN',true FROM auth.users
+-- WHERE id='8b4b674c-d90c-4a6e-b410-2943c9a98be4'
+-- AND lower(email)='marcelos@moretti.com.ar'
+-- ON CONFLICT (user_id) DO NOTHING;
+-- Los usuarios posteriores se invitan desde el portal, no por SQL.
 -- No ejecutar placeholders. No colocar service_role en HTML.
