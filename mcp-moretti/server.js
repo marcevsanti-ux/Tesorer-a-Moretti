@@ -3,13 +3,14 @@ import { timingSafeEqual } from 'node:crypto';
 
 const PORT = Number(process.env.PORT || 3100);
 const TOKEN = process.env.MCP_API_TOKEN || '';
+const ACCOUNT_TOKEN = process.env.MCP_ACCOUNT_TOKEN || '';
 const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const PROTOCOL_VERSION = '2025-03-26';
 
 const tools = [
-  { name: 'moretti_estado_conexion', description: 'Verifica disponibilidad del conector Moretti sin revelar credenciales.', inputSchema: { type: 'object', properties: {}, additionalProperties: false } },
-  { name: 'moretti_listar_reclamos', description: 'Consulta reclamos de Mesa de Ayuda (solo lectura). Admite estado y límite de resultados.', inputSchema: { type: 'object', properties: { estado: { type: 'string', enum: ['ABIERTO', 'EN_PROCESO', 'CERRADO'] }, limite: { type: 'integer', minimum: 1, maximum: 50 } }, additionalProperties: false } }
+  { name: 'moretti_estado_conexion', description: 'Verifica disponibilidad del conector Moretti sin revelar credenciales.', annotations: { readOnlyHint: true }, _meta: { puentes: { account: false } }, inputSchema: { type: 'object', properties: {}, additionalProperties: false } },
+  { name: 'moretti_listar_reclamos', description: 'Consulta reclamos de Mesa de Ayuda (solo lectura). Admite estado y límite de resultados.', annotations: { readOnlyHint: true }, inputSchema: { type: 'object', properties: { estado: { type: 'string', enum: ['ABIERTO', 'EN_PROCESO', 'CERRADO'] }, limite: { type: 'integer', minimum: 1, maximum: 50 } }, additionalProperties: false } }
 ];
 
 function json(res, status, body, extra = {}) {
@@ -18,12 +19,21 @@ function json(res, status, body, extra = {}) {
 }
 function rpc(id, result) { return { jsonrpc: '2.0', id, result }; }
 function error(id, code, message) { return { jsonrpc: '2.0', id, error: { code, message } }; }
-function authorized(req) {
-  if (!TOKEN) return false;
-  const header = req.headers.authorization || '';
-  const supplied = header.startsWith('Bearer ') ? header.slice(7) : '';
-  const a = Buffer.from(supplied), b = Buffer.from(TOKEN);
+function equalSecret(supplied, expected) {
+  if (!expected || !supplied) return false;
+  const a = Buffer.from(supplied), b = Buffer.from(expected);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+function bearer(req) {
+  const header = req.headers.authorization || '';
+  return header.startsWith('Bearer ') ? header.slice(7) : '';
+}
+function authorized(req) {
+  return equalSecret(req.headers['x-api-key'], TOKEN) || equalSecret(bearer(req), TOKEN);
+}
+function accountAuthorized(req) {
+  // An account credential is required separately from the server connector key.
+  return equalSecret(bearer(req), ACCOUNT_TOKEN);
 }
 async function supabaseReclamos(args) {
   if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Supabase no configurado');
@@ -40,7 +50,7 @@ async function supabaseReclamos(args) {
   if (!response.ok) throw new Error('Error consultando reclamos (' + response.status + ')');
   return await response.json();
 }
-async function dispatch(msg) {
+async function dispatch(msg, req) {
   const id = msg?.id ?? null;
   if (!msg || msg.jsonrpc !== '2.0' || typeof msg.method !== 'string') return error(id, -32600, 'Solicitud JSON-RPC inválida');
   if (msg.method === 'notifications/initialized') return null;
@@ -54,7 +64,10 @@ async function dispatch(msg) {
     try {
       let value;
       if (name === 'moretti_estado_conexion') value = { estado: 'OK', supabase_configurado: Boolean(SUPABASE_URL && SUPABASE_KEY) };
-      else if (name === 'moretti_listar_reclamos') value = await supabaseReclamos(args);
+      else if (name === 'moretti_listar_reclamos') {
+        if (!accountAuthorized(req)) return rpc(id, { content: [{ type: 'text', text: 'Cuenta Moretti no autorizada' }], isError: true });
+        value = await supabaseReclamos(args);
+      }
       else return error(id, -32602, 'Herramienta desconocida');
       return rpc(id, { content: [{ type: 'text', text: JSON.stringify(value) }], isError: false });
     } catch (e) {
@@ -77,7 +90,7 @@ const server = http.createServer(async (req, res) => {
     }
     const request = JSON.parse(body);
     if (Array.isArray(request)) return json(res, 400, error(null, -32600, 'Batch no soportado'));
-    const response = await dispatch(request);
+    const response = await dispatch(request, req);
     if (response === null) { res.writeHead(202); return res.end(); }
     return json(res, 200, response);
   } catch { return json(res, 400, error(null, -32700, 'JSON inválido')); }
