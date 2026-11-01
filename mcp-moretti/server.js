@@ -92,7 +92,7 @@ async function mesaRead(table,args,filters) {
     // OT numbers may be stored as OS.-00071595 but searched as OS-00071595.
     // Match the numeric suffix rather than relying on punctuation.
     const term=(table==='mesa_ot'&&column==='numero')
-      ? (clean.match(/(\\d{4,})$/)?.[1]||clean)
+      ? (clean.match(/(\d{4,})$/)?.[1]||clean)
       : clean;
     url.searchParams.set(column,mode==='like'?'ilike.*'+term+'*':'eq.'+term);
   }
