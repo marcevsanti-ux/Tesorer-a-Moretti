@@ -54,17 +54,22 @@ async function sincronizar(registros) {
     return { simulacion: true, cantidad: filas.length, numeros: filas.map(f => f.numero) };
   }
   if (!URL_BASE.startsWith('https://') || !KEY) throw new Error('Faltan credenciales de Supabase');
-  let creadas = 0, actualizadas = 0;
+  let creadas = 0, actualizadas = 0, historialRegistrado = 0;
   for (const fila of filas) {
     if (!fila.cliente) throw new Error('Cliente vacío en OT ' + fila.numero);
     const url = URL_BASE + '/rest/v1/mesa_ot';
-    const params = new URLSearchParams({select:'id,numero,pendiente_sync',numero:'eq.' + fila.numero,limit:'1'});
+    const params = new URLSearchParams({select:'id,numero,estado,subestado,pendiente_sync',numero:'eq.' + fila.numero,limit:'2'});
     const existentes = await request(url + '?' + params);
     if (existentes.length > 1) throw new Error('OT duplicada: ' + fila.numero);
     if (existentes.length && existentes[0].pendiente_sync) {
       console.log('Omitida por pendiente_sync:', fila.numero);
       continue;
     }
+    const anterior = existentes[0] || null;
+    const cambioReal = anterior && (
+      String(anterior.estado ?? '') !== fila.estado ||
+      String(anterior.subestado ?? '') !== fila.subestado
+    );
     if (existentes.length) {
       await request(url + '?numero=eq.' + encodeURIComponent(fila.numero), {
         method:'PATCH', prefer:'return=minimal',
@@ -78,7 +83,27 @@ async function sincronizar(registros) {
       });
       creadas++;
     }
+    // Guardar únicamente altas observadas y cambios de estado/subestado.
+    // La fecha es de detección, no necesariamente la fecha original de Clarity.
+    if (!anterior || cambioReal) {
+      await request(URL_BASE + '/rest/v1/mesa_ot_historial', {
+        method: 'POST', prefer: 'return=minimal',
+        body: JSON.stringify({
+          ot_id: fila.numero,
+          estado_anterior: anterior?.estado ?? null,
+          estado_nuevo: fila.estado,
+          subestado_anterior: anterior?.subestado ?? null,
+          subestado_nuevo: fila.subestado,
+          fecha_cambio: new Date().toISOString(),
+          origen: 'CLARITY',
+          observaciones: anterior
+            ? 'Cambio detectado en sincronización; fecha de detección.'
+            : 'Primera observación en sincronización; fecha de detección.'
+        })
+      });
+      historialRegistrado++;
+    }
   }
-  return {simulacion:false,cantidad:filas.length,creadas,actualizadas};
+  return {simulacion:false,cantidad:filas.length,creadas,actualizadas,historialRegistrado};
 }
 module.exports = { sincronizar };
