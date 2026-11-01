@@ -89,7 +89,12 @@ async function mesaRead(table,args,filters) {
     if(typeof raw!=='string'||raw.length>150)throw Error('Filtro inválido: '+arg);
     const clean=raw.replace(/[*,()%]/g,'').trim();
     if(!clean)throw Error('Filtro vacío: '+arg);
-    url.searchParams.set(column,mode==='like'?'ilike.*'+clean+'*':'eq.'+clean);
+    // OT numbers may be stored as OS.-00071595 but searched as OS-00071595.
+    // Match the numeric suffix rather than relying on punctuation.
+    const term=(table==='mesa_ot'&&column==='numero')
+      ? (clean.match(/(\\d{4,})$/)?.[1]||clean)
+      : clean;
+    url.searchParams.set(column,mode==='like'?'ilike.*'+term+'*':'eq.'+term);
   }
   const response=await fetch(url,{headers:{apikey:MESA_KEY,Authorization:'Bearer '+MESA_KEY},signal:AbortSignal.timeout(12000)});
   if(!response.ok)throw Error('No se pudo consultar '+table+' ('+response.status+')');
