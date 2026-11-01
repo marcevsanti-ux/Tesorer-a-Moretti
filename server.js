@@ -419,6 +419,21 @@ http.createServer(async (req, res) => {
 
   if (pathname === '/api/asistente/chat' && req.method === 'POST') return assistantChat(req,res);
 
+  if (pathname === '/api/clarity/estado' && req.method === 'GET') {
+    const auth = req.headers.authorization || '';
+    if (!/^Bearer [A-Za-z0-9_.-]+$/.test(auth)) return json(res, 401, { error: 'Sesión requerida' });
+    try {
+      const jwt = auth.slice(7);
+      const identity = await sb('/auth/v1/user', ANON_KEY, { headers: { Authorization: 'Bearer ' + jwt } });
+      if (!identity.ok || !identity.data?.id) return json(res, 401, { error: 'Sesión inválida' });
+      const perms = await sb('/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.' +
+        encodeURIComponent(identity.data.id), ANON_KEY, { headers: { Authorization: 'Bearer ' + jwt } });
+      if (!perms.ok || !Array.isArray(perms.data) ||
+          !perms.data.some(x => x.activo && x.rol === 'ADMIN')) return json(res, 403, { error: 'Solo administradores' });
+      return json(res, 200, { manual_configurada: Boolean(valid && RAILWAY_TOKEN && CLARITY_SERVICE_ID && RAILWAY_ENVIRONMENT_ID) });
+    } catch { return json(res, 502, { error: 'No se pudo verificar Clarity' }); }
+  }
+
   if (pathname === '/api/clarity/importar' && req.method === 'POST') {
     return importarClarity(req, res);
   }
