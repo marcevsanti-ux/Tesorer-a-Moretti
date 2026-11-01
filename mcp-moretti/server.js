@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
+import { syncReclamos } from './sync-reclamos.js';
 
 const PORT = Number(process.env.PORT || 3100);
 const TOKEN = process.env.MCP_API_TOKEN || '';
@@ -10,7 +11,7 @@ const PROTOCOL_VERSION = '2025-03-26';
 
 const tools = [
   { name: 'moretti_estado_conexion', description: 'Verifica disponibilidad del conector Moretti sin revelar credenciales.', annotations: { readOnlyHint: true }, _meta: { puentes: { account: false } }, inputSchema: { type: 'object', properties: {}, additionalProperties: false } },
-  { name: 'moretti_listar_reclamos', description: 'Consulta reclamos de Mesa de Ayuda (solo lectura). Admite estado y límite de resultados.', annotations: { readOnlyHint: true }, inputSchema: { type: 'object', properties: { estado: { type: 'string', enum: ['ABIERTO', 'EN_PROCESO', 'CERRADO'] }, limite: { type: 'integer', minimum: 1, maximum: 50 } }, additionalProperties: false } }
+  { name: 'moretti_listar_reclamos', description: 'Consulta reclamos CRM sincronizados desde Google Sheets (solo lectura). Admite estado y límite de resultados.', annotations: { readOnlyHint: true }, inputSchema: { type: 'object', properties: { estado: { type: 'string' }, limite: { type: 'integer', minimum: 1, maximum: 50 } }, additionalProperties: false } }
 ];
 
 function json(res, status, body, extra = {}) {
@@ -38,12 +39,11 @@ function accountAuthorized(req) {
 async function supabaseReclamos(args) {
   if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Supabase no configurado');
   const limit = Number.isInteger(args.limite) ? Math.min(50, Math.max(1, args.limite)) : 20;
-  const url = new URL(SUPABASE_URL + '/rest/v1/mesa_reclamos');
-  url.searchParams.set('select', 'id,asunto,estado,prioridad,created_at,updated_at');
-  url.searchParams.set('order', 'created_at.desc');
+  const url = new URL(SUPABASE_URL + '/rest/v1/crm_reclamos');
+  url.searchParams.set('select', 'reclamo_id,cliente,motivo,tipo,urgencia,estado,producto,responsable,dias_sin_respuesta,observaciones,fecha_ingreso');
+  url.searchParams.set('order', 'reclamo_id.desc');
   url.searchParams.set('limit', String(limit));
   if (args.estado) {
-    if (!['ABIERTO','EN_PROCESO','CERRADO'].includes(args.estado)) throw new Error('Estado inválido');
     url.searchParams.set('estado', 'eq.' + args.estado);
   }
   const response = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }, signal: AbortSignal.timeout(10000) });
@@ -78,6 +78,11 @@ async function dispatch(msg, req) {
 }
 const server = http.createServer(async (req, res) => {
   if (req.url === '/health' && req.method === 'GET') return json(res, 200, { ok: true, service: 'mcp-moretti' });
+  if (req.url === '/sync/reclamos' && req.method === 'POST') {
+    if (!equalSecret(req.headers['x-api-key'], TOKEN)) return json(res, 401, { error: 'Unauthorized' });
+    try { return json(res, 200, await syncReclamos()); }
+    catch (e) { console.error('sync reclamos:', e.message); return json(res, 502, { ok: false, error: e.message }); }
+  }
   if (req.url !== '/mcp') return json(res, 404, { error: 'Not found' });
   if (!authorized(req)) return json(res, 401, { error: 'Unauthorized' });
   if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' }, { Allow: 'POST' });
