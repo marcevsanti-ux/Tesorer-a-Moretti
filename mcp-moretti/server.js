@@ -13,7 +13,7 @@ const tools = [
   { name: 'moretti_buscar_ot', description: 'Consulta órdenes de trabajo de Mesa de Ayuda por número de OS o nombre de cliente. Solo lectura; nunca accede a usuarios ni contraseñas.', annotations: { readOnlyHint: true }, inputSchema: { type:'object', properties:{ numero:{type:'string'}, cliente:{type:'string'}, limite:{type:'integer',minimum:1,maximum:30} }, additionalProperties:false } },
   { name: 'moretti_listar_ot', description: 'Lista órdenes de trabajo con filtros opcionales de estado y subestado, solo lectura.', annotations:{readOnlyHint:true}, inputSchema:{type:'object',properties:{estado:{type:'string'},subestado:{type:'string'},limite:{type:'integer',minimum:1,maximum:50}},additionalProperties:false} },
   { name: 'moretti_reclamos_ot', description: 'Consulta reclamos asociados a órdenes de trabajo por ID de OT, estado o prioridad, solo lectura.',annotations:{readOnlyHint:true},inputSchema:{type:'object',properties:{ot_id:{type:'string'},estado:{type:'string'},prioridad:{type:'string'},limite:{type:'integer',minimum:1,maximum:50}},additionalProperties:false} },
-  { name: 'moretti_seguimientos_ot', description: 'Consulta el historial de seguimientos de una orden de trabajo o reclamo, solo lectura.',annotations:{readOnlyHint:true},inputSchema:{type:'object',properties:{ot_id:{type:'string'},reclamo_id:{type:'string'},limite:{type:'integer',minimum:1,maximum:50}},additionalProperties:false} },
+  { name: 'moretti_seguimientos_ot', description: 'Consulta seguimientos por ot_id (UUID o número de OS, ej. 71541, OS-00071541) o reclamo_id (UUID). Resuelve automáticamente el número de OS a su ID interno. Solo lectura.',annotations:{readOnlyHint:true},inputSchema:{type:'object',properties:{ot_id:{type:'string'},reclamo_id:{type:'string'},limite:{type:'integer',minimum:1,maximum:50}},additionalProperties:false} },
   { name: 'moretti_estado_conexion', description: 'Verifica disponibilidad del conector Moretti sin revelar credenciales.', annotations: { readOnlyHint: true }, _meta: { puentes: { account: false } }, inputSchema: { type: 'object', properties: {}, additionalProperties: false } },
   { name: 'moretti_contar_reclamos', description: 'Devuelve la cantidad total de reclamos CRM registrados en Supabase; permite filtrar por estado.', annotations: { readOnlyHint: true }, inputSchema: { type: 'object', properties: { estado: { type: 'string' } }, additionalProperties: false } },
   { name: 'moretti_listar_reclamos', description: 'Consulta reclamos CRM sincronizados desde Google Sheets (solo lectura). Admite estado y límite de resultados.', annotations: { readOnlyHint: true }, inputSchema: { type: 'object', properties: { estado: { type: 'string' }, limite: { type: 'integer', minimum: 1, maximum: 50 } }, additionalProperties: false } }
@@ -101,6 +101,21 @@ async function mesaRead(table,args,filters) {
   return await response.json();
 }
 
+async function resolveOtId(value) {
+  const raw = String(value || '').trim();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw)) return raw;
+  const suffix = raw.match(/(\\d{4,})$/)?.[1];
+  if (!suffix) throw Error('Número de OS inválido. Usá OS-00071541 o el ID interno.');
+  const matches = await mesaRead('mesa_ot', { numero: suffix, limite: 30 }, [['numero','numero','like']]);
+  const exact = matches.filter(x => {
+    const stored = String(x.numero || '').match(/(\\d{4,})$/)?.[1];
+    return stored && Number(stored) === Number(suffix);
+  });
+  if (exact.length === 0) throw Error('No se encontró la OS ' + raw);
+  if (exact.length > 1) throw Error('Hay más de una OS con ese número; necesitás el ID interno.');
+  return exact[0].id;
+}
+
 async function dispatch(msg, req) {
   const id = msg?.id ?? null;
   if (!msg || msg.jsonrpc !== '2.0' || typeof msg.method !== 'string') return error(id, -32600, 'Solicitud JSON-RPC inválida');
@@ -130,7 +145,8 @@ async function dispatch(msg, req) {
         if(name==='moretti_reclamos_ot')value=await mesaRead('mesa_reclamos',args,[['ot_id','ot_id','eq'],['estado','estado','eq'],['prioridad','prioridad','eq']]);
         if(name==='moretti_seguimientos_ot'){
           if(Boolean(args.ot_id)===Boolean(args.reclamo_id))throw Error('Indicá exactamente ot_id o reclamo_id');
-          value=await mesaRead('mesa_seguimientos',args,[['ot_id','ot_id','eq'],['reclamo_id','reclamo_id','eq']]);
+          const resolved = args.ot_id ? { ...args, ot_id: await resolveOtId(args.ot_id) } : args;
+          value=await mesaRead('mesa_seguimientos',resolved,[['ot_id','ot_id','eq'],['reclamo_id','reclamo_id','eq']]);
         }
       }
       else return error(id, -32602, 'Herramienta desconocida');
