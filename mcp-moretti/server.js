@@ -68,7 +68,7 @@ async function supabaseContarReclamos(args) {
   return { total_reclamos: total, ...(args.estado ? { estado: args.estado } : {}) };
 }
 
-const MESA_URL=(process.env.MESA_SUPABASE_URL||SUPABASE_URL).replace(/\\/$/,'');
+const MESA_URL=(process.env.MESA_SUPABASE_URL||SUPABASE_URL).replace(/\/$/,'');
 const MESA_KEY=process.env.MESA_SUPABASE_SERVICE_ROLE_KEY||SUPABASE_KEY;
 // Explicit table and column allowlist. Never expose auth, mesa_usuarios or other tables.
 const MESA_TABLES={
