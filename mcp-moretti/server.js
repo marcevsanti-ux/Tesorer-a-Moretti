@@ -104,11 +104,11 @@ async function mesaRead(table,args,filters) {
 async function resolveOtId(value) {
   const raw = String(value || '').trim();
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw)) return raw;
-  const suffix = raw.match(/(\\d{4,})$/)?.[1];
+  const suffix = raw.match(/(\d{4,})$/)?.[1];
   if (!suffix) throw Error('Número de OS inválido. Usá OS-00071541 o el ID interno.');
   const matches = await mesaRead('mesa_ot', { numero: suffix, limite: 30 }, [['numero','numero','like']]);
   const exact = matches.filter(x => {
-    const stored = String(x.numero || '').match(/(\\d{4,})$/)?.[1];
+    const stored = String(x.numero || '').match(/(\d{4,})$/)?.[1];
     return stored && Number(stored) === Number(suffix);
   });
   if (exact.length === 0) throw Error('No se encontró la OS ' + raw);
