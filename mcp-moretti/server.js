@@ -10,6 +10,10 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const PROTOCOL_VERSION = '2025-03-26';
 
 const tools = [
+  { name: 'moretti_buscar_ot', description: 'Consulta órdenes de trabajo de Mesa de Ayuda por número de OS o nombre de cliente. Solo lectura; nunca accede a usuarios ni contraseñas.', annotations: { readOnlyHint: true }, inputSchema: { type:'object', properties:{ numero:{type:'string'}, cliente:{type:'string'}, limite:{type:'integer',minimum:1,maximum:30} }, additionalProperties:false } },
+  { name: 'moretti_listar_ot', description: 'Lista órdenes de trabajo con filtros opcionales de estado y subestado, solo lectura.', annotations:{readOnlyHint:true}, inputSchema:{type:'object',properties:{estado:{type:'string'},subestado:{type:'string'},limite:{type:'integer',minimum:1,maximum:50}},additionalProperties:false} },
+  { name: 'moretti_reclamos_ot', description: 'Consulta reclamos asociados a órdenes de trabajo por ID de OT, estado o prioridad, solo lectura.',annotations:{readOnlyHint:true},inputSchema:{type:'object',properties:{ot_id:{type:'string'},estado:{type:'string'},prioridad:{type:'string'},limite:{type:'integer',minimum:1,maximum:50}},additionalProperties:false} },
+  { name: 'moretti_seguimientos_ot', description: 'Consulta el historial de seguimientos de una orden de trabajo o reclamo, solo lectura.',annotations:{readOnlyHint:true},inputSchema:{type:'object',properties:{ot_id:{type:'string'},reclamo_id:{type:'string'},limite:{type:'integer',minimum:1,maximum:50}},additionalProperties:false} },
   { name: 'moretti_estado_conexion', description: 'Verifica disponibilidad del conector Moretti sin revelar credenciales.', annotations: { readOnlyHint: true }, _meta: { puentes: { account: false } }, inputSchema: { type: 'object', properties: {}, additionalProperties: false } },
   { name: 'moretti_contar_reclamos', description: 'Devuelve la cantidad total de reclamos CRM registrados en Supabase; permite filtrar por estado.', annotations: { readOnlyHint: true }, inputSchema: { type: 'object', properties: { estado: { type: 'string' } }, additionalProperties: false } },
   { name: 'moretti_listar_reclamos', description: 'Consulta reclamos CRM sincronizados desde Google Sheets (solo lectura). Admite estado y límite de resultados.', annotations: { readOnlyHint: true }, inputSchema: { type: 'object', properties: { estado: { type: 'string' }, limite: { type: 'integer', minimum: 1, maximum: 50 } }, additionalProperties: false } }
@@ -63,6 +67,35 @@ async function supabaseContarReclamos(args) {
   if (!range.includes('/') || !Number.isSafeInteger(total)) throw new Error('Supabase no devolvió el total');
   return { total_reclamos: total, ...(args.estado ? { estado: args.estado } : {}) };
 }
+
+const MESA_URL=(process.env.MESA_SUPABASE_URL||SUPABASE_URL).replace(/\\/$/,'');
+const MESA_KEY=process.env.MESA_SUPABASE_SERVICE_ROLE_KEY||SUPABASE_KEY;
+// Explicit table and column allowlist. Never expose auth, mesa_usuarios or other tables.
+const MESA_TABLES={
+  mesa_ot:'id,numero,cliente,estado,subestado,updated_at',
+  mesa_reclamos:'id,ot_id,asunto,estado,prioridad,updated_at',
+  mesa_seguimientos:'id,ot_id,reclamo_id,contenido,created_at'
+};
+async function mesaRead(table,args,filters) {
+  if(!MESA_URL||!MESA_KEY)throw Error('Base de Mesa de Ayuda no configurada');
+  const url=new URL(MESA_URL+'/rest/v1/'+table);
+  url.searchParams.set('select',MESA_TABLES[table]);
+  const limit=Number.isInteger(args.limite)?Math.max(1,Math.min(50,args.limite)):20;
+  url.searchParams.set('limit',String(limit));
+  url.searchParams.set('order',table==='mesa_seguimientos'?'created_at.desc':'updated_at.desc');
+  for(const [arg,column,mode] of filters){
+    const raw=args[arg];
+    if(raw===undefined||raw===null||raw==='')continue;
+    if(typeof raw!=='string'||raw.length>150)throw Error('Filtro inválido: '+arg);
+    const clean=raw.replace(/[*,()%]/g,'').trim();
+    if(!clean)throw Error('Filtro vacío: '+arg);
+    url.searchParams.set(column,mode==='like'?'ilike.*'+clean+'*':'eq.'+clean);
+  }
+  const response=await fetch(url,{headers:{apikey:MESA_KEY,Authorization:'Bearer '+MESA_KEY},signal:AbortSignal.timeout(12000)});
+  if(!response.ok)throw Error('No se pudo consultar '+table+' ('+response.status+')');
+  return await response.json();
+}
+
 async function dispatch(msg, req) {
   const id = msg?.id ?? null;
   if (!msg || msg.jsonrpc !== '2.0' || typeof msg.method !== 'string') return error(id, -32600, 'Solicitud JSON-RPC inválida');
@@ -84,6 +117,16 @@ async function dispatch(msg, req) {
       else if (name === 'moretti_listar_reclamos') {
         if (!accountAuthorized(req)) return rpc(id, { content: [{ type: 'text', text: 'Cuenta Moretti no autorizada' }], isError: true });
         value = await supabaseReclamos(args);
+      }
+      else if (['moretti_buscar_ot','moretti_listar_ot','moretti_reclamos_ot','moretti_seguimientos_ot'].includes(name)) {
+        if (!accountAuthorized(req)) return rpc(id,{content:[{type:'text',text:'Cuenta Moretti no autorizada'}],isError:true});
+        if(name==='moretti_buscar_ot')value=await mesaRead('mesa_ot',args,[['numero','numero','like'],['cliente','cliente','like']]);
+        if(name==='moretti_listar_ot')value=await mesaRead('mesa_ot',args,[['estado','estado','eq'],['subestado','subestado','eq']]);
+        if(name==='moretti_reclamos_ot')value=await mesaRead('mesa_reclamos',args,[['ot_id','ot_id','eq'],['estado','estado','eq'],['prioridad','prioridad','eq']]);
+        if(name==='moretti_seguimientos_ot'){
+          if(Boolean(args.ot_id)===Boolean(args.reclamo_id))throw Error('Indicá exactamente ot_id o reclamo_id');
+          value=await mesaRead('mesa_seguimientos',args,[['ot_id','ot_id','eq'],['reclamo_id','reclamo_id','eq']]);
+        }
       }
       else return error(id, -32602, 'Herramienta desconocida');
       return rpc(id, { content: [{ type: 'text', text: JSON.stringify(value) }], isError: false });
