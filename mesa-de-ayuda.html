@@ -18,8 +18,8 @@
 <button id="moretti-ai-toggle" type="button" aria-expanded="false" style="background:#d4000a;color:#fff;border:0;border-radius:30px;padding:14px 18px;font-weight:700;box-shadow:0 8px 25px #0004;cursor:pointer">✦ Asistente Moretti</button></div>
 <script>(function(){
 const b=document.getElementById('moretti-ai-toggle'),p=document.getElementById('moretti-ai-panel'),f=document.getElementById('moretti-ai-form'),i=document.getElementById('moretti-ai-input'),log=document.getElementById('moretti-ai-messages'),send=document.getElementById('moretti-ai-send');
-p.hidden=true;
-function open(v){p.hidden=!v;b.setAttribute('aria-expanded',String(v));if(v)i.focus()}
+p.style.display="none";
+function open(v){p.hidden=!v;p.style.display=v?"flex":"none";b.setAttribute('aria-expanded',String(v));if(v)i.focus()}
 b.addEventListener('click',()=>open(p.hidden));document.getElementById('moretti-ai-close').addEventListener('click',()=>open(false));
 function message(t,from){const d=document.createElement('div');d.textContent=t;d.style.cssText='padding:12px;border-radius:12px;max-width:92%;white-space:pre-wrap;overflow-wrap:anywhere;align-self:'+(from==='user'?'flex-end;background:#e7f0f8':'flex-start;background:#f1f5f8');log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
 f.addEventListener('submit',async e=>{e.preventDefault();const q=i.value.trim();if(!q||send.disabled)return;message(q,'user');i.value='';send.disabled=true;const pending=message('Consultando...','bot');try{
