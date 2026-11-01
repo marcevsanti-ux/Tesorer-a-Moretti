@@ -297,11 +297,47 @@ async function importarClarity(req, res) {
   }
 }
 
+
+async function assistantChat(req,res) {
+  if (!valid || !SERVICE_KEY) return json(res,503,{error:'Asistente no configurado'});
+  const authorization=req.headers.authorization||'';
+  if (!/^Bearer [A-Za-z0-9_.-]+$/.test(authorization)) return json(res,401,{error:'Iniciá sesión'});
+  let body='';
+  try { for await(const chunk of req){body+=chunk;if(body.length>4096)return json(res,413,{error:'Mensaje demasiado largo'});} }
+  catch{return json(res,400,{error:'Solicitud inválida'});}
+  let question;
+  try {question=String(JSON.parse(body).mensaje||'').trim().slice(0,600);}
+  catch{return json(res,400,{error:'JSON inválido'});}
+  if(!question)return json(res,400,{error:'Escribí una consulta'});
+  try {
+    const jwt=authorization.slice(7);
+    const identity=await sb('/auth/v1/user',ANON_KEY,{headers:{Authorization:'Bearer '+jwt}});
+    if(!identity.ok||!identity.data.id)return json(res,401,{error:'Sesión inválida'});
+    const perms=await sb('/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.'+encodeURIComponent(identity.data.id),ANON_KEY,{headers:{Authorization:'Bearer '+jwt}});
+    if(!perms.ok||!Array.isArray(perms.data)||!perms.data.some(x=>x.activo&&['ADMIN','USUARIO'].includes(x.rol)))return json(res,403,{error:'Sin acceso a Mesa de Ayuda'});
+    const q=question.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if(!/reclam/.test(q))return json(res,200,{respuesta:'Por ahora puedo consultar la cantidad de reclamos registrados. Probá: ¿Cuántos reclamos tenemos en total?',tipo:'limitado'});
+    if(!/(cuant|total|cantidad|numero|registrad|hay)/.test(q))return json(res,200,{respuesta:'Puedo contar los reclamos registrados. Para buscar por estado, responsable o urgencia necesitaremos ampliar las herramientas del asistente.',tipo:'limitado'});
+    const base=URL.replace(/\/$/,'');
+    const response=await fetch(base+'/rest/v1/crm_reclamos?select=reclamo_id&limit=1',{
+      headers:{apikey:SERVICE_KEY,Authorization:'Bearer '+SERVICE_KEY,Prefer:'count=exact',Range:'0-0'},
+      signal:AbortSignal.timeout(12000)
+    });
+    if(!response.ok)throw Error('Supabase count '+response.status);
+    const range=response.headers.get('content-range')||'';
+    const match=range.match(/\/(\d+)$/);
+    if(!match)return json(res,502,{error:'Supabase no devolvió el total'});
+    return json(res,200,{respuesta:'Hay '+Number(match[1]).toLocaleString('es-AR')+' reclamos registrados en total en Moretti.',tipo:'conteo',total:Number(match[1])});
+  }catch(e){console.error('Assistant query failed',e.message);return json(res,502,{error:'No se pudo consultar reclamos en este momento'});}
+}
+
 http.createServer(async (req, res) => {
   const pathname = new NodeURL(
     req.url,
     'http://localhost'
   ).pathname;
+
+  if (pathname === '/api/asistente/chat' && req.method === 'POST') return assistantChat(req,res);
 
   if (pathname === '/api/clarity/importar' && req.method === 'POST') {
     return importarClarity(req, res);
