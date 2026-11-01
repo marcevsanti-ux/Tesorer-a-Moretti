@@ -235,6 +235,43 @@ const CLARITY_SERVICE_ID = process.env.CLARITY_SYNC_SERVICE_ID || '';
 const RAILWAY_ENVIRONMENT_ID = process.env.RAILWAY_ENVIRONMENT_ID || '';
 let lastManualTrigger = 0;
 
+async function railwayDeployments() {
+  const response = await fetch('https://backboard.railway.com/graphql/v2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Project-Access-Token': RAILWAY_TOKEN },
+    body: JSON.stringify({
+      query: 'query ($input: DeploymentListInput!, $first: Int) { deployments(input: $input, first: $first) { edges { node { id status createdAt } } } }',
+      variables: { input: { serviceId: CLARITY_SERVICE_ID, environmentId: RAILWAY_ENVIRONMENT_ID }, first: 10 }
+    }),
+    signal: AbortSignal.timeout(12000)
+  });
+  const result = await response.json();
+  if (!response.ok || result.errors?.length) throw Error('No se pudo consultar el estado de Railway');
+  return (result.data?.deployments?.edges || []).map(e => e.node)
+    .filter(Boolean).sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+}
+
+async function clarityEstado(req, res) {
+  if (!valid || !RAILWAY_TOKEN || !CLARITY_SERVICE_ID || !RAILWAY_ENVIRONMENT_ID)
+    return json(res, 503, { error: 'Sincronización no configurada' });
+  const authorization = req.headers.authorization || '';
+  if (!/^Bearer [A-Za-z0-9_.-]+$/.test(authorization)) return json(res, 401, { error: 'Sesión requerida' });
+  try {
+    const jwt = authorization.slice(7);
+    const identity = await sb('/auth/v1/user', ANON_KEY, { headers: { Authorization: 'Bearer ' + jwt } });
+    if (!identity.ok || !identity.data?.id) return json(res, 401, { error: 'Sesión inválida' });
+    const perms = await sb('/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.' +
+      encodeURIComponent(identity.data.id), ANON_KEY, { headers: { Authorization: 'Bearer ' + jwt } });
+    if (!perms.ok || !Array.isArray(perms.data) || !perms.data.some(x => x.activo && x.rol === 'ADMIN'))
+      return json(res, 403, { error: 'Solo administradores' });
+    const deployments = await railwayDeployments();
+    return json(res, 200, { deployment: deployments[0] || null, solicitado_en: lastManualTrigger || null });
+  } catch (error) {
+    console.error('Clarity status check failed', error.message);
+    return json(res, 502, { error: 'No se pudo consultar el estado del despliegue en Railway' });
+  }
+}
+
 async function importarClarity(req, res) {
   if (!valid || !RAILWAY_TOKEN || !CLARITY_SERVICE_ID || !RAILWAY_ENVIRONMENT_ID) {
     return json(res, 503, { error: 'Importación manual aún no configurada en Railway' });
@@ -433,6 +470,8 @@ http.createServer(async (req, res) => {
       return json(res, 200, { manual_configurada: Boolean(valid && RAILWAY_TOKEN && CLARITY_SERVICE_ID && RAILWAY_ENVIRONMENT_ID) });
     } catch { return json(res, 502, { error: 'No se pudo verificar Clarity' }); }
   }
+
+  if (pathname === '/api/clarity/ejecucion' && req.method === 'GET') return clarityEstado(req, res);
 
   if (pathname === '/api/clarity/importar' && req.method === 'POST') {
     return importarClarity(req, res);
