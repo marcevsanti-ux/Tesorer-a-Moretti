@@ -298,37 +298,117 @@ async function importarClarity(req, res) {
 }
 
 
-async function assistantChat(req,res) {
-  if (!valid || !SERVICE_KEY) return json(res,503,{error:'Asistente no configurado'});
-  const authorization=req.headers.authorization||'';
-  if (!/^Bearer [A-Za-z0-9_.-]+$/.test(authorization)) return json(res,401,{error:'Iniciá sesión'});
-  let body='';
-  try { for await(const chunk of req){body+=chunk;if(body.length>4096)return json(res,413,{error:'Mensaje demasiado largo'});} }
-  catch{return json(res,400,{error:'Solicitud inválida'});}
-  let question;
-  try {question=String(JSON.parse(body).mensaje||'').trim().slice(0,600);}
-  catch{return json(res,400,{error:'JSON inválido'});}
-  if(!question)return json(res,400,{error:'Escribí una consulta'});
+const PUENTES_API_KEY = process.env.PUENTES_API_KEY || '';
+const PUENTES_BOT_ID = '77109ece-0d17-4abc-abd3-f81784e8675c';
+const PUENTES_BASE = 'https://app.puentes.ai/api';
+const assistantLocks = new Map();
+
+async function puentes(endpoint, options = {}) {
+  const response = await fetch(PUENTES_BASE + endpoint, {
+    ...options,
+    headers: {
+      Authorization: 'Bearer ' + PUENTES_API_KEY,
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    },
+    signal: AbortSignal.timeout(15000)
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) throw new Error('Puentes HTTP ' + response.status);
+  return data;
+}
+
+async function assistantGroup(userId) {
+  // A distinct private group for each Supabase user; never reuse the owner's direct chat.
+  const name = 'Mesa Moretti · ' + userId;
+  const groups = await puentes('/me/groups');
+  const list = Array.isArray(groups) ? groups : (groups?.groups || []);
+  const existing = list.find(g => g.kind === 'group' && g.name === name &&
+    (g.members || []).some(m => m.id === PUENTES_BOT_ID || m.botId === PUENTES_BOT_ID));
+  if (existing) return existing.id;
+  const group = await puentes('/groups', {
+    method: 'POST',
+    body: JSON.stringify({ name, puentes: false })
+  });
+  if (!group?.id) throw new Error('Puentes did not return group ID');
+  await puentes('/groups/' + encodeURIComponent(group.id) + '/bots', {
+    method: 'POST',
+    body: JSON.stringify({ botId: PUENTES_BOT_ID, mode: 'always' })
+  });
+  return group.id;
+}
+
+async function assistantChat(req, res) {
+  if (!valid || !SERVICE_KEY || !PUENTES_API_KEY)
+    return json(res, 503, { error: 'Asistente Puentes no configurado' });
+  const authorization = req.headers.authorization || '';
+  if (!/^Bearer [A-Za-z0-9_.-]+$/.test(authorization))
+    return json(res, 401, { error: 'Iniciá sesión' });
+  let body = '';
   try {
-    const jwt=authorization.slice(7);
-    const identity=await sb('/auth/v1/user',ANON_KEY,{headers:{Authorization:'Bearer '+jwt}});
-    if(!identity.ok||!identity.data.id)return json(res,401,{error:'Sesión inválida'});
-    const perms=await sb('/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.'+encodeURIComponent(identity.data.id),ANON_KEY,{headers:{Authorization:'Bearer '+jwt}});
-    if(!perms.ok||!Array.isArray(perms.data)||!perms.data.some(x=>x.activo&&['ADMIN','USUARIO'].includes(x.rol)))return json(res,403,{error:'Sin acceso a Mesa de Ayuda'});
-    const q=question.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    if(!/reclam/.test(q))return json(res,200,{respuesta:'Por ahora puedo consultar la cantidad de reclamos registrados. Probá: ¿Cuántos reclamos tenemos en total?',tipo:'limitado'});
-    if(!/(cuant|total|cantidad|numero|registrad|hay)/.test(q))return json(res,200,{respuesta:'Puedo contar los reclamos registrados. Para buscar por estado, responsable o urgencia necesitaremos ampliar las herramientas del asistente.',tipo:'limitado'});
-    const base=URL.replace(/\/$/,'');
-    const response=await fetch(base+'/rest/v1/crm_reclamos?select=reclamo_id&limit=1',{
-      headers:{apikey:SERVICE_KEY,Authorization:'Bearer '+SERVICE_KEY,Prefer:'count=exact',Range:'0-0'},
-      signal:AbortSignal.timeout(12000)
+    for await (const chunk of req) {
+      body += chunk;
+      if (body.length > 4096) return json(res, 413, { error: 'Mensaje demasiado largo' });
+    }
+  } catch { return json(res, 400, { error: 'Solicitud inválida' }); }
+  let question;
+  try { question = String(JSON.parse(body).mensaje || '').trim().slice(0, 600); }
+  catch { return json(res, 400, { error: 'JSON inválido' }); }
+  if (!question) return json(res, 400, { error: 'Escribí una consulta' });
+
+  let userId;
+  try {
+    const jwt = authorization.slice(7);
+    const identity = await sb('/auth/v1/user', ANON_KEY, {
+      headers: { Authorization: 'Bearer ' + jwt }
     });
-    if(!response.ok)throw Error('Supabase count '+response.status);
-    const range=response.headers.get('content-range')||'';
-    const match=range.match(/\/(\d+)$/);
-    if(!match)return json(res,502,{error:'Supabase no devolvió el total'});
-    return json(res,200,{respuesta:'Hay '+Number(match[1]).toLocaleString('es-AR')+' reclamos registrados en total en Moretti.',tipo:'conteo',total:Number(match[1])});
-  }catch(e){console.error('Assistant query failed',e.message);return json(res,502,{error:'No se pudo consultar reclamos en este momento'});}
+    if (!identity.ok || !identity.data.id)
+      return json(res, 401, { error: 'Sesión inválida' });
+    userId = identity.data.id;
+    const perms = await sb(
+      '/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.' + encodeURIComponent(userId),
+      ANON_KEY, { headers: { Authorization: 'Bearer ' + jwt } }
+    );
+    if (!perms.ok || !Array.isArray(perms.data) ||
+        !perms.data.some(x => x.activo && ['ADMIN', 'USUARIO'].includes(x.rol)))
+      return json(res, 403, { error: 'Sin acceso a Mesa de Ayuda' });
+  } catch (e) {
+    console.error('Assistant auth failed', e.message);
+    return json(res, 502, { error: 'No se pudo validar la sesión' });
+  }
+
+  // Serialize queries from the same user to avoid mixing answers.
+  if (assistantLocks.has(userId))
+    return json(res, 429, { error: 'Esperá la respuesta anterior antes de consultar otra vez' });
+  assistantLocks.set(userId, true);
+  try {
+    const groupId = await assistantGroup(userId);
+    const route = '/groups/' + encodeURIComponent(groupId) + '/messages';
+    const sent = await puentes(route, {
+      method: 'POST',
+      body: JSON.stringify({ text: question, clientId: require('node:crypto').randomUUID() })
+    });
+    const sentId = sent?.id || sent?.message?.id;
+    const sentSeq = sent?.seq || sent?.message?.seq || 0;
+    if (!sentId) throw new Error('Puentes message ID missing');
+    // Poll the specific isolated group. Do not return other users' messages.
+    const deadline = Date.now() + 55000;
+    while (Date.now() < deadline) {
+      await new Promise(resolve => setTimeout(resolve, 1800));
+      const history = await puentes(route + '?limit=30');
+      const messages = Array.isArray(history) ? history : (history?.messages || []);
+      const answer = messages.find(m => m.senderType === 'bot' &&
+        (m.senderId === PUENTES_BOT_ID || m.botId === PUENTES_BOT_ID) &&
+        (m.replyTo === sentId || (Number(m.seq) > Number(sentSeq) && Number(sentSeq) > 0)));
+      if (answer?.text) return json(res, 200, { respuesta: answer.text, tipo: 'puentes' });
+    }
+    return json(res, 504, { error: 'El asistente está tardando en responder. Volvé a intentar en unos instantes.' });
+  } catch (e) {
+    console.error('Puentes assistant error', e.message);
+    return json(res, 502, { error: 'No se pudo obtener la respuesta de Puentes.ai' });
+  } finally {
+    assistantLocks.delete(userId);
+  }
 }
 
 http.createServer(async (req, res) => {
