@@ -11,6 +11,7 @@ const PROTOCOL_VERSION = '2025-03-26';
 
 const tools = [
   { name: 'moretti_estado_conexion', description: 'Verifica disponibilidad del conector Moretti sin revelar credenciales.', annotations: { readOnlyHint: true }, _meta: { puentes: { account: false } }, inputSchema: { type: 'object', properties: {}, additionalProperties: false } },
+  { name: 'moretti_contar_reclamos', description: 'Devuelve la cantidad total de reclamos CRM registrados en Supabase; permite filtrar por estado.', annotations: { readOnlyHint: true }, inputSchema: { type: 'object', properties: { estado: { type: 'string' } }, additionalProperties: false } },
   { name: 'moretti_listar_reclamos', description: 'Consulta reclamos CRM sincronizados desde Google Sheets (solo lectura). Admite estado y límite de resultados.', annotations: { readOnlyHint: true }, inputSchema: { type: 'object', properties: { estado: { type: 'string' }, limite: { type: 'integer', minimum: 1, maximum: 50 } }, additionalProperties: false } }
 ];
 
@@ -50,6 +51,18 @@ async function supabaseReclamos(args) {
   if (!response.ok) throw new Error('Error consultando reclamos (' + response.status + ')');
   return await response.json();
 }
+async function supabaseContarReclamos(args) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('Supabase no configurado');
+  const url = new URL(SUPABASE_URL + '/rest/v1/crm_reclamos');
+  url.searchParams.set('select', 'reclamo_id');
+  if (args.estado) url.searchParams.set('estado', 'eq.' + args.estado);
+  const response = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, Prefer: 'count=exact', Range: '0-0' }, signal: AbortSignal.timeout(10000) });
+  if (!response.ok) throw new Error('Error contando reclamos (' + response.status + ')');
+  const range = response.headers.get('content-range') || '';
+  const total = Number(range.split('/').pop());
+  if (!range.includes('/') || !Number.isSafeInteger(total)) throw new Error('Supabase no devolvió el total');
+  return { total_reclamos: total, ...(args.estado ? { estado: args.estado } : {}) };
+}
 async function dispatch(msg, req) {
   const id = msg?.id ?? null;
   if (!msg || msg.jsonrpc !== '2.0' || typeof msg.method !== 'string') return error(id, -32600, 'Solicitud JSON-RPC inválida');
@@ -64,6 +77,10 @@ async function dispatch(msg, req) {
     try {
       let value;
       if (name === 'moretti_estado_conexion') value = { estado: 'OK', supabase_configurado: Boolean(SUPABASE_URL && SUPABASE_KEY) };
+      else if (name === 'moretti_contar_reclamos') {
+        if (!accountAuthorized(req)) return rpc(id, { content: [{ type: 'text', text: 'Cuenta Moretti no autorizada' }], isError: true });
+        value = await supabaseContarReclamos(args);
+      }
       else if (name === 'moretti_listar_reclamos') {
         if (!accountAuthorized(req)) return rpc(id, { content: [{ type: 'text', text: 'Cuenta Moretti no autorizada' }], isError: true });
         value = await supabaseReclamos(args);
