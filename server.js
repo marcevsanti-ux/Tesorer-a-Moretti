@@ -257,7 +257,7 @@ async function clarityEstado(req, res) {
   const authorization = req.headers.authorization || '';
   if (!/^Bearer [A-Za-z0-9_.-]+$/.test(authorization)) return json(res, 401, { error: 'Sesión requerida' });
   try {
-    jwt = authorization.slice(7);
+    const jwt = authorization.slice(7);
     const identity = await sb('/auth/v1/user', ANON_KEY, { headers: { Authorization: 'Bearer ' + jwt } });
     if (!identity.ok || !identity.data?.id) return json(res, 401, { error: 'Sesión inválida' });
     const perms = await sb('/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.' +
