@@ -257,7 +257,7 @@ async function clarityEstado(req, res) {
   const authorization = req.headers.authorization || '';
   if (!/^Bearer [A-Za-z0-9_.-]+$/.test(authorization)) return json(res, 401, { error: 'Sesión requerida' });
   try {
-    const jwt = authorization.slice(7);
+    jwt = authorization.slice(7);
     const identity = await sb('/auth/v1/user', ANON_KEY, { headers: { Authorization: 'Bearer ' + jwt } });
     if (!identity.ok || !identity.data?.id) return json(res, 401, { error: 'Sesión inválida' });
     const perms = await sb('/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.' +
@@ -375,6 +375,33 @@ async function assistantGroup(userId) {
   return group.id;
 }
 
+
+function normalizeMesa(s) {
+  return String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es-AR').trim();
+}
+async function readMesaTable(table,jwt) {
+  const rows=[];
+  for(let start=0;start<10000;start+=500) {
+    const result=await sb('/rest/v1/'+table+'?select=*&order=created_at.asc&limit=500&offset='+start,ANON_KEY,{headers:{Authorization:'Bearer '+jwt}});
+    if(!result.ok||!Array.isArray(result.data))throw Error('No se pudo consultar '+table);
+    rows.push(...result.data);
+    if(result.data.length<500)break;
+  }
+  return rows;
+}
+function mesaRecordText(r,table) {
+  const h=r.drive_historico||{};
+  if(table==='mesa_reclamos')return ['ID '+(r.drive_id??''),h.Cliente||r.asunto,h.Motivo||r.asunto,h.Producto||'',r.estado,r.prioridad,h['Fecha ingreso']||r.fecha_ingreso_historica||'',h['Último contacto']||'',r.descripcion||''].join(' | ');
+  return ['OT '+(r.numero||''),r.cliente,r.estado,r.subestado,r.observaciones||'',JSON.stringify(r.clarity_snapshot||{}).slice(0,600)].join(' | ');
+}
+function mesaMatches(text,question) {
+  const q=normalizeMesa(question).replace(/[¿?¡!"]/g,' ');
+  const m=q.match(/(?:motivo|producto|cliente|subestado|estado)\s+(?:(?:es|de|como|igual a|:)\s+)?(.+?)(?:\s+(?:en|de|con)\s+(?:los|las|el|la)\s+(?:casos|reclamos|ot|ordenes))?$/);
+  if(m&&m[1])return normalizeMesa(text).includes(normalizeMesa(m[1].replace(/[. ]+$/,'')));
+  const terms=q.split(/\s+/).filter(w=>w.length>3&&!['cuantos','cuantas','tienen','tenemos','casos','reclamos','ordenes','trabajo','mostrar','decime','cuales','sobre','informacion'].includes(w));
+  return terms.length>0&&terms.every(w=>normalizeMesa(text).includes(w));
+}
+
 async function assistantChat(req, res) {
   if (!valid || !SERVICE_KEY || !PUENTES_API_KEY)
     return json(res, 503, { error: 'Asistente Puentes no configurado' });
@@ -394,6 +421,7 @@ async function assistantChat(req, res) {
   if (!question) return json(res, 400, { error: 'Escribí una consulta' });
 
   let userId;
+  let jwt;
   try {
     const jwt = authorization.slice(7);
     const identity = await sb('/auth/v1/user', ANON_KEY, {
@@ -419,11 +447,28 @@ async function assistantChat(req, res) {
     return json(res, 429, { error: 'Esperá la respuesta anterior antes de consultar otra vez' });
   assistantLocks.set(userId, true);
   try {
+    // Consultas de solo lectura bajo el JWT del usuario: Supabase aplica RLS.
+    const [reclamos,ordenes]=await Promise.all([
+      readMesaTable('mesa_reclamos',jwt),readMesaTable('mesa_ot',jwt)
+    ]);
+    const isOT=/\b(?:ot|orden(?:es)?(?: de trabajo)?)\b/i.test(question);
+    const table=isOT?'mesa_ot':'mesa_reclamos';
+    const records=isOT?ordenes:reclamos;
+    const matching=records.filter(x=>mesaMatches(mesaRecordText(x,table),question));
+    const countQuestion=/\b(cuantos|cuantas|cantidad|total)\b/i.test(normalizeMesa(question));
+    if(countQuestion && matching.length) {
+      const examples=matching.slice(0,15).map(x=>mesaRecordText(x,table).slice(0,200));
+      return json(res,200,{respuesta:'Encontré '+matching.length+' '+(isOT?'órdenes de trabajo':'reclamos')+' que coinciden con la consulta.\n'+examples.join('\n')+(matching.length>15?'\n(Se muestran los primeros 15)':''),tipo:'supabase'});
+    }
+    if(countQuestion && !matching.length && /motivo|producto|cliente|subestado|estado/i.test(question))
+      return json(res,200,{respuesta:'No encontré registros que coincidan con ese criterio en los datos disponibles de Mesa de Ayuda.',tipo:'supabase'});
+    const context=matching.slice(0,35).map(x=>mesaRecordText(x,table).slice(0,500)).join('\n');
+    const fullQuestion='Respondé usando SOLO estos datos autorizados de Mesa de Ayuda. No confundas motivo con estado. Si no hay datos suficientes, indicá la limitación. Total reclamos: '+reclamos.length+'. Total OT: '+ordenes.length+'. Coincidencias de '+table+': '+matching.length+'.\n'+context+'\nPregunta: '+question;
     const groupId = await assistantGroup(userId);
     const route = '/groups/' + encodeURIComponent(groupId) + '/messages';
     const sent = await puentes(route, {
       method: 'POST',
-      body: JSON.stringify({ text: question, clientId: require('node:crypto').randomUUID() })
+      body: JSON.stringify({ text: fullQuestion.slice(0,18000), clientId: require('node:crypto').randomUUID() })
     });
     const sentId = sent?.id || sent?.message?.id;
     const sentSeq = sent?.seq || sent?.message?.seq || 0;
