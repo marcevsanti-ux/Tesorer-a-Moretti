@@ -22,7 +22,9 @@ async function request(url, options = {}) {
   if (!response.ok) throw new Error('Supabase HTTP ' + response.status + ': ' + body.slice(0, 300));
   return body ? JSON.parse(body) : null;
 }
-function normalizar(registros, ejecucionId, fechaExtraccion) {
+function normalizar(registros, ejecucionId, fechaExtraccion, opciones = {}) {
+  const finalizadas = opciones.estado === 'Finalizado';
+  if(finalizadas && !opciones.fechaDesde) throw new Error('Falta rango de finalización');
   const porNumero = new Map();
   for (const registro of registros) {
     const numero = String(registro.ot || '').trim();
@@ -37,21 +39,22 @@ function normalizar(registros, ejecucionId, fechaExtraccion) {
   return [...porNumero.entries()].map(([numero, filas]) => ({
     numero,
     cliente: String(filas[0].valores[3] || '').trim(),
-    estado: 'Pendiente',
-    subestado: '8 - Garantia',
+    estado: finalizadas ? 'Finalizado' : 'Pendiente',
+    subestado: finalizadas ? String(filas[0].valores[10] || 'Finalizado') : '8 - Garantia',
     clarity_snapshot: {
       fuente: 'Clarity',
       fechaExtraccion,
       ejecucionId,
-      filtros: { estadoID: 1, subestadoID: 120 },
+      filtros: finalizadas ? { estado: 'Finalizado', tipoFecha: 'Finalización', fechaDesde: opciones.fechaDesde, fechaHasta: opciones.fechaHasta, subestado: 'Todos' } : { estadoID: 1, subestadoID: 120 },
+      ...(finalizadas ? { fechaFinalizacion: String(filas[0].valores[12] || '').trim() } : {}),
       filas
     }
   }));
 }
-async function sincronizar(registros) {
+async function sincronizar(registros, opciones = {}) {
   const fechaExtraccion = new Date().toISOString();
   const ejecucionId = 'clarity-' + fechaExtraccion;
-  const filas = normalizar(registros, ejecucionId, fechaExtraccion);
+  const filas = normalizar(registros, ejecucionId, fechaExtraccion, opciones);
   if (process.env.CLARITY_SYNC_WRITE !== 'true') {
     console.log('Supabase: simulación (CLARITY_SYNC_WRITE no es true). OT:', filas.length);
     return { simulacion: true, cantidad: filas.length, numeros: filas.map(f => f.numero) };
