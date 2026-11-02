@@ -811,10 +811,18 @@ async function aplicarFinalizadas(frame){
  if(tipos.length!==1||!tipos[0].id)throw Error('Selector Tipo Fecha no identificado; ver claridad-finalizadas-controles.json');
  const tipo=tipos[0],op=tipo.options.find(o=>/finalizaci[oó]n/i.test(o.text));
  await frame.locator('#'+tipo.id).selectOption(op.value);
- const fechas=controles.filter(c=>c.type!=='hidden'&&c.id&&/fecha|desde|hasta/i.test(c.id+' '+c.name+' '+c.label)&&!c.options.length);
- const desde=fechas.filter(c=>/desde|inicio/i.test(c.id+' '+c.name+' '+c.label));
- const hasta=fechas.filter(c=>/hasta|fin/i.test(c.id+' '+c.name+' '+c.label));
- if(desde.length!==1||hasta.length!==1)throw Error('Campos de fechas ambiguos; revisar clarity-finalizadas-controles.json');
+ const fechas=controles.filter(c=>c.type!=='hidden'&&c.id&&!c.options.length);
+ const buscar=(patron)=>fechas.filter(c=>patron.test(c.id+' '+c.name));
+ let desde=buscar(/desde|fec.*ini|fecha.*ini|start/i);
+ let hasta=buscar(/hasta|fec.*fin|fecha.*fin|end/i);
+ if(desde.length!==1||hasta.length!==1){
+   const candidatos=fechas.filter(c=>/^(?:\\d{2}\\/\\d{2}\\/\\d{4})?$/.test(c.value)&&/fecha|fec|date/i.test(c.id+' '+c.name));
+   if(candidatos.length===2){desde=[candidatos[0]];hasta=[candidatos[1]];}
+ }
+ if(desde.length!==1||hasta.length!==1){
+   console.log('DIAGNÓSTICO CAMPOS FECHA:',JSON.stringify(fechas.map(c=>({id:c.id,name:c.name,value:c.value,type:c.type}))));
+   throw Error('Campos de fechas no identificados; revisar claridad-finalizadas-controles.json');
+ }
  const fmt=s=>s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4);
  await frame.locator('#'+desde[0].id).fill(fmt(rango.desde));
  await frame.locator('#'+hasta[0].id).fill(fmt(rango.hasta));
@@ -982,7 +990,10 @@ async function main() {
     const resultadoSync = await sincronizar(registros);
     console.log('Resultado Supabase:', JSON.stringify(resultadoSync));
     if(process.env.CLARITY_FINALIZADAS_ENABLED==='true'){
-      const rango=await aplicarFinalizadas(frameFiltro);
+      let rango;
+      try { rango=await aplicarFinalizadas(frameFiltro); }
+      catch(error){console.error('FINALIZADAS: filtros pendientes de ajuste:',error.message);rango=null;}
+      if(rango){
       await presionarListar(page);
       await esperar(2500);
       const primeraFinal=await esperarResultados(page);
@@ -994,6 +1005,7 @@ async function main() {
         const resultado=await sincronizar(finalizadas.registros,{estado:'Finalizado',fechaDesde:rango.desde,fechaHasta:rango.hasta});
         console.log('Resultado Supabase finalizadas:',JSON.stringify(resultado));
       }else console.log('OT finalizadas en modo diagnóstico: sin escritura');
+      }
     }
 
   } catch (error) {
