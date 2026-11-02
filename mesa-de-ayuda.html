@@ -71,10 +71,21 @@ function currentClarityOrders(items){
     : !x.snapshot.ejecucionId&&Math.abs(Date.parse(x.snapshot.fechaExtraccion)-Date.parse(latest.fechaExtraccion))<=600000)
     .map(x=>x.ot);
 }
+async function loadAllClaims(){
+  const result=[];
+  const pageSize=500;
+  for(let start=0;start<100000;start+=pageSize){
+    const {data,error}=await db.from('mesa_reclamos').select('*').order('updated_at',{ascending:false}).order('id',{ascending:true}).range(start,start+pageSize-1);
+    if(error)return {data:result,error};
+    result.push(...(data||[]));
+    if(!data||data.length<pageSize)return {data:result,error:null};
+  }
+  return {data:result,error:new Error('Se alcanzó el límite de lectura de reclamos')};
+}
 async function load(){
   const [o,c]=await Promise.all([
     db.from('mesa_ot').select('*').order('updated_at',{ascending:false}).limit(500),
-    db.from('mesa_reclamos').select('*').order('updated_at',{ascending:false}).limit(500)
+    loadAllClaims()
   ]);
   orders=o.data||[];claims=c.data||[];
   currentOrders=currentClarityOrders(orders);
