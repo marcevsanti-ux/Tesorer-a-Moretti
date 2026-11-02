@@ -249,15 +249,16 @@ $('manualClarityImport').onclick=async()=>{
   try{
     const response=await fetch('/api/clarity/importar',{
       method:'POST',
-      headers:{Authorization:'Bearer '+session.access_token}
+      headers:{Authorization:'Bearer '+session.access_token},
+      signal:AbortSignal.timeout(30000)
     });
     const result=await response.json();
     if(!response.ok)throw Error(result.error||'No se pudo solicitar la importación');
     msg('manualClarityMessage','⏳ Ejecución solicitada. Consultando estado de Railway…');
     await refreshClarityStatus();
-    if(!clarityPoll)clarityPoll=setInterval(refreshClarityStatus,10000);
+    if(!clarityPoll){let checks=0;clarityPoll=setInterval(async()=>{if(++checks>=18){clearInterval(clarityPoll);clarityPoll=null;button.disabled=false;button.removeAttribute('aria-busy');button.textContent='Importar desde Clarity';msg('manualClarityMessage','No se pudo confirmar el resultado tras 3 minutos. Revisá los logs de Railway antes de reintentar.',true);return;}await refreshClarityStatus();},10000);}
   }catch(error){
-    msg('manualClarityMessage',error.message,true);
+    msg('manualClarityMessage',error.name==='TimeoutError'?'La solicitud superó los 30 segundos. Revisá Railway antes de volver a intentar.':error.message,true);
   }finally{if(!clarityPoll){button.removeAttribute('aria-busy');button.textContent='Importar desde Clarity';button.disabled=false;}}
 };
 void boot().then(()=>refreshClarityStatus());
