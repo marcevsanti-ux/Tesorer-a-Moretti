@@ -22,7 +22,7 @@ async function request(url, options = {}) {
   if (!response.ok) throw new Error('Supabase HTTP ' + response.status + ': ' + body.slice(0, 300));
   return body ? JSON.parse(body) : null;
 }
-function normalizar(registros) {
+function normalizar(registros, ejecucionId, fechaExtraccion) {
   const porNumero = new Map();
   for (const registro of registros) {
     const numero = String(registro.ot || '').trim();
@@ -41,14 +41,17 @@ function normalizar(registros) {
     subestado: '8 - Garantia',
     clarity_snapshot: {
       fuente: 'Clarity',
-      fechaExtraccion: new Date().toISOString(),
+      fechaExtraccion,
+      ejecucionId,
       filtros: { estadoID: 1, subestadoID: 120 },
       filas
     }
   }));
 }
 async function sincronizar(registros) {
-  const filas = normalizar(registros);
+  const fechaExtraccion = new Date().toISOString();
+  const ejecucionId = 'clarity-' + fechaExtraccion;
+  const filas = normalizar(registros, ejecucionId, fechaExtraccion);
   if (process.env.CLARITY_SYNC_WRITE !== 'true') {
     console.log('Supabase: simulación (CLARITY_SYNC_WRITE no es true). OT:', filas.length);
     return { simulacion: true, cantidad: filas.length, numeros: filas.map(f => f.numero) };
