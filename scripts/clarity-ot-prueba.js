@@ -787,6 +787,44 @@ function generarCSV(registros) {
   ).join('\r\n');
 }
 
+
+function rangoFinalizadas(){
+ const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Argentina/Buenos_Aires',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ const fin=new Date(today+'T00:00:00Z'),desde=new Date(fin),hasta=new Date(fin);
+ desde.setUTCDate(desde.getUTCDate()-10);hasta.setUTCDate(hasta.getUTCDate()-1);
+ return {desde:desde.toISOString().slice(0,10),hasta:hasta.toISOString().slice(0,10)};
+}
+async function aplicarFinalizadas(frame){
+ const rango=rangoFinalizadas();
+ const controles=await frame.evaluate(()=>[...document.querySelectorAll('input,select')].map(e=>({id:e.id,name:e.name,type:e.type,value:e.value,label:(e.closest('tr')?.innerText||'').slice(0,140),options:e.tagName==='SELECT'?[...e.options].map(o=>({value:o.value,text:o.text.trim()})):[]})));
+ guardarJSON('clarity-finalizadas-controles.json',{rango,controles});
+ const estado=controles.find(c=>c.id==='cboEstadoID_control');
+ const final=estado?.options.find(o=>/^finalizad[oa]$/i.test(o.text));
+ if(!final)throw Error('No se encontró Estado Finalizado en Clarity');
+ await seleccionarFiltro(frame,'#cboEstadoID_control',final.value,'Estado Finalizado');
+ await esperar(500);
+ const opciones=await frame.locator('#cboSubEstado_control option').evaluateAll(a=>a.map(o=>({value:o.value,text:o.text.trim()})));
+ const todos=opciones.find(o=>/^\(?todos\)?$/i.test(o.text));
+ if(!todos)throw Error('No se encontró Subestado Todos');
+ await frame.locator('#cboSubEstado_control').selectOption(todos.value);
+ const tipos=controles.filter(c=>c.id!=='cboEstadoID_control'&&c.options.some(o=>/finalizaci[oó]n/i.test(o.text)));
+ if(tipos.length!==1||!tipos[0].id)throw Error('Selector Tipo Fecha no identificado; ver claridad-finalizadas-controles.json');
+ const tipo=tipos[0],op=tipo.options.find(o=>/finalizaci[oó]n/i.test(o.text));
+ await frame.locator('#'+tipo.id).selectOption(op.value);
+ const fechas=controles.filter(c=>c.type!=='hidden'&&c.id&&/fecha|desde|hasta/i.test(c.id+' '+c.name+' '+c.label)&&!c.options.length);
+ const desde=fechas.filter(c=>/desde|inicio/i.test(c.id+' '+c.name+' '+c.label));
+ const hasta=fechas.filter(c=>/hasta|fin/i.test(c.id+' '+c.name+' '+c.label));
+ if(desde.length!==1||hasta.length!==1)throw Error('Campos de fechas ambiguos; revisar clarity-finalizadas-controles.json');
+ const fmt=s=>s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4);
+ await frame.locator('#'+desde[0].id).fill(fmt(rango.desde));
+ await frame.locator('#'+hasta[0].id).fill(fmt(rango.hasta));
+ await configurarSelectorTecnico(frame,'#slkUsuario_code','#slkUsuario_description','1er. Técnico');
+ await configurarSelectorTecnico(frame,'#slkTester_code','#slkTester_description','2do. Técnico');
+ const ver=await frame.evaluate(ids=>Object.fromEntries(ids.map(id=>[id,document.getElementById(id)?.value])),[estado.id,'cboSubEstado_control',tipo.id,desde[0].id,hasta[0].id]);
+ if(ver[estado.id]!==final.value||ver['cboSubEstado_control']!==todos.value||ver[tipo.id]!==op.value||ver[desde[0].id]!==fmt(rango.desde)||ver[hasta[0].id]!==fmt(rango.hasta))throw Error('No se conservaron los filtros');
+ return rango;
+}
+
 async function main() {
   if (Object.values(CREDENCIALES).some(v => !v)) {
     throw new Error(
@@ -943,6 +981,20 @@ async function main() {
 
     const resultadoSync = await sincronizar(registros);
     console.log('Resultado Supabase:', JSON.stringify(resultadoSync));
+    if(process.env.CLARITY_FINALIZADAS_ENABLED==='true'){
+      const rango=await aplicarFinalizadas(frameFiltro);
+      await presionarListar(page);
+      await esperar(2500);
+      const primeraFinal=await esperarResultados(page);
+      const finalizadas=await extraerTodasLasPaginas(page,primeraFinal);
+      guardarJSON('clarity-finalizadas-diagnostico.json',{rango,registros:finalizadas.registros});
+      console.log('OT finalizadas extraídas:',finalizadas.registros.length,'Rango:',JSON.stringify(rango));
+      if(process.env.CLARITY_FINALIZADAS_WRITE==='true'){
+        if(process.env.CLARITY_FINALIZADAS_FECHA_VALIDADA!=='true')throw Error('Falta validar que fecha corresponde a Fecha Finalización');
+        const resultado=await sincronizar(finalizadas.registros,{estado:'Finalizado',fechaDesde:rango.desde,fechaHasta:rango.hasta});
+        console.log('Resultado Supabase finalizadas:',JSON.stringify(resultado));
+      }else console.log('OT finalizadas en modo diagnóstico: sin escritura');
+    }
 
   } catch (error) {
     console.error(
