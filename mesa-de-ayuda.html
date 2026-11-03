@@ -237,8 +237,26 @@ async function uploadEvidence(claimId,files){
   }
   return errors;
 }
-async function followups(){const {type,item}=editing;if(!item)return;const {data,error}=await db.from('mesa_seguimientos').select('contenido,created_at').eq(type==='ot'?'ot_id':'reclamo_id',item.id).order('created_at',{ascending:false});$('followupList').textContent=error?error.message:(data||[]).map(x=>new Date(x.created_at).toLocaleString('es-AR')+' — '+x.contenido).join('\n')||'Sin seguimientos';$('followupList').style.whiteSpace='pre-wrap'}
-$('addFollowup').onclick=async()=>{const t=$('followupText').value.trim();if(!t||!editing?.item)return;const {type,item}=editing;const {error}=await db.from('mesa_seguimientos').insert({[type==='ot'?'ot_id':'reclamo_id']:item.id,contenido:t});if(error){alert(error.message);return}$('followupText').value='';await followups()};
+async function followups(){
+ const {type,item}=editing;if(!item)return;
+ const isClaim=type==='claim';
+ const query=isClaim?db.from('mesa_reclamo_seguimientos').select('texto,creado_at,autor_id').eq('reclamo_id',item.id).order('creado_at',{ascending:false}):db.from('mesa_seguimientos').select('contenido,created_at').eq('ot_id',item.id).order('created_at',{ascending:false});
+ const {data,error}=await query;
+ const ids=[...new Set((data||[]).map(x=>x.autor_id).filter(Boolean))];
+ let names={};
+ if(ids.length){const {data:members}=await db.from('mesa_agenda_integrantes').select('user_id,responsable').in('user_id',ids);names=Object.fromEntries((members||[]).map(x=>[x.user_id,x.responsable]));}
+ $('followupList').textContent=error?error.message:(data||[]).map(x=>new Date(x.creado_at||x.created_at).toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires'})+' · '+(isClaim?(names[x.autor_id]||'Usuario interno'):'Equipo')+' — '+(x.texto||x.contenido)).join('\n')||'Sin seguimientos';
+ $('followupList').style.whiteSpace='pre-wrap';
+}
+$('addFollowup').onclick=async()=>{
+ const t=$('followupText').value.trim();if(!t||!editing?.item)return;
+ const {type,item}=editing;
+ const table=type==='claim'?'mesa_reclamo_seguimientos':'mesa_seguimientos';
+ const payload=type==='claim'?{reclamo_id:item.id,texto:t}:{ot_id:item.id,contenido:t};
+ const {error}=await db.from(table).insert(payload);
+ if(error){msg('editMessage','No se pudo registrar el seguimiento: '+error.message,true);return}
+ $('followupText').value='';await followups();
+};
 $('inviteForm').onsubmit=async e=>{e.preventDefault();if(role!=='ADMIN'||!session)return;const f=Object.fromEntries(new FormData(e.target).entries());msg('inviteMessage','Enviando invitación...');try{const response=await fetch('/api/usuarios/invitar',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify(f)});const data=await response.json();if(!response.ok)throw Error(data.error||'No se pudo enviar');msg('inviteMessage','Invitación enviada a '+data.email+' con rol '+data.rol);e.target.reset()}catch(error){msg('inviteMessage',error.message,true)}};
 let clarityPoll=null;
 function clarityDate(value){
