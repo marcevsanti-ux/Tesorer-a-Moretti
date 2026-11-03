@@ -37,6 +37,14 @@ const r=await fetch('/api/asistente/chat',{method:'POST',headers:{'Content-Type'
 <div class="topline"><div><h2>Agenda del equipo</h2><p class="message">Vista de carga de reclamos por responsable. Los recordatorios con fecha y hora se incorporarán al habilitar su almacenamiento seguro.</p></div><button class="btn secondary" id="agendaRefresh">Actualizar</button></div>
 <div class="toolbar" style="margin:16px 0;align-items:end"><label>Responsable<br><select id="agendaOwner"><option value="TODOS">Todo el equipo</option><option value="Valeria">🟣 Valeria</option><option value="Estefania">🟢 Estefanía</option><option value="Samanta">🟠 Samanta</option><option value="SIN_ASIGNAR">Sin asignar</option></select></label><label>Estado<br><select id="agendaStatus"><option value="ACTIVOS">Activos</option><option value="TODOS">Todos</option></select></label></div>
 <div class="grid" id="agendaStats" aria-live="polite"></div>
+<form id="agendaReminderForm" class="toolbar" style="margin:16px 0;align-items:end;flex-wrap:wrap">
+<label>Reclamo<br><select id="agendaClaim" required></select></label>
+<label>Próxima acción<br><input id="agendaDetail" maxlength="2000" placeholder="Contactar al cliente" required></label>
+<label>Fecha y hora<br><input id="agendaWhen" type="datetime-local" required></label>
+<label>Destinatario<br><select id="agendaTarget"><option value="EQUIPO">Todo el equipo</option><option value="Valeria">🟣 Valeria</option><option value="Estefania">🟢 Estefanía</option><option value="Samanta">🟠 Samanta</option></select></label>
+<button class="btn" type="submit">Programar recordatorio</button></form>
+<div class="topline"><h3>Próximas acciones</h3><span class="message">Notificaciones dentro del portal, sin WhatsApp</span></div>
+<div class="tablewrap"><table><thead><tr><th>Fecha / hora</th><th>Reclamo</th><th>Acción</th><th>Destinatario</th><th>Estado</th></tr></thead><tbody id="agendaReminderRows"></tbody></table></div>
 <div class="tablewrap"><table><thead><tr><th>Reclamo</th><th>Asunto / Cliente</th><th>Responsable</th><th>Estado</th><th>Próxima acción</th></tr></thead><tbody id="agendaRows"></tbody></table></div>
 <p class="message" id="agendaMessage" role="status"></p>
 </section>
@@ -54,7 +62,7 @@ const db=ready?window.supabase.createClient(CONFIG.url,CONFIG.anonKey):null;
 const $=id=>document.getElementById(id);let session=null,role=null,orders=[],claims=[],editing=null,claimPage=0;
 const CLAIM_PAGE_SIZE=10;
 const FINAL_PAGE_SIZE=20;
-let finalPage=0;
+let finalPage=0;let agendaReminders=[];let agendaIdentity=null;
 const RESPONSABLES={Valeria:{emoji:'🟣',color:'#7c3aed'},Estefania:{emoji:'🟢',color:'#15803d'},Samanta:{emoji:'🟠',color:'#c2410c'}};
 function responsableBadge(nombre){const r=RESPONSABLES[nombre];return r?'<span style="font-weight:600;color:'+r.color+'">'+r.emoji+' '+escapeHTML(nombre==='Estefania'?'Estefanía':nombre)+'</span>':'<span style="color:#64748b">Sin asignar</span>';}
 function msg(id,text,error=false){$(id).textContent=text;$(id).classList.toggle('error',error)}
@@ -74,7 +82,7 @@ else await setSession(data.session);
 db.auth.onAuthStateChange((event,s)=>{if(event==='PASSWORD_RECOVERY'||(event==='SIGNED_IN'&&sessionStorage.getItem('mesa_invite_pending')==='1')){show('login',true);show('app',false);show('loginForm',false);show('inviteSetup',true);return}if(!s)void setSession(null)});
 }
 $('inviteSetupForm').onsubmit=async e=>{e.preventDefault();const a=$('invitePassword').value,b=$('invitePasswordConfirm').value;if(a!==b){msg('inviteSetupMessage','Las contraseñas no coinciden.',true);return;}const {data:auth}=await db.auth.getSession();if(!auth.session){msg('inviteSetupMessage','La invitación no está activa. Volvé a abrir el enlace del correo.',true);return;}const {error}=await db.auth.updateUser({password:a});if(error){msg('inviteSetupMessage',error.message,true);return;}sessionStorage.removeItem('mesa_invite_pending');history.replaceState(null,'',location.pathname);show('inviteSetup',false);show('loginForm',true);msg('loginMessage','Cuenta activada. Ya podés ingresar con tu correo y contraseña.');await db.auth.signOut();};
-async function setSession(s){session=s;show('login',!s);show('app',!!s);if(!s)return;const {data,error}=await db.from('mesa_usuarios').select('rol,activo').eq('user_id',s.user.id).maybeSingle();if(error||!data?.activo){await db.auth.signOut();msg('loginMessage','Tu cuenta no está autorizada para Mesa de Ayuda.',true);return}role=data.rol;$('who').textContent=s.user.email;$('roleLabel').textContent=role==='ADMIN'?'Administrador':'Usuario';show('usersTab',role==='ADMIN');show('manualClarityImport',role==='ADMIN');if(role==='ADMIN'){try{const cfg=await fetch('/api/clarity/estado',{headers:{Authorization:'Bearer '+session.access_token}}).then(r=>r.json());if(!cfg.manual_configurada){$('manualClarityImport').disabled=true;msg('manualClarityMessage','Importación manual pendiente de configurar en Railway.');}else{msg('manualClarityMessage','Importación manual disponible.');}}catch{msg('manualClarityMessage','No se pudo verificar la configuración de Clarity.',true);}}await load()}
+async function setSession(s){session=s;show('login',!s);show('app',!!s);if(!s)return;const {data,error}=await db.from('mesa_usuarios').select('rol,activo').eq('user_id',s.user.id).maybeSingle();if(error||!data?.activo){await db.auth.signOut();msg('loginMessage','Tu cuenta no está autorizada para Mesa de Ayuda.',true);return}role=data.rol;const {data:identity}=await db.from('mesa_agenda_integrantes').select('responsable,supervisor').eq('user_id',s.user.id).maybeSingle();agendaIdentity=identity||null;$('agendaOwner').value=role==='ADMIN'||agendaIdentity?.supervisor?'TODOS':agendaIdentity?.responsable||'SIN_ASIGNAR';$('agendaOwner').disabled=role!=='ADMIN'&&!agendaIdentity?.supervisor;$('who').textContent=s.user.email;$('roleLabel').textContent=role==='ADMIN'?'Administrador':'Usuario';show('usersTab',role==='ADMIN');show('manualClarityImport',role==='ADMIN');if(role==='ADMIN'){try{const cfg=await fetch('/api/clarity/estado',{headers:{Authorization:'Bearer '+session.access_token}}).then(r=>r.json());if(!cfg.manual_configurada){$('manualClarityImport').disabled=true;msg('manualClarityMessage','Importación manual pendiente de configurar en Railway.');}else{msg('manualClarityMessage','Importación manual disponible.');}}catch{msg('manualClarityMessage','No se pudo verificar la configuración de Clarity.',true);}}await load()}
 $('loginForm').onsubmit=async e=>{e.preventDefault();if(!db)return;msg('loginMessage','Ingresando...');const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){msg('loginMessage',error.message,true);return}await setSession(data.session)};
 $('logout').onclick=async()=>{if(db)await db.auth.signOut();await setSession(null)};
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');for(const t of ['ot','finalizadas','reclamos','agenda','biblioteca','usuarios'])show('tab-'+t,b.dataset.tab===t);show('editor',false)});
@@ -127,6 +135,7 @@ async function load(){
   $('pending').textContent=visible.filter(x=>/pendiente/i.test(x.estado||'')).length;
   $('warranty').textContent=visible.filter(x=>/garant/i.test(x.subestado||'')).length;
   $('claims').textContent=claims.filter(x=>!['CERRADO','RESUELTO'].includes(String(x.estado||'').toUpperCase())).length;
+  const {data:reminders,error:agendaError}=await db.from("mesa_reclamo_recordatorios").select("*").order("fecha_hora",{ascending:true}).limit(500);agendaReminders=reminders||[];if(agendaError)msg("agendaMessage","No se pudieron cargar recordatorios: "+agendaError.message,true);
   render();
 }
 $('claimStatus').onchange=updateClaimFilters;
@@ -295,8 +304,13 @@ function renderAgenda(){
  const count=name=>claims.filter(x=>active(x)&&x.responsable===name).length;
  $('agendaStats').innerHTML=['Valeria','Estefania','Samanta'].map(name=>'<div class="stat"><strong>'+count(name)+'</strong><small>'+responsableBadge(name)+' · activos</small></div>').join('')+'<div class="stat"><strong>'+claims.filter(x=>active(x)&&!x.responsable).length+'</strong><small>Sin asignar</small></div>';
  root.innerHTML=subset.map(x=>'<tr><td>'+escapeHTML(x.drive_id??x.id)+'</td><td>'+escapeHTML(x.asunto||x.drive_historico?.Cliente||'—')+'</td><td>'+responsableBadge(x.responsable)+'</td><td>'+escapeHTML(x.estado||'—')+'</td><td><span class="tag">Sin recordatorio</span></td></tr>').join('')||'<tr><td colspan="5">No hay reclamos para estos filtros.</td></tr>';
- $('agendaMessage').textContent=subset.length+' reclamos visibles. Esta vista todavía no registra ni envía recordatorios.';
+ const select=$('agendaClaim');const previous=select.value;select.innerHTML=subset.map(x=>'<option value="'+escapeHTML(x.id)+'">#'+escapeHTML(x.drive_id??'—')+' · '+escapeHTML(x.asunto||'Reclamo')+'</option>').join('');if(subset.some(x=>x.id===previous))select.value=previous;
+ const visibleReminders=agendaReminders.filter(x=>status==='TODOS'||x.estado==='PENDIENTE').filter(x=>owner==='TODOS'||(owner==='SIN_ASIGNAR'?x.destinatario==='EQUIPO':x.destinatario===owner||x.destinatario==='EQUIPO'));
+ $('agendaReminderRows').innerHTML=visibleReminders.map(x=>{const overdue=x.estado==='PENDIENTE'&&new Date(x.fecha_hora)<new Date();return '<tr><td>'+escapeHTML(new Date(x.fecha_hora).toLocaleString('es-AR'))+'</td><td>'+escapeHTML(claims.find(c=>c.id===x.reclamo_id)?.drive_id??'—')+'</td><td>'+escapeHTML(x.detalle)+'</td><td>'+responsableBadge(x.destinatario)+'</td><td>'+(overdue?'🔴 Vencido':escapeHTML(x.estado))+(x.estado==='PENDIENTE'?' <button class="btn secondary" data-complete-reminder="'+escapeHTML(x.id)+'">Completar</button>':'')+'</td></tr>'}).join('')||'<tr><td colspan="5">No hay recordatorios en esta vista.</td></tr>';
+ document.querySelectorAll('[data-complete-reminder]').forEach(b=>b.onclick=async()=>{const {error}=await db.from('mesa_reclamo_recordatorios').update({estado:'COMPLETADO',actualizado_at:new Date().toISOString()}).eq('id',b.dataset.completeReminder);if(error)msg('agendaMessage',error.message,true);else await load();});
+ $('agendaMessage').textContent=subset.length+' reclamos visibles · '+visibleReminders.filter(x=>x.estado==='PENDIENTE').length+' recordatorios pendientes.';
 }
+$('agendaReminderForm').onsubmit=async e=>{e.preventDefault();const reclamo_id=$('agendaClaim').value,detalle=$('agendaDetail').value.trim(),fecha_hora=$('agendaWhen').value,destinatario=$('agendaTarget').value;if(!reclamo_id||!detalle||!fecha_hora)return;const {error}=await db.from('mesa_reclamo_recordatorios').insert({reclamo_id,detalle,fecha_hora:new Date(fecha_hora).toISOString(),destinatario});if(error)msg('agendaMessage','No se pudo guardar: '+error.message,true);else{$('agendaDetail').value='';await load();}};
 $('agendaOwner').onchange=renderAgenda;
 $('agendaStatus').onchange=renderAgenda;
 $('agendaRefresh').onclick=load;
