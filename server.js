@@ -423,7 +423,7 @@ async function assistantChat(req, res) {
   let userId;
   let jwt;
   try {
-    const jwt = authorization.slice(7);
+    jwt = authorization.slice(7);
     const identity = await sb('/auth/v1/user', ANON_KEY, {
       headers: { Authorization: 'Bearer ' + jwt }
     });
@@ -486,8 +486,8 @@ async function assistantChat(req, res) {
     }
     return json(res, 504, { error: 'El asistente está tardando en responder. Volvé a intentar en unos instantes.' });
   } catch (e) {
-    console.error('Puentes assistant error', e.message);
-    return json(res, 502, { error: 'No se pudo obtener la respuesta de Puentes.ai' });
+    console.error('Mesa assistant request failed', { code: e.name || 'Error', message: String(e.message || '').slice(0,250) });
+    return json(res, 502, { error: 'No se pudo completar la consulta del asistente. Revisar registros del servidor.' });
   } finally {
     assistantLocks.delete(userId);
   }
