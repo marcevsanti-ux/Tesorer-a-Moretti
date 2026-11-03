@@ -622,8 +622,18 @@ async function extraerTodasLasPaginas(page, primera) {
     registros.map(r => JSON.stringify(r.valores))
   );
 
-  const infoInicial = await leerPaginacion(page);
-  const conteo = contarPaginas(infoInicial);
+  // El iframe de paginación puede aparecer después de las filas del listado.
+  // Reintentar sin asumir una única página ni importar datos incompletos.
+  let conteo = null;
+  for (let intento = 1; intento <= 12; intento++) {
+    const info = await leerPaginacion(page);
+    conteo = contarPaginas(info);
+    if (conteo) break;
+    if (intento === 1 || intento === 6) {
+      console.log('Esperando paginador de Clarity, intento', intento);
+    }
+    await esperar(500);
+  }
 
   // Siempre guardar el diagnóstico para inspección.
   await diagnosticarPaginador(page);
