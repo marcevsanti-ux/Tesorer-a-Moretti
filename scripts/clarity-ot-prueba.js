@@ -407,7 +407,7 @@ async function extraerFilas(frame) {
     const patronOT = /^OS\.-?\d{5,}$/i;
     const patronFecha = /^\d{2}\/\d{2}\/\d{4}$/;
     const filas = [];
-    // En la grilla de Clarity, 'Fecha Final. Vehículo' corresponde al campo\n    // FechaFinalizacion del CSV exportado, validado con el usuario.
+    // La columna Fecha Final. Vehículo corresponde a FechaFinalizacion del CSV.
     const normalizarTitulo = v => limpiar(v).normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/gi, '').toLowerCase();
     const encabezados = [...document.querySelectorAll('tr')].map(tr =>
@@ -433,7 +433,17 @@ async function extraerFilas(frame) {
 
       if (!ot || !fecha) continue;
 
-      filas.push({ ot, fecha, valores, ...(indiceFechaFinalizacion >= 0 && valores[indiceFechaFinalizacion] ? { fechaFinalizacion: valores[indiceFechaFinalizacion] } : {}) });
+      // La grilla usa dos TD iniciales de controles que no aparecen en el encabezado.
+      // Si el encabezado está en otra tabla/frame, validar el índice 13 por
+      // estructura observada: Fecha(2), Documento(4), Estado(10), Fecha Final(13).
+      const esFinalizada = valores[10] === 'Finalizado';
+      const fechaPorCabecera = indiceFechaFinalizacion >= 0
+        ? valores[indiceFechaFinalizacion + (valores.length > 15 ? 2 : 0)]
+        : '';
+      const fechaPorEstructura = esFinalizada ? valores[13] : '';
+      const fechaFinalizacion = [fechaPorCabecera, fechaPorEstructura]
+        .find(v => patronFecha.test(String(v || '')));
+      filas.push({ ot, fecha, valores, ...(fechaFinalizacion ? { fechaFinalizacion } : {}) });
     }
 
     const vistos = new Set();
