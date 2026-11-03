@@ -52,8 +52,13 @@ function normalizar(registros, ejecucionId, fechaExtraccion, opciones = {}) {
     porNumero.get(numero).push(registro);
   }
   return [...porNumero.entries()].map(([numero, filas]) => {
-    const fechas = finalizadas ? [...new Set(filas.map(f => fechaISO(f.fechaFinalizacion)))] : [];
-    if (finalizadas && (fechas.length !== 1 || fechas[0] < opciones.fechaDesde || fechas[0] > opciones.fechaHasta)) throw new Error('Fecha finalización inconsistente o fuera de rango en ' + numero + ': ' + fechas.join(','));
+    const fechas = finalizadas ? [...new Set(filas.map(f => fechaISO(f.fechaFinalizacion)))].sort() : [];
+    if (finalizadas && (!fechas.length || fechas.some(fecha => fecha < opciones.fechaDesde || fecha > opciones.fechaHasta))) {
+      throw new Error('Fecha finalización ausente o fuera de rango en ' + numero + ': ' + fechas.join(','));
+    }
+    if (finalizadas && fechas.length > 1) {
+      console.warn('OT con múltiples fechas de finalización:', numero, fechas.join(','), 'Fecha consolidada:', fechas[fechas.length - 1]);
+    }
     return ({
     numero,
     cliente: String(filas[0].valores[3] || '').trim(),
@@ -64,7 +69,7 @@ function normalizar(registros, ejecucionId, fechaExtraccion, opciones = {}) {
       fechaExtraccion,
       ejecucionId,
       filtros: finalizadas ? { estado: 'Finalizado', tipoFecha: 'Finalización', fechaDesde: opciones.fechaDesde, fechaHasta: opciones.fechaHasta, subestado: 'Todos' } : { estadoID: 1, subestadoID: 120 },
-      ...(finalizadas ? { fechaFinalizacion: fechas[0] } : {}),
+      ...(finalizadas ? { fechaFinalizacion: fechas[fechas.length - 1], fechasFinalizacionDetectadas: fechas } : {}),
       filas
     }
   });
