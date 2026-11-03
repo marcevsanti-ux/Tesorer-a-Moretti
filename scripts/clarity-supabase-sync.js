@@ -51,7 +51,10 @@ function normalizar(registros, ejecucionId, fechaExtraccion, opciones = {}) {
     if (!porNumero.has(numero)) porNumero.set(numero, []);
     porNumero.get(numero).push(registro);
   }
-  return [...porNumero.entries()].map(([numero, filas]) => {\n    const fechas = finalizadas ? [...new Set(filas.map(f => fechaISO(f.fechaFinalizacion)))] : [];\n    if (finalizadas && (fechas.length !== 1 || fechas[0] < opciones.fechaDesde || fechas[0] > opciones.fechaHasta)) throw new Error('Fecha finalización inconsistente o fuera de rango en ' + numero + ': ' + fechas.join(','));\n    return ({
+  return [...porNumero.entries()].map(([numero, filas]) => {
+    const fechas = finalizadas ? [...new Set(filas.map(f => fechaISO(f.fechaFinalizacion)))] : [];
+    if (finalizadas && (fechas.length !== 1 || fechas[0] < opciones.fechaDesde || fechas[0] > opciones.fechaHasta)) throw new Error('Fecha finalización inconsistente o fuera de rango en ' + numero + ': ' + fechas.join(','));
+    return ({
     numero,
     cliente: String(filas[0].valores[3] || '').trim(),
     estado: finalizadas ? 'Finalizado' : 'Pendiente',
@@ -64,7 +67,10 @@ function normalizar(registros, ejecucionId, fechaExtraccion, opciones = {}) {
       ...(finalizadas ? { fechaFinalizacion: fechas[0] } : {}),
       filas
     }
-  });\n  });\n}\nasync function sincronizar(registros, opciones = {}) {
+  });
+  });
+}
+async function sincronizar(registros, opciones = {}) {
   const fechaExtraccion = new Date().toISOString();
   const ejecucionId = 'clarity-' + fechaExtraccion;
   const filas = normalizar(registros, ejecucionId, fechaExtraccion, opciones);
