@@ -452,6 +452,21 @@ function mesaMatches(text,question) {
   return terms.length>0&&terms.every(w=>normalizeMesa(text).includes(w));
 }
 
+
+function structuredClaimCount(question,records){
+ const q=normalizeMesa(question);
+ if(!/\b(cuantos|cuantas|cantidad|total)\b/.test(q)||!/\breclamos?\b/.test(q))return null;
+ const owners=[['Valeria',/\b(valeria|vale)\b/],['Samanta',/\b(samanta|sami)\b/],['Estefania',/\b(estefania|tefa)\b/]];
+ const mentionsOwner=/\b(responsable|asignad[oa]s?|tiene|lleva|a cargo|de vale|de valeria|de sami|de samanta|de tefa|de estefania)\b/.test(q);
+ const owner=mentionsOwner?owners.find(([,rx])=>rx.test(q))?.[0]:null;
+ const status=/\ben[\s_-]*proceso\b/.test(q)?'EN_PROCESO':/\b(abiertos?|abiertas?)\b/.test(q)?'ABIERTO':/\b(cerrados?|cerradas?)\b/.test(q)?'CERRADO':/\b(resueltos?|resueltas?)\b/.test(q)?'RESUELTO':null;
+ if(!owner&&!status)return null;
+ const matched=records.filter(r=>(!owner||normalizeMesa(r.responsable)===normalizeMesa(owner))&&(!status||normalizeMesa(r.estado)===normalizeMesa(status)));
+ const statusLabel={EN_PROCESO:'en proceso',ABIERTO:'abiertos',CERRADO:'cerrados',RESUELTO:'resueltos'};
+ const detail=(owner?' asignados a '+owner:'')+(status?' con estado '+statusLabel[status]:'');
+ return {respuesta:'Hay '+matched.length+' reclamos'+detail+'.'+(matched.length?' IDs: '+matched.slice(0,20).map(r=>'#'+(r.drive_id??r.id)).join(', ')+(matched.length>20?' (primeros 20 de '+matched.length+')':''):'') ,tipo:'supabase',cantidad:matched.length};
+}
+
 async function assistantChat(req, res) {
   if (!valid || !SERVICE_KEY || !PUENTES_API_KEY)
     return json(res, 503, { error: 'Asistente Puentes no configurado' });
@@ -504,6 +519,8 @@ async function assistantChat(req, res) {
     const isOT=/\b(?:ot|orden(?:es)?(?: de trabajo)?)\b/i.test(question);
     const table=isOT?'mesa_ot':'mesa_reclamos';
     const records=isOT?ordenes:reclamos;
+    const structured=!isOT?structuredClaimCount(question,reclamos):null;
+    if(structured)return json(res,200,structured);
     const matching=records.filter(x=>mesaMatches(mesaRecordText(x,table),question));
     const countQuestion=/\b(cuantos|cuantas|cantidad|total)\b/i.test(normalizeMesa(question));
     if(countQuestion && matching.length) {
