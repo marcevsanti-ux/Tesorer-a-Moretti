@@ -407,16 +407,15 @@ async function extraerFilas(frame) {
     const patronOT = /^OS\.-?\d{5,}$/i;
     const patronFecha = /^\d{2}\/\d{2}\/\d{4}$/;
     const filas = [];
-    // Solo una columna titulada explícitamente FechaFinalizacion es válida.
-    // "Fecha Final. Vehículo" NO es la fecha de cierre de la OT.
+    // En la grilla de Clarity, 'Fecha Final. Vehículo' corresponde al campo\n    // FechaFinalizacion del CSV exportado, validado con el usuario.
     const normalizarTitulo = v => limpiar(v).normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/gi, '').toLowerCase();
     const encabezados = [...document.querySelectorAll('tr')].map(tr =>
       [...tr.children].filter(el => /^(TH|TD)$/.test(el.tagName))
         .map(el => normalizarTitulo(el.innerText || el.textContent))
     );
-    const cabecera = encabezados.find(h => h.includes('fechafinalizacion') && h.includes('documento'));
-    const indiceFechaFinalizacion = cabecera ? cabecera.indexOf('fechafinalizacion') : -1;
+    const cabecera = encabezados.find(h => h.includes('documento') && (h.includes('fechafinalvehiculo') || h.includes('fechafinalizacion')));
+    const indiceFechaFinalizacion = cabecera ? cabecera.findIndex(h => h === 'fechafinalvehiculo' || h === 'fechafinalizacion') : -1;
 
     for (const tr of document.querySelectorAll('tr')) {
       const celdas = [...tr.children].filter(
@@ -1013,7 +1012,7 @@ async function main() {
       console.log('Finalizadas con FechaFinalizacion explícita:',conFecha,'de',finalizadas.registros.length);
       console.log('OT finalizadas extraídas:',finalizadas.registros.length,'Rango:',JSON.stringify(rango));
       if(process.env.CLARITY_FINALIZADAS_WRITE==='true'){
-        if(finalizadas.registros.some(r=>!r.fechaFinalizacion))throw Error('Escritura bloqueada: la grilla no expone FechaFinalizacion. No se usará Fecha Final. Vehículo.');
+        if(finalizadas.registros.some(r=>!r.fechaFinalizacion))throw Error('Escritura bloqueada: no se pudo leer Fecha Final. Vehículo de todas las OT.');
         const resultado=await sincronizar(finalizadas.registros,{estado:'Finalizado',fechaDesde:rango.desde,fechaHasta:rango.hasta});
         console.log('Resultado Supabase finalizadas:',JSON.stringify(resultado));
       }else console.log('OT finalizadas en modo diagnóstico: sin escritura');
