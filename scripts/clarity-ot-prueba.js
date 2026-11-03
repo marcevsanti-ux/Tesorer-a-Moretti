@@ -407,6 +407,16 @@ async function extraerFilas(frame) {
     const patronOT = /^OS\.-?\d{5,}$/i;
     const patronFecha = /^\d{2}\/\d{2}\/\d{4}$/;
     const filas = [];
+    // Solo una columna titulada explícitamente FechaFinalizacion es válida.
+    // "Fecha Final. Vehículo" NO es la fecha de cierre de la OT.
+    const normalizarTitulo = v => limpiar(v).normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/gi, '').toLowerCase();
+    const encabezados = [...document.querySelectorAll('tr')].map(tr =>
+      [...tr.children].filter(el => /^(TH|TD)$/.test(el.tagName))
+        .map(el => normalizarTitulo(el.innerText || el.textContent))
+    );
+    const cabecera = encabezados.find(h => h.includes('fechafinalizacion') && h.includes('documento'));
+    const indiceFechaFinalizacion = cabecera ? cabecera.indexOf('fechafinalizacion') : -1;
 
     for (const tr of document.querySelectorAll('tr')) {
       const celdas = [...tr.children].filter(
@@ -424,7 +434,7 @@ async function extraerFilas(frame) {
 
       if (!ot || !fecha) continue;
 
-      filas.push({ ot, fecha, valores });
+      filas.push({ ot, fecha, valores, ...(indiceFechaFinalizacion >= 0 && valores[indiceFechaFinalizacion] ? { fechaFinalizacion: valores[indiceFechaFinalizacion] } : {}) });
     }
 
     const vistos = new Set();
@@ -998,10 +1008,10 @@ async function main() {
       await esperar(2500);
       const primeraFinal=await esperarResultados(page);
       const finalizadas=await extraerTodasLasPaginas(page,primeraFinal);
-      guardarJSON('clarity-finalizadas-diagnostico.json',{rango,registros:finalizadas.registros});
+      guardarJSON('clarity-finalizadas-diagnostico.json',{rango,registros:finalizadas.registros});\n      const conFecha=finalizadas.registros.filter(r=>r.fechaFinalizacion).length;\n      console.log('Finalizadas con FechaFinalizacion explícita:',conFecha,'de',finalizadas.registros.length);
       console.log('OT finalizadas extraídas:',finalizadas.registros.length,'Rango:',JSON.stringify(rango));
       if(process.env.CLARITY_FINALIZADAS_WRITE==='true'){
-        if(process.env.CLARITY_FINALIZADAS_FECHA_VALIDADA!=='true')throw Error('Falta validar que fecha corresponde a Fecha Finalización');
+        if(finalizadas.registros.some(r=>!r.fechaFinalizacion))throw Error('Escritura bloqueada: la grilla no expone FechaFinalizacion. No se usará Fecha Final. Vehículo.');
         const resultado=await sincronizar(finalizadas.registros,{estado:'Finalizado',fechaDesde:rango.desde,fechaHasta:rango.hasta});
         console.log('Resultado Supabase finalizadas:',JSON.stringify(resultado));
       }else console.log('OT finalizadas en modo diagnóstico: sin escritura');
