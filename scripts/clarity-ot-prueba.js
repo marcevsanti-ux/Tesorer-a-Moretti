@@ -816,7 +816,7 @@ async function aplicarFinalizadas(frame){
  let desde=buscar(/desde|fec.*ini|fecha.*ini|start/i);
  let hasta=buscar(/hasta|fec.*fin|fecha.*fin|end/i);
  if(desde.length!==1||hasta.length!==1){
-   const candidatos=fechas.filter(c=>/^(?:\\d{2}\\/\\d{2}\\/\\d{4})?$/.test(c.value)&&/fecha|fec|date/i.test(c.id+' '+c.name));
+   const candidatos=fechas.filter(c=>/^(?:\d{2}\/\d{2}\/\d{4})?$/.test(c.value)&&/fecha|fec|date/i.test(c.id+' '+c.name));
    if(candidatos.length===2){desde=[candidatos[0]];hasta=[candidatos[1]];}
  }
  if(desde.length!==1||hasta.length!==1){
