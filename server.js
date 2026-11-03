@@ -542,6 +542,14 @@ http.createServer(async (req, res) => {
     );
   }
 
+  if (pathname === '/moretti-m-blue.svg' && ['GET','HEAD'].includes(req.method)) {
+    try {
+      const svg = await fs.readFile(path.join(__dirname, 'moretti-m-blue.svg'));
+      res.writeHead(200, {'Content-Type':'image/svg+xml','Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff'});
+      return res.end(req.method === 'HEAD' ? '' : svg);
+    } catch (e) { return json(res,404,{error:'Icono no disponible'}); }
+  }
+
   if (
     !['/', '/mesa-de-ayuda.html'].includes(pathname) ||
     !['GET', 'HEAD'].includes(req.method)
