@@ -1028,6 +1028,12 @@ async function main() {
       const primeraFinal=await esperarResultados(page);
       const finalizadas=await extraerTodasLasPaginas(page,primeraFinal);
       guardarJSON('clarity-finalizadas-diagnostico.json',{rango,registros:finalizadas.registros});
+      if(finalizadas.registros.length && !finalizadas.registros.some(r=>r.fechaFinalizacion)){
+        const muestra=finalizadas.registros.slice(0,3).map(r=>({
+          ot:r.ot, columnas:r.valores.map((valor,indice)=>({indice,valor}))
+        }));
+        console.log('DIAGNOSTICO COLUMNAS FINALIZADAS:',JSON.stringify(muestra));
+      }
       const conFecha=finalizadas.registros.filter(r=>r.fechaFinalizacion).length;
       console.log('Finalizadas con FechaFinalizacion explícita:',conFecha,'de',finalizadas.registros.length);
       console.log('OT finalizadas extraídas:',finalizadas.registros.length,'Rango:',JSON.stringify(rango));
