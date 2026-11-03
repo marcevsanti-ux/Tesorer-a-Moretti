@@ -235,6 +235,56 @@ const CLARITY_SERVICE_ID = process.env.CLARITY_SYNC_SERVICE_ID || '';
 const RAILWAY_ENVIRONMENT_ID = process.env.RAILWAY_ENVIRONMENT_ID || '';
 let lastManualTrigger = 0;
 
+let claritySchedulerBusy = false;
+async function triggerRailwayClarity() {
+  const response = await fetch('https://backboard.railway.com/graphql/v2', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Project-Access-Token':RAILWAY_TOKEN},
+    body:JSON.stringify({
+      query:'mutation ($serviceId: String!, $environmentId: String!) { serviceInstanceRedeploy(serviceId: $serviceId, environmentId: $environmentId) }',
+      variables:{serviceId:CLARITY_SERVICE_ID,environmentId:RAILWAY_ENVIRONMENT_ID}
+    }),
+    signal:AbortSignal.timeout(15000)
+  });
+  const result = await response.json().catch(()=>({}));
+  if(!response.ok || result.errors?.length || !result.data?.serviceInstanceRedeploy)
+    throw Error('Railway rechazó la solicitud de ejecución');
+}
+async function clarityScheduleTick() {
+  if(claritySchedulerBusy || !valid || !SERVICE_KEY || !RAILWAY_TOKEN || !CLARITY_SERVICE_ID || !RAILWAY_ENVIRONMENT_ID)return;
+  claritySchedulerBusy=true;
+  try {
+    const now=new Date();
+    const local=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Argentina/Buenos_Aires',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(now);
+    const p=Object.fromEntries(local.map(x=>[x.type,x.value]));
+    const hhmm=p.hour+':'+p.minute;
+    const config=await sb('/rest/v1/mesa_clarity_programacion?id=eq.1&select=activo,horarios',SERVICE_KEY);
+    if(!config.ok || !config.data?.[0]?.activo || !config.data[0].horarios.includes(hhmm))return;
+    const slot=p.year+'-'+p.month+'-'+p.day+'T'+hhmm;
+    const claimed=await sb('/rest/v1/mesa_clarity_ejecuciones',SERVICE_KEY,{
+      method:'POST',headers:{Prefer:'return=representation'},
+      body:JSON.stringify({slot,estado:'SOLICITANDO'})
+    });
+    if(!claimed.ok) {
+      if(claimed.status!==409)console.error('Clarity scheduler claim failed',claimed.status);
+      return;
+    }
+    let estado='SOLICITADA',detalle=null;
+    try {await triggerRailwayClarity();}catch(e){estado='ERROR';detalle=e.message;console.error('Clarity scheduled trigger failed',e.message)}
+    await sb('/rest/v1/mesa_clarity_ejecuciones?slot=eq.'+encodeURIComponent(slot),SERVICE_KEY,{
+      method:'PATCH',body:JSON.stringify({estado,detalle})
+    });
+    await sb('/rest/v1/mesa_clarity_programacion?id=eq.1',SERVICE_KEY,{
+      method:'PATCH',body:JSON.stringify({ultimo_intento:now.toISOString(),ultimo_estado:estado,ultimo_error:detalle})
+    });
+    console.log('Clarity scheduled execution',slot,estado);
+  }catch(e){console.error('Clarity scheduler error',e.message)}
+  finally{claritySchedulerBusy=false}
+}
+setInterval(clarityScheduleTick,30000);
+setTimeout(clarityScheduleTick,5000);
+
+
 async function railwayDeployments() {
   const response = await fetch('https://backboard.railway.com/graphql/v2', {
     method: 'POST',
