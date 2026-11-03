@@ -1008,7 +1008,9 @@ async function main() {
       await esperar(2500);
       const primeraFinal=await esperarResultados(page);
       const finalizadas=await extraerTodasLasPaginas(page,primeraFinal);
-      guardarJSON('clarity-finalizadas-diagnostico.json',{rango,registros:finalizadas.registros});\n      const conFecha=finalizadas.registros.filter(r=>r.fechaFinalizacion).length;\n      console.log('Finalizadas con FechaFinalizacion explícita:',conFecha,'de',finalizadas.registros.length);
+      guardarJSON('clarity-finalizadas-diagnostico.json',{rango,registros:finalizadas.registros});
+      const conFecha=finalizadas.registros.filter(r=>r.fechaFinalizacion).length;
+      console.log('Finalizadas con FechaFinalizacion explícita:',conFecha,'de',finalizadas.registros.length);
       console.log('OT finalizadas extraídas:',finalizadas.registros.length,'Rango:',JSON.stringify(rango));
       if(process.env.CLARITY_FINALIZADAS_WRITE==='true'){
         if(finalizadas.registros.some(r=>!r.fechaFinalizacion))throw Error('Escritura bloqueada: la grilla no expone FechaFinalizacion. No se usará Fecha Final. Vehículo.');
