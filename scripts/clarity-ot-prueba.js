@@ -407,15 +407,15 @@ async function extraerFilas(frame) {
     const patronOT = /^OS\.-?\d{5,}$/i;
     const patronFecha = /^\d{2}\/\d{2}\/\d{4}$/;
     const filas = [];
-    // La columna Fecha Final. Vehículo corresponde a FechaFinalizacion del CSV.
+    // Fecha Final. y Vehículo son campos distintos en la grilla de Clarity.
     const normalizarTitulo = v => limpiar(v).normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/gi, '').toLowerCase();
     const encabezados = [...document.querySelectorAll('tr')].map(tr =>
       [...tr.children].filter(el => /^(TH|TD)$/.test(el.tagName))
         .map(el => normalizarTitulo(el.innerText || el.textContent))
     );
-    const cabecera = encabezados.find(h => h.includes('documento') && (h.includes('fechafinalvehiculo') || h.includes('fechafinalizacion')));
-    const indiceFechaFinalizacion = cabecera ? cabecera.findIndex(h => h === 'fechafinalvehiculo' || h === 'fechafinalizacion') : -1;
+    const cabecera = encabezados.find(h => h.includes('documento') && (h.includes('fechafinalvehiculo') || h.includes('fechafinalizacion') || h.includes('fechafinal')));
+    const indiceFechaFinalizacion = cabecera ? cabecera.findIndex(h => h === 'fechafinalvehiculo' || h === 'fechafinalizacion' || h === 'fechafinal') : -1;
 
     for (const tr of document.querySelectorAll('tr')) {
       const celdas = [...tr.children].filter(
@@ -434,13 +434,13 @@ async function extraerFilas(frame) {
       if (!ot || !fecha) continue;
 
       // La grilla usa dos TD iniciales de controles que no aparecen en el encabezado.
-      // Si el encabezado está en otra tabla/frame, validar el índice 13 por
-      // estructura observada: Fecha(2), Documento(4), Estado(10), Fecha Final(13).
+      // Estructura observada: Fecha(2), Documento(4), Estado(10),
+      // Prioridad(11), Fecha Final.(12), Vehículo(13).
       const esFinalizada = valores[10] === 'Finalizado';
       const fechaPorCabecera = indiceFechaFinalizacion >= 0
         ? valores[indiceFechaFinalizacion + (valores.length > 15 ? 2 : 0)]
         : '';
-      const fechaPorEstructura = esFinalizada ? valores[13] : '';
+      const fechaPorEstructura = esFinalizada ? valores[12] : '';
       const fechaFinalizacion = [fechaPorCabecera, fechaPorEstructura]
         .find(v => patronFecha.test(String(v || '')));
       filas.push({ ot, fecha, valores, ...(fechaFinalizacion ? { fechaFinalizacion } : {}) });
