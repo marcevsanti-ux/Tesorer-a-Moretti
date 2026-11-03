@@ -22,6 +22,21 @@ async function request(url, options = {}) {
   if (!response.ok) throw new Error('Supabase HTTP ' + response.status + ': ' + body.slice(0, 300));
   return body ? JSON.parse(body) : null;
 }
+function fechaISO(valor) {
+  const s = String(valor || '').trim();
+  let y, m, d;
+  let match = /^(\d{4})[\/-](\d{2})[\/-](\d{2})$/.exec(s);
+  if (match) [, y, m, d] = match;
+  else {
+    match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
+    if (!match) throw new Error('FechaFinalizacion ausente o inválida: ' + s);
+    [, d, m, y] = match;
+  }
+  const iso = y + '-' + m + '-' + d;
+  if (new Date(iso + 'T00:00:00Z').toISOString().slice(0, 10) !== iso)
+    throw new Error('FechaFinalizacion imposible: ' + s);
+  return iso;
+}
 function normalizar(registros, ejecucionId, fechaExtraccion, opciones = {}) {
   const finalizadas = opciones.estado === 'Finalizado';
   if(finalizadas && !opciones.fechaDesde) throw new Error('Falta rango de finalización');
@@ -36,22 +51,20 @@ function normalizar(registros, ejecucionId, fechaExtraccion, opciones = {}) {
     if (!porNumero.has(numero)) porNumero.set(numero, []);
     porNumero.get(numero).push(registro);
   }
-  return [...porNumero.entries()].map(([numero, filas]) => ({
+  return [...porNumero.entries()].map(([numero, filas]) => {\n    const fechas = finalizadas ? [...new Set(filas.map(f => fechaISO(f.fechaFinalizacion)))] : [];\n    if (finalizadas && (fechas.length !== 1 || fechas[0] < opciones.fechaDesde || fechas[0] > opciones.fechaHasta)) throw new Error('Fecha finalización inconsistente o fuera de rango en ' + numero + ': ' + fechas.join(','));\n    return ({
     numero,
     cliente: String(filas[0].valores[3] || '').trim(),
     estado: finalizadas ? 'Finalizado' : 'Pendiente',
-    subestado: finalizadas ? String(filas[0].valores[10] || 'Finalizado') : '8 - Garantia',
+    subestado: finalizadas ? 'Finalizado' : '8 - Garantia',
     clarity_snapshot: {
       fuente: 'Clarity',
       fechaExtraccion,
       ejecucionId,
       filtros: finalizadas ? { estado: 'Finalizado', tipoFecha: 'Finalización', fechaDesde: opciones.fechaDesde, fechaHasta: opciones.fechaHasta, subestado: 'Todos' } : { estadoID: 1, subestadoID: 120 },
-      ...(finalizadas ? { fechaFinalizacion: String(filas[0].valores[12] || '').trim() } : {}),
+      ...(finalizadas ? { fechaFinalizacion: fechas[0] } : {}),
       filas
     }
-  }));
-}
-async function sincronizar(registros, opciones = {}) {
+  });\n  });\n}\nasync function sincronizar(registros, opciones = {}) {
   const fechaExtraccion = new Date().toISOString();
   const ejecucionId = 'clarity-' + fechaExtraccion;
   const filas = normalizar(registros, ejecucionId, fechaExtraccion, opciones);
