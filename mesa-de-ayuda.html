@@ -11,11 +11,11 @@
 <section id="login" class="panel login"><h2>Acceso al portal</h2><p class="message">Ingresá con tu usuario corporativo autorizado.</p><form id="loginForm"><input id="email" type="email" placeholder="Correo corporativo" required autocomplete="username"><input id="password" type="password" placeholder="Contraseña" required autocomplete="current-password"><button class="btn" type="submit">Ingresar</button></form><div id="loginMessage" class="message"></div><div id="inviteSetup" class="hidden" style="margin-top:18px"><h3>Activar cuenta</h3><p class="message">Definí una contraseña para completar tu invitación.</p><form id="inviteSetupForm"><input id="invitePassword" type="password" minlength="8" required autocomplete="new-password" placeholder="Nueva contraseña (mínimo 8 caracteres)"><input id="invitePasswordConfirm" type="password" minlength="8" required autocomplete="new-password" placeholder="Repetir contraseña"><button class="btn" type="submit">Activar cuenta</button></form><div id="inviteSetupMessage" class="message"></div></div></section>
 <section id="app" class="hidden"><div id="moretti-ai" style="position:fixed;right:20px;bottom:20px;z-index:9999;font-family:DM Sans,Arial,sans-serif">
 <div id="moretti-ai-panel" hidden style="width:min(390px,calc(100vw - 30px));height:min(530px,calc(100dvh - 105px));margin-bottom:10px;background:white;color:#182d41;border:1px solid #dce4ea;border-radius:16px;box-shadow:0 12px 40px #0004;overflow:hidden;display:flex;flex-direction:column">
-<div style="background:#182d41;color:white;padding:15px 17px;display:flex;justify-content:space-between;align-items:center"><strong>✦ Asistente Moretti</strong><button id="moretti-ai-close" type="button" aria-label="Cerrar chat" style="border:0;background:transparent;color:white;font-size:23px">×</button></div>
+<div style="background:#182d41;color:white;padding:15px 17px;display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:9px"><svg viewBox="0 0 64 64" width="36" height="36" aria-hidden="true" style="border-radius:50%;flex-shrink:0"><circle cx="32" cy="32" r="32" fill="#dbeafe"/><path d="M13 53c2-14 5-27 8-34C26 7 42 8 47 20c4 9 4 23 6 33" fill="#283d64"/><path d="M13 64c1-14 8-20 19-20s18 6 19 20" fill="#b3244b"/><ellipse cx="32" cy="30" rx="14" ry="17" fill="#f4c8b3"/><path d="M18 28c0-17 10-21 18-19 9 2 13 10 12 19-4-3-6-7-8-12-5 8-14 11-22 12" fill="#283d64"/><circle cx="27" cy="30" r="1.4" fill="#26334d"/><circle cx="37" cy="30" r="1.4" fill="#26334d"/><path d="M28 39q4 4 8 0" fill="none" stroke="#a74b5b" stroke-width="1.6" stroke-linecap="round"/><path d="M14 54q6-9 18-9t18 9" fill="none" stroke="#f8d6e2" stroke-width="2"/></svg><strong>Asistente Moretti</strong></span><button id="moretti-ai-close" type="button" aria-label="Cerrar chat" style="border:0;background:transparent;color:white;font-size:23px">×</button></div>
 <div id="moretti-ai-messages" role="log" aria-live="polite" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;font-size:13px"><div style="background:#f1f5f8;padding:12px;border-radius:12px;align-self:flex-start;max-width:92%">¡Hola! Puedo consultar reclamos y órdenes de trabajo de Mesa de Ayuda: motivos, clientes, productos, estados y cantidades.</div></div>
 <form id="moretti-ai-form" style="display:flex;gap:8px;padding:12px;border-top:1px solid #e1e7ec"><input id="moretti-ai-input" aria-label="Tu mensaje" placeholder="Escribí tu consulta..." maxlength="600" required style="min-width:0;flex:1;font-size:13px"><button id="moretti-ai-send" type="submit" style="background:#d4000a;color:white;border:0;border-radius:8px;padding:0 14px">Enviar</button></form>
-<div style="font-size:10px;color:#687887;padding:0 14px 10px">Consultas de solo lectura sobre reclamos y OT en Supabase.</div></div>
-<button id="moretti-ai-toggle" type="button" aria-expanded="false" style="background:#d4000a;color:#fff;border:0;border-radius:30px;padding:14px 18px;font-weight:700;box-shadow:0 8px 25px #0004;cursor:pointer">✦ Asistente Moretti</button></div>
+<div style="font-size:10px;color:#687887;padding:0 14px 10px">Consultas sobre reclamos y OT; los recordatorios permiten completar y reprogramar acciones.</div></div>
+<button id="moretti-ai-toggle" type="button" aria-expanded="false" style="background:#d4000a;color:#fff;border:0;border-radius:30px;padding:14px 18px;font-weight:700;box-shadow:0 8px 25px #0004;cursor:pointer;display:flex;align-items:center;gap:8px"><svg viewBox="0 0 64 64" width="36" height="36" aria-hidden="true" style="border-radius:50%;flex-shrink:0"><circle cx="32" cy="32" r="32" fill="#dbeafe"/><path d="M13 53c2-14 5-27 8-34C26 7 42 8 47 20c4 9 4 23 6 33" fill="#283d64"/><path d="M13 64c1-14 8-20 19-20s18 6 19 20" fill="#b3244b"/><ellipse cx="32" cy="30" rx="14" ry="17" fill="#f4c8b3"/><path d="M18 28c0-17 10-21 18-19 9 2 13 10 12 19-4-3-6-7-8-12-5 8-14 11-22 12" fill="#283d64"/><circle cx="27" cy="30" r="1.4" fill="#26334d"/><circle cx="37" cy="30" r="1.4" fill="#26334d"/><path d="M28 39q4 4 8 0" fill="none" stroke="#a74b5b" stroke-width="1.6" stroke-linecap="round"/><path d="M14 54q6-9 18-9t18 9" fill="none" stroke="#f8d6e2" stroke-width="2"/></svg><span>Asistente Moretti</span></button></div>
 <script>(function(){
 const b=document.getElementById('moretti-ai-toggle'),p=document.getElementById('moretti-ai-panel'),f=document.getElementById('moretti-ai-form'),i=document.getElementById('moretti-ai-input'),log=document.getElementById('moretti-ai-messages'),send=document.getElementById('moretti-ai-send');
 p.style.display="none";
@@ -89,7 +89,7 @@ else await setSession(data.session);
 db.auth.onAuthStateChange((event,s)=>{if(event==='PASSWORD_RECOVERY'||(event==='SIGNED_IN'&&sessionStorage.getItem('mesa_invite_pending')==='1')){show('login',true);show('app',false);show('loginForm',false);show('inviteSetup',true);return}if(!s)void setSession(null)});
 }
 $('inviteSetupForm').onsubmit=async e=>{e.preventDefault();const a=$('invitePassword').value,b=$('invitePasswordConfirm').value;if(a!==b){msg('inviteSetupMessage','Las contraseñas no coinciden.',true);return;}const {data:auth}=await db.auth.getSession();if(!auth.session){msg('inviteSetupMessage','La invitación no está activa. Volvé a abrir el enlace del correo.',true);return;}const {error}=await db.auth.updateUser({password:a});if(error){msg('inviteSetupMessage',error.message,true);return;}sessionStorage.removeItem('mesa_invite_pending');history.replaceState(null,'',location.pathname);show('inviteSetup',false);show('loginForm',true);msg('loginMessage','Cuenta activada. Ya podés ingresar con tu correo y contraseña.');await db.auth.signOut();};
-async function setSession(s){if(session?.user?.id!==s?.user?.id){notificationsInitialized=false;lastNotifiedIds=new Set();}session=s;show('login',!s);show('app',!!s);if(!s)return;const {data,error}=await db.from('mesa_usuarios').select('rol,activo').eq('user_id',s.user.id).maybeSingle();if(error||!data?.activo){await db.auth.signOut();msg('loginMessage','Tu cuenta no está autorizada para Mesa de Ayuda.',true);return}role=data.rol;const {data:identity}=await db.from('mesa_agenda_integrantes').select('responsable,supervisor').eq('user_id',s.user.id).maybeSingle();agendaIdentity=identity||null;$('agendaOwner').value=role==='ADMIN'||agendaIdentity?.supervisor?'TODOS':agendaIdentity?.responsable||'SIN_ASIGNAR';$('agendaOwner').disabled=role!=='ADMIN'&&!agendaIdentity?.supervisor;$('who').textContent=s.user.email;$('roleLabel').textContent=role==='ADMIN'?'Administrador':'Usuario';show('usersTab',role==='ADMIN');show('manualClarityImport',role==='ADMIN');if(role==='ADMIN'){void loadMesaUsers();try{const cfg=await fetch('/api/clarity/estado',{headers:{Authorization:'Bearer '+session.access_token}}).then(r=>r.json());if(!cfg.manual_configurada){$('manualClarityImport').disabled=true;msg('manualClarityMessage','Importación manual pendiente de configurar en Railway.');}else{msg('manualClarityMessage','Importación manual disponible.');}}catch{msg('manualClarityMessage','No se pudo verificar la configuración de Clarity.',true);}}await load()}
+async function setSession(s){if(session?.user?.id!==s?.user?.id){notificationsInitialized=false;lastNotifiedIds=new Set();assistantReminderShown.clear();}session=s;show('login',!s);show('app',!!s);if(!s)return;const {data,error}=await db.from('mesa_usuarios').select('rol,activo').eq('user_id',s.user.id).maybeSingle();if(error||!data?.activo){await db.auth.signOut();msg('loginMessage','Tu cuenta no está autorizada para Mesa de Ayuda.',true);return}role=data.rol;const {data:identity}=await db.from('mesa_agenda_integrantes').select('responsable,supervisor').eq('user_id',s.user.id).maybeSingle();agendaIdentity=identity||null;$('agendaOwner').value=role==='ADMIN'||agendaIdentity?.supervisor?'TODOS':agendaIdentity?.responsable||'SIN_ASIGNAR';$('agendaOwner').disabled=role!=='ADMIN'&&!agendaIdentity?.supervisor;$('who').textContent=s.user.email;$('roleLabel').textContent=role==='ADMIN'?'Administrador':'Usuario';show('usersTab',role==='ADMIN');show('manualClarityImport',role==='ADMIN');if(role==='ADMIN'){void loadMesaUsers();try{const cfg=await fetch('/api/clarity/estado',{headers:{Authorization:'Bearer '+session.access_token}}).then(r=>r.json());if(!cfg.manual_configurada){$('manualClarityImport').disabled=true;msg('manualClarityMessage','Importación manual pendiente de configurar en Railway.');}else{msg('manualClarityMessage','Importación manual disponible.');}}catch{msg('manualClarityMessage','No se pudo verificar la configuración de Clarity.',true);}}await load()}
 $('loginForm').onsubmit=async e=>{e.preventDefault();if(!db)return;msg('loginMessage','Ingresando...');const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){msg('loginMessage',error.message,true);return}await setSession(data.session)};
 $('logout').onclick=async()=>{if(db)await db.auth.signOut();await setSession(null)};
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');for(const t of ['ot','finalizadas','reclamos','agenda','biblioteca','usuarios'])show('tab-'+t,b.dataset.tab===t);show('editor',false)});
@@ -143,7 +143,7 @@ async function load(){
   $('warranty').textContent=visible.filter(x=>/garant/i.test(x.subestado||'')).length;
   $('claims').textContent=claims.filter(x=>!['CERRADO','RESUELTO'].includes(String(x.estado||'').toUpperCase())).length;
   const {data:reminders,error:agendaError}=await db.from("mesa_reclamo_recordatorios").select("*").order("fecha_hora",{ascending:true}).limit(500);agendaReminders=reminders||[];if(agendaError)msg("agendaMessage","No se pudieron cargar recordatorios: "+agendaError.message,true);
-  render();
+  render();deliverAssistantReminders();
 }
 $('claimStatus').onchange=updateClaimFilters;
 $('claimPrevPage').onclick=()=>{if(claimPage>0){claimPage--;render();}};
@@ -411,6 +411,63 @@ function visibleReminderAlerts(){
 function playReminderSound(){
  try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(!notificationAudio)notificationAudio=new C();if(notificationAudio.state!=='running')return;const t=notificationAudio.currentTime;[0,.19].forEach((delay,i)=>{const osc=notificationAudio.createOscillator(),gain=notificationAudio.createGain();osc.type='sine';osc.frequency.value=i?784:659;gain.gain.setValueAtTime(.0001,t+delay);gain.gain.exponentialRampToValueAtTime(.075,t+delay+.025);gain.gain.exponentialRampToValueAtTime(.0001,t+delay+.15);osc.connect(gain).connect(notificationAudio.destination);osc.start(t+delay);osc.stop(t+delay+.16);});}catch(e){console.warn('No se pudo reproducir la alerta sonora');}
 }
+
+const assistantReminderShown=new Set();
+function personalChatReminders(){
+ const now=Date.now();
+ return agendaReminders.filter(x=>x.estado==='PENDIENTE'&&Date.parse(x.fecha_hora)<=now&&
+ (x.destinatario==='EQUIPO'||(agendaIdentity?.responsable&&x.destinatario===agendaIdentity.responsable)))
+ .sort((a,b)=>Date.parse(a.fecha_hora)-Date.parse(b.fecha_hora));
+}
+function assistantReminderCard(x){
+ const log=$('moretti-ai-messages');if(!log)return;
+ const claim=claims.find(c=>c.id===x.reclamo_id);
+ const card=document.createElement('div');card.className='assistant-reminder-card';
+ card.style.cssText='background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:12px;max-width:96%;align-self:flex-start;color:#182d41';
+ const heading=document.createElement('strong');
+ heading.textContent='🔔 '+(x.destinatario==='EQUIPO'?'Equipo':'@'+({Valeria:'vale',Samanta:'sami',Estefania:'tefa'}[x.destinatario]||x.destinatario))+' · Recordatorio';
+ const desc=document.createElement('div');
+ desc.style.cssText='white-space:pre-wrap;margin:8px 0';
+ desc.textContent='Reclamo #'+(claim?.drive_id||'—')+' · '+(claim?.drive_historico?.Cliente||claim?.asunto||'Cliente no informado')+'\n'+x.detalle+'\n'+new Date(x.fecha_hora).toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires'});
+ const actions=document.createElement('div');actions.style.cssText='display:flex;flex-wrap:wrap;gap:6px';
+ const complete=document.createElement('button');complete.type='button';complete.textContent='✓ Ya lo hice';
+ const reschedule=document.createElement('button');reschedule.type='button';reschedule.textContent='↻ Reprogramar';
+ const view=document.createElement('button');view.type='button';view.textContent='Ver reclamo';
+ for(const b of [complete,reschedule,view])b.style.cssText='background:white;color:#1e3a5f;border:1px solid #b7c9da;border-radius:7px;padding:7px 9px;cursor:pointer;font-size:12px';
+ const feedback=document.createElement('small');feedback.style.cssText='display:block;margin-top:8px';
+ complete.onclick=async()=>{
+  complete.disabled=true;reschedule.disabled=true;
+  const {data,error}=await db.from('mesa_reclamo_recordatorios').update({estado:'COMPLETADO',actualizado_at:new Date().toISOString()}).eq('id',x.id).eq('estado','PENDIENTE').select('id');
+  if(error||!data?.length){feedback.textContent='No se pudo completar. Actualizá y reintentá.';complete.disabled=false;reschedule.disabled=false;return;}
+  feedback.textContent='✓ Gestión marcada como completada';actions.remove();await refreshReminderNotifications();renderAgenda();
+ };
+ reschedule.onclick=async()=>{
+  const local=new Date(Date.now()+3600000);
+  const pad=n=>String(n).padStart(2,'0');
+  const suggested=local.getFullYear()+'-'+pad(local.getMonth()+1)+'-'+pad(local.getDate())+'T'+pad(local.getHours())+':'+pad(local.getMinutes());
+  const answer=prompt('Nueva fecha y hora (AAAA-MM-DDTHH:MM)',suggested);
+  if(answer===null)return;
+  if(!/^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(answer)||!Number.isFinite(new Date(answer).getTime())||new Date(answer).getTime()<=Date.now()){feedback.textContent='Ingresá una fecha y hora futuras válidas.';return;}
+  complete.disabled=true;reschedule.disabled=true;
+  const {data,error}=await db.from('mesa_reclamo_recordatorios').update({fecha_hora:new Date(answer).toISOString(),actualizado_at:new Date().toISOString()}).eq('id',x.id).eq('estado','PENDIENTE').select('id');
+  if(error||!data?.length){feedback.textContent='No se pudo reprogramar.';complete.disabled=false;reschedule.disabled=false;return;}
+  feedback.textContent='✓ Reprogramado para '+new Date(answer).toLocaleString('es-AR');actions.remove();await refreshReminderNotifications();renderAgenda();
+ };
+ view.onclick=()=>{
+  const tab=document.querySelector('[data-tab="reclamos"]');if(tab)tab.click();
+  if(claim){const input=$('claimSearch');if(input){input.value=String(claim.drive_id||'');input.dispatchEvent(new Event('input',{bubbles:true}));}}
+  $('moretti-ai-close').click();
+ };
+ actions.append(complete,reschedule,view);card.append(heading,desc,actions,feedback);log.append(card);log.scrollTop=log.scrollHeight;
+}
+function deliverAssistantReminders(){
+ if(!session||!$('moretti-ai-messages'))return;
+ for(const x of personalChatReminders()){
+  if(assistantReminderShown.has(x.id))continue;
+  assistantReminderShown.add(x.id);
+  assistantReminderCard(x);
+ }
+}
 function renderNotifications(){
  if(!$('notificationBell'))return;
  const alerts=visibleReminderAlerts(),ids=new Set(alerts.map(x=>x.id));
@@ -428,7 +485,7 @@ $('notificationAgenda').onclick=()=>{$('notificationClose').click();$('openAgend
 async function refreshReminderNotifications(){
  if(!session||!db||document.hidden)return;
  const {data,error}=await db.from('mesa_reclamo_recordatorios').select('*').eq('estado','PENDIENTE').order('fecha_hora',{ascending:true}).limit(500);
- if(!error){const completed=agendaReminders.filter(x=>x.estado!=='PENDIENTE');agendaReminders=[...completed,...(data||[])];renderNotifications();renderDashboardAgenda();}
+ if(!error){const completed=agendaReminders.filter(x=>x.estado!=='PENDIENTE');agendaReminders=[...completed,...(data||[])];renderNotifications();renderDashboardAgenda();deliverAssistantReminders();}
 }
 window.setInterval(refreshReminderNotifications,60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshReminderNotifications();});
