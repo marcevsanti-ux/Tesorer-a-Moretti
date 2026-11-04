@@ -53,7 +53,7 @@ const reminderResult=await createChatReminder(q);if(reminderResult!==null){pendi
 <div class="topline"><h3>Próximas acciones</h3><span class="message">Notificaciones dentro del portal, sin WhatsApp</span></div>
 <div class="tablewrap"><table><thead><tr><th>Fecha / hora</th><th>Reclamo</th><th>Acción</th><th>Destinatario</th><th>Estado</th></tr></thead><tbody id="agendaReminderRows"></tbody></table></div>
 <div class="tablewrap"><table><thead><tr><th>Reclamo</th><th>Asunto / Cliente</th><th>Responsable</th><th>Estado</th><th>Próxima acción</th></tr></thead><tbody id="agendaRows"></tbody></table></div>
-<p class="message" id="agendaMessage" role="status"></p>
+<form id="postponeForm" class="panel hidden" style="margin:16px 0"><h3>Postergar acción</h3><p id="postponeOriginal"></p><input type="hidden" id="postponeId"><div class="formgrid"><label>Nueva fecha y hora<input type="datetime-local" id="postponeWhen" required></label><label>Motivo de postergación<textarea id="postponeReason" maxlength="2000" required placeholder="Qué se realizó y qué falta confirmar"></textarea></label></div><div class="toolbar"><button class="btn" type="submit">Confirmar postergación</button><button class="btn secondary" id="postponeCancel" type="button">Cancelar</button></div></form><p class="message" id="agendaMessage" role="status"></p>
 </section>
 <section id="tab-reclamos" class="panel hidden"><div class="topline"><h2>Reclamos</h2><div class="toolbar"><label for="claimStatus" style="font-size:14px">Estado</label><select id="claimStatus" aria-label="Filtrar reclamos por estado"><option value="EN_PROCESO">En proceso</option><option value="ABIERTO">Abiertos</option><option value="CERRADO">Cerrados</option><option value="RESUELTO">Resueltos</option><option value="TODOS">Todos</option></select><button class="btn" id="newClaim">Nuevo reclamo</button></div></div><div class="toolbar" style="margin:12px 0;flex-wrap:wrap"><input id="claimIdFilter" type="search" placeholder="ID" aria-label="Filtrar por ID" style="max-width:90px"><input id="claimDateFilter" type="date" aria-label="Filtrar por fecha de ingreso"><input id="claimClientFilter" type="search" placeholder="Cliente" aria-label="Filtrar por cliente"><input id="claimReasonFilter" type="search" placeholder="Motivo" aria-label="Filtrar por motivo"><input id="claimProductFilter" type="search" placeholder="Producto" aria-label="Filtrar por producto"><input id="claimContactFilter" type="date" aria-label="Filtrar por último contacto"><select id="claimOwnerFilter" aria-label="Filtrar reclamos por responsable" style="min-width:165px"><option value="TODOS">Todos los responsables</option><option value="Valeria">@vale · Valeria</option><option value="Estefania">@tefa · Estefanía</option><option value="Samanta">@sami · Samanta</option><option value="SIN_ASIGNAR">Sin asignar</option></select><button class="btn secondary" id="clearClaimFilters" type="button">Limpiar filtros</button></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Fecha de ingreso</th><th>Clientes</th><th>Motivo</th><th>Producto</th><th>Último contacto</th><th>Responsable</th><th></th></tr></thead><tbody id="claimRows"></tbody></table></div><div class="toolbar" style="justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap"><span id="claimPageInfo" class="message" aria-live="polite"></span><div class="toolbar"><button type="button" class="btn secondary" id="claimPrevPage">Anterior</button><span id="claimPageNumber" aria-live="polite"></span><button type="button" class="btn secondary" id="claimNextPage">Siguiente</button></div></div><p id="claimMessage" class="message"></p></section>
 <section id="tab-biblioteca" class="panel hidden"><h2>Biblioteca técnica</h2><p class="message">Próxima integración: búsqueda de documentos técnicos en Google Drive mediante Railway / MCP Puentes.</p></section>
@@ -620,8 +620,33 @@ function renderAgenda(){
     $('agendaReminderForm').scrollIntoView({behavior:'smooth',block:'center'});
   });
  const visibleReminders=agendaReminders.filter(x=>status==='TODOS'||x.estado==='PENDIENTE').filter(x=>owner==='TODOS'||(owner==='SIN_ASIGNAR'?x.destinatario==='EQUIPO':x.destinatario===owner||x.destinatario==='EQUIPO'));
- $('agendaReminderRows').innerHTML=visibleReminders.map(x=>{const overdue=x.estado==='PENDIENTE'&&new Date(x.fecha_hora)<new Date();return '<tr><td>'+escapeHTML(fechaHoraVisible(x.fecha_hora))+'</td><td>'+(()=>{const c=claims.find(c=>c.id===x.reclamo_id);return escapeHTML(c?'#'+(c.drive_id??'—')+' · '+(c.drive_historico?.Cliente||c.asunto||'Cliente no informado'):'Recordatorio general');})()+'</td><td>'+escapeHTML(x.detalle)+'</td><td>'+responsableBadge(x.destinatario)+'</td><td>'+(overdue?'🔴 Vencido':escapeHTML(x.estado))+(x.estado==='PENDIENTE'?' <button class="btn secondary" data-complete-reminder="'+escapeHTML(x.id)+'">Completar</button>':'')+'</td></tr>'}).join('')||'<tr><td colspan="5">No hay recordatorios en esta vista.</td></tr>';
+ $('agendaReminderRows').innerHTML=visibleReminders.map(x=>{const overdue=x.estado==='PENDIENTE'&&new Date(x.fecha_hora)<new Date();return '<tr><td>'+escapeHTML(fechaHoraVisible(x.fecha_hora))+'</td><td>'+(()=>{const c=claims.find(c=>c.id===x.reclamo_id);return escapeHTML(c?'#'+(c.drive_id??'—')+' · '+(c.drive_historico?.Cliente||c.asunto||'Cliente no informado'):'Recordatorio general');})()+'</td><td>'+escapeHTML(x.detalle)+'</td><td>'+responsableBadge(x.destinatario)+'</td><td>'+(overdue?'🔴 Vencido':escapeHTML(x.estado))+(x.estado==='PENDIENTE'?' <button class="btn secondary" data-complete-reminder="'+escapeHTML(x.id)+'">Completar</button> <button class="btn secondary" data-postpone-reminder="'+escapeHTML(x.id)+'">Postergar</button>':'')+'</td></tr>'}).join('')||'<tr><td colspan="5">No hay recordatorios en esta vista.</td></tr>';
+ document.querySelectorAll('[data-postpone-reminder]').forEach(b=>b.onclick=()=>{
+  const reminder=agendaReminders.find(x=>String(x.id)===b.dataset.postponeReminder);
+  if(!reminder)return;
+  $('postponeId').value=reminder.id;
+  $('postponeOriginal').textContent=reminder.detalle+' · '+fechaHoraVisible(reminder.fecha_hora);
+  $('postponeWhen').value='';
+  $('postponeReason').value='';
+  $('postponeForm').classList.remove('hidden');
+  $('postponeWhen').focus();
+  $('postponeForm').scrollIntoView({behavior:'smooth',block:'center'});
+ });
  document.querySelectorAll('[data-complete-reminder]').forEach(b=>b.onclick=async()=>{const {error}=await db.from('mesa_reclamo_recordatorios').update({estado:'COMPLETADO',actualizado_at:new Date().toISOString()}).eq('id',b.dataset.completeReminder);if(error)msg('agendaMessage',error.message,true);else await load();});
+ $('postponeCancel').onclick=()=>$('postponeForm').classList.add('hidden');
+ $('postponeForm').onsubmit=async e=>{
+  e.preventDefault();
+  const when=$('postponeWhen').value,reason=$('postponeReason').value.trim();
+  if(!when||reason.length<3)return;
+  const button=$('postponeForm').querySelector('[type="submit"]');button.disabled=true;
+  try{
+   const {error}=await db.rpc('mesa_postergar_recordatorio',{p_id:$('postponeId').value,p_fecha:new Date(when).toISOString(),p_motivo:reason});
+   if(error)throw error;
+   $('postponeForm').classList.add('hidden');
+   await load();
+  }catch(error){msg('agendaMessage','No se pudo postergar: '+error.message,true);}
+  finally{button.disabled=false;}
+ };
  $('agendaMessage').textContent=subset.length+' reclamos visibles · '+visibleReminders.filter(x=>x.estado==='PENDIENTE').length+' recordatorios pendientes.';
 }
 $('agendaReminderForm').onsubmit=async e=>{e.preventDefault();const reclamo_id=$('agendaClaim').value,detalle=$('agendaDetail').value.trim(),fecha_hora=$('agendaWhen').value,destinatario=$('agendaTarget').value;if(!detalle||!fecha_hora)return;const {error}=await db.from('mesa_reclamo_recordatorios').insert({reclamo_id:reclamo_id||null,detalle,fecha_hora:new Date(fecha_hora).toISOString(),destinatario,creado_por:session.user.id});if(error)msg('agendaMessage','No se pudo guardar: '+error.message,true);else{$('agendaDetail').value='';await load();}};
