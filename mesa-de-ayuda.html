@@ -556,7 +556,17 @@ function renderAgenda(){
  const subset=claims.filter(x=>(status==='TODOS'||active(x))&&(owner==='TODOS'||(owner==='SIN_ASIGNAR'?!x.responsable:x.responsable===owner)));
  const count=name=>claims.filter(x=>active(x)&&x.responsable===name).length;
  $('agendaStats').innerHTML=['Valeria','Estefania','Samanta'].map(name=>'<div class="stat"><strong>'+count(name)+'</strong><small>'+responsableBadge(name)+' · activos</small></div>').join('')+'<div class="stat"><strong>'+claims.filter(x=>active(x)&&!x.responsable).length+'</strong><small>Sin asignar</small></div>';
- root.innerHTML=subset.map(x=>'<tr><td>'+escapeHTML(x.drive_id??x.id)+'</td><td>'+escapeHTML(x.asunto||x.drive_historico?.Cliente||'—')+'</td><td>'+responsableBadge(x.responsable)+'</td><td>'+escapeHTML(x.estado||'—')+'</td><td><span class="tag">Sin recordatorio</span></td></tr>').join('')||'<tr><td colspan="5">No hay reclamos para estos filtros.</td></tr>';
+ const pendingByClaim=new Map();
+  for(const reminder of agendaReminders){
+    if(reminder.estado!=='PENDIENTE'||!reminder.reclamo_id)continue;
+    const current=pendingByClaim.get(String(reminder.reclamo_id));
+    if(!current||new Date(reminder.fecha_hora)<new Date(current.fecha_hora))pendingByClaim.set(String(reminder.reclamo_id),reminder);
+  }
+  root.innerHTML=subset.map(x=>{
+    const reminder=pendingByClaim.get(String(x.id));
+    const action=reminder?'<span title="'+escapeHTML(fechaHoraVisible(reminder.fecha_hora))+'">'+escapeHTML(reminder.detalle)+' · '+escapeHTML(fechaHoraVisible(reminder.fecha_hora))+'</span>':'<span class="tag">Sin recordatorio</span>';
+    return '<tr><td>'+escapeHTML(x.drive_id??x.id)+'</td><td>'+escapeHTML(x.asunto||x.drive_historico?.Cliente||'—')+'</td><td>'+responsableBadge(x.responsable)+'</td><td>'+escapeHTML(x.estado||'—')+'</td><td><button type="button" class="btn secondary" data-agenda-claim="'+escapeHTML(x.id)+'" title="Crear nueva acción para este reclamo" style="white-space:normal;text-align:left">'+action+' ＋</button></td></tr>';
+  }).join('')||'<tr><td colspan="5">No hay reclamos para estos filtros.</td></tr>';
  const select=$('agendaClaim');const previous=select.value;
  const normalize=t=>String(t||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
  const query=normalize($('agendaClaimSearch').value.trim());
@@ -564,6 +574,16 @@ function renderAgenda(){
  select.innerHTML='<option value="">Sin reclamo (recordatorio general)</option>'+matching.map(x=>'<option value="'+escapeHTML(x.id)+'">#'+escapeHTML(x.drive_id??'—')+' · '+escapeHTML(x.asunto||'Reclamo')+'</option>').join('');
  if(matching.some(x=>String(x.id)===String(previous)))select.value=previous;
  $('agendaClaimCount').textContent=matching.length+' de '+subset.length+' reclamos';
+  document.querySelectorAll('[data-agenda-claim]').forEach(button=>button.onclick=()=>{
+    const claim=claims.find(x=>String(x.id)===button.dataset.agendaClaim);
+    if(!claim)return;
+    $('agendaClaimSearch').value='';
+    renderAgenda();
+    $('agendaClaim').value=String(claim.id);
+    if(claim.responsable&&['Valeria','Estefania','Samanta'].includes(claim.responsable))$('agendaTarget').value=claim.responsable;
+    $('agendaDetail').focus();
+    $('agendaReminderForm').scrollIntoView({behavior:'smooth',block:'center'});
+  });
  const visibleReminders=agendaReminders.filter(x=>status==='TODOS'||x.estado==='PENDIENTE').filter(x=>owner==='TODOS'||(owner==='SIN_ASIGNAR'?x.destinatario==='EQUIPO':x.destinatario===owner||x.destinatario==='EQUIPO'));
  $('agendaReminderRows').innerHTML=visibleReminders.map(x=>{const overdue=x.estado==='PENDIENTE'&&new Date(x.fecha_hora)<new Date();return '<tr><td>'+escapeHTML(fechaHoraVisible(x.fecha_hora))+'</td><td>'+(()=>{const c=claims.find(c=>c.id===x.reclamo_id);return escapeHTML(c?'#'+(c.drive_id??'—')+' · '+(c.drive_historico?.Cliente||c.asunto||'Cliente no informado'):'Recordatorio general');})()+'</td><td>'+escapeHTML(x.detalle)+'</td><td>'+responsableBadge(x.destinatario)+'</td><td>'+(overdue?'🔴 Vencido':escapeHTML(x.estado))+(x.estado==='PENDIENTE'?' <button class="btn secondary" data-complete-reminder="'+escapeHTML(x.id)+'">Completar</button>':'')+'</td></tr>'}).join('')||'<tr><td colspan="5">No hay recordatorios en esta vista.</td></tr>';
  document.querySelectorAll('[data-complete-reminder]').forEach(b=>b.onclick=async()=>{const {error}=await db.from('mesa_reclamo_recordatorios').update({estado:'COMPLETADO',actualizado_at:new Date().toISOString()}).eq('id',b.dataset.completeReminder);if(error)msg('agendaMessage',error.message,true);else await load();});
