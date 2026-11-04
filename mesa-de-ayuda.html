@@ -170,14 +170,14 @@ function filteredClaims(){
     const h=x.drive_historico||{},parts=String(x.asunto||'').split(' - ');
     return ($('claimStatus').value==='TODOS'||String(x.estado||'').toUpperCase()===$('claimStatus').value)
       &&match(x.drive_id,'claimIdFilter')
-      &&(!value('claimDateFilter')||claimDate(h['Fecha ingreso']||x.fecha_ingreso_historica)===value('claimDateFilter'))
+      &&(!value('claimDateFilter')||claimDate(h['Fecha ingreso']||x.fecha_ingreso_historica||x.created_at)===value('claimDateFilter'))
       &&match(h.Cliente||parts[0],'claimClientFilter')
       &&match(h.Motivo||parts.slice(1).join(' - '),'claimReasonFilter')
       &&match(nombreProductoReclamo(x)+' '+(h.Producto||''),'claimProductFilter')
       &&($('claimOwnerFilter').value==='TODOS'||($('claimOwnerFilter').value==='SIN_ASIGNAR'?!x.responsable:String(x.responsable||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')===$('claimOwnerFilter').value))
       &&(!value('claimContactFilter')||claimDate(h['Último contacto'])===value('claimContactFilter'));
   }).sort((a,b)=>{
-    const date=x=>claimDate(x.drive_historico?.['Fecha ingreso']||x.fecha_ingreso_historica)||'9999-12-31';
+    const date=x=>claimDate(x.drive_historico?.['Fecha ingreso']||x.fecha_ingreso_historica||x.created_at)||'9999-12-31';
     return date(a).localeCompare(date(b))||Number(a.drive_id||0)-Number(b.drive_id||0);
   });
 }
@@ -207,7 +207,7 @@ function renderFinalizadas(){
 $('finalSearch').oninput=()=>{finalPage=0;renderFinalizadas()};$('finalRefresh').onclick=load;
 $('finalPrevPage').onclick=()=>{if(finalPage>0){finalPage--;renderFinalizadas()}};
 $('finalNextPage').onclick=()=>{finalPage++;renderFinalizadas()};
-function render(){renderNotifications();renderDashboardAgenda();renderAgenda();renderFinalizadas();const q=$('search').value.toLowerCase();$('otRows').innerHTML=($('otScope').value==='historico'?activeOrders(orders):currentOrders).filter(x=>(x.numero+' '+x.cliente).toLowerCase().includes(q)).map(x=>'<tr><td><b>'+escapeHTML(x.numero)+'</b></td><td>'+escapeHTML(x.cliente)+'</td><td><span class="tag">'+escapeHTML(x.estado)+'</span></td><td>'+escapeHTML(x.subestado)+'</td><td>'+escapeHTML(fechaVisible(x.updated_at))+'</td><td><button class="btn secondary" data-ot="'+escapeHTML(x.id)+'">Editar</button></td></tr>').join('')||'<tr><td colspan="6">Sin registros</td></tr>';const allFilteredClaims=filteredClaims();const pageCount=Math.max(1,Math.ceil(allFilteredClaims.length/CLAIM_PAGE_SIZE));claimPage=Math.min(claimPage,pageCount-1);const visibleClaims=allFilteredClaims.slice(claimPage*CLAIM_PAGE_SIZE,(claimPage+1)*CLAIM_PAGE_SIZE);$('claimPageInfo').textContent=allFilteredClaims.length?'Mostrando '+(claimPage*CLAIM_PAGE_SIZE+1)+'–'+Math.min((claimPage+1)*CLAIM_PAGE_SIZE,allFilteredClaims.length)+' de '+allFilteredClaims.length+' reclamos':'0 reclamos';$('claimPageNumber').textContent='Página '+(claimPage+1)+' de '+pageCount;$('claimPrevPage').disabled=claimPage===0;$('claimNextPage').disabled=claimPage>=pageCount-1;$('claimRows').innerHTML=visibleClaims.map(x=>{const h=x.drive_historico||{};const parts=String(x.asunto||'').split(' - ');const values=[x.drive_id??'—',fechaVisible(h['Fecha ingreso']||x.fecha_ingreso_historica)||'—',h.Cliente||parts[0]||'—',h.Motivo||parts.slice(1).join(' - ')||'—',nombreProductoReclamo(x),fechaVisible(h['Último contacto'])||'—'];return '<tr>'+values.map(v=>'<td>'+escapeHTML(v)+'</td>').join('')+'<td>'+responsableBadge(x.responsable)+'</td><td><button class="btn secondary" data-claim="'+escapeHTML(x.id)+'">Editar</button></td></tr>'}).join('')||'<tr><td colspan="8">Sin reclamos para estos filtros</td></tr>';document.querySelectorAll('[data-ot]').forEach(b=>b.onclick=()=>edit('ot',orders.find(x=>x.id===b.dataset.ot)));document.querySelectorAll('[data-claim]').forEach(b=>b.onclick=()=>edit('claim',claims.find(x=>x.id===b.dataset.claim)))}
+function render(){renderNotifications();renderDashboardAgenda();renderAgenda();renderFinalizadas();const q=$('search').value.toLowerCase();$('otRows').innerHTML=($('otScope').value==='historico'?activeOrders(orders):currentOrders).filter(x=>(x.numero+' '+x.cliente).toLowerCase().includes(q)).map(x=>'<tr><td><b>'+escapeHTML(x.numero)+'</b></td><td>'+escapeHTML(x.cliente)+'</td><td><span class="tag">'+escapeHTML(x.estado)+'</span></td><td>'+escapeHTML(x.subestado)+'</td><td>'+escapeHTML(fechaVisible(x.updated_at))+'</td><td><button class="btn secondary" data-ot="'+escapeHTML(x.id)+'">Editar</button></td></tr>').join('')||'<tr><td colspan="6">Sin registros</td></tr>';const allFilteredClaims=filteredClaims();const pageCount=Math.max(1,Math.ceil(allFilteredClaims.length/CLAIM_PAGE_SIZE));claimPage=Math.min(claimPage,pageCount-1);const visibleClaims=allFilteredClaims.slice(claimPage*CLAIM_PAGE_SIZE,(claimPage+1)*CLAIM_PAGE_SIZE);$('claimPageInfo').textContent=allFilteredClaims.length?'Mostrando '+(claimPage*CLAIM_PAGE_SIZE+1)+'–'+Math.min((claimPage+1)*CLAIM_PAGE_SIZE,allFilteredClaims.length)+' de '+allFilteredClaims.length+' reclamos':'0 reclamos';$('claimPageNumber').textContent='Página '+(claimPage+1)+' de '+pageCount;$('claimPrevPage').disabled=claimPage===0;$('claimNextPage').disabled=claimPage>=pageCount-1;$('claimRows').innerHTML=visibleClaims.map(x=>{const h=x.drive_historico||{};const parts=String(x.asunto||'').split(' - ');const values=[x.drive_id??'—',fechaVisible(h['Fecha ingreso']||x.fecha_ingreso_historica||x.created_at)||'—',h.Cliente||parts[0]||'—',h.Motivo||parts.slice(1).join(' - ')||'—',nombreProductoReclamo(x),fechaVisible(h['Último contacto'])||'—'];return '<tr>'+values.map(v=>'<td>'+escapeHTML(v)+'</td>').join('')+'<td>'+responsableBadge(x.responsable)+'</td><td><button class="btn secondary" data-claim="'+escapeHTML(x.id)+'">Editar</button></td></tr>'}).join('')||'<tr><td colspan="8">Sin reclamos para estos filtros</td></tr>';document.querySelectorAll('[data-ot]').forEach(b=>b.onclick=()=>edit('ot',orders.find(x=>x.id===b.dataset.ot)));document.querySelectorAll('[data-claim]').forEach(b=>b.onclick=()=>edit('claim',claims.find(x=>x.id===b.dataset.claim)))}
 $('search').oninput=render;$('otScope').onchange=load;$('refresh').onclick=load;$('newOT').onclick=()=>edit('ot',null);$('newClaim').onclick=()=>edit('claim',null);$('cancelEdit').onclick=()=>show('editor',false);
 function datosOtReclamo(ot){const filas=ot?.clarity_snapshot?.filas||[];const productos=[...new Set(filas.map(x=>String(x.valores?.[5]||'').trim()).filter(Boolean))];const series=[...new Set(filas.map(x=>String(x.valores?.[7]||'').trim()).filter(Boolean))];return {cliente:ot?.cliente||'',producto:productos.join(' / '),serie:series.join(' / '),numero:ot?.numero||''};}
 function fechaArgentinaHoy(){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Argentina/Buenos_Aires',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
@@ -249,10 +249,9 @@ $('editForm').onsubmit=async e=>{e.preventDefault();if(!editing)return;const f=O
   const otOrigen=orders.find(x=>x.id===item?.ot_id);const datos=datosOtReclamo(otOrigen);const hist={...(item?.drive_historico||{}),Motivo:motivo,Producto:producto,...(otOrigen?{Cliente:datos.cliente,'Número de serie':datos.serie,'OT vinculada':datos.numero}: {})};
   if(!item||item._nuevo){
    const fechaOt=fechaOrigenOt(otOrigen);
-   if(fechaOt){
-     f.fecha_ingreso_historica=fechaOt;
-     hist['Fecha ingreso']=fechaOt;
-   }
+   const fechaIngreso=fechaOt||fechaArgentinaHoy();
+   f.fecha_ingreso_historica=fechaIngreso;
+   hist['Fecha ingreso']=fechaIngreso;
    hist['Último contacto']=fechaArgentinaHoy();
   }
   f.drive_historico=hist;
@@ -281,6 +280,11 @@ if(isUpdate&&$('followupArea')&&!$('followupArea').classList.contains('hidden'))
    return;
   }
   $('followupText').value='';
+  if(type==='claim'){
+   const historial={...(item.drive_historico||{}),'Último contacto':fechaArgentinaHoy()};
+   const {error:contactError}=await db.from('mesa_reclamos').update({drive_historico:historial}).eq('id',saved.id);
+   if(contactError){msg('editMessage','Seguimiento guardado, pero no se actualizó Último contacto: '+contactError.message,true);await load();return;}
+  }
  }
 }
 if(type==='claim'&&!isUpdate){
