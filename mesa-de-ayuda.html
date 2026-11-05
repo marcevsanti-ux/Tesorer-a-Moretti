@@ -38,8 +38,8 @@ const reminderResult=await createChatReminder(q);if(reminderResult!==null){pendi
 <section class="panel" id="syncMonitor" aria-label="Programación de sincronización de Clarity"><div class="topline"><h2>⏱ Sincronización de Clarity</h2><button type="button" class="btn secondary" id="toggleSyncDetails" aria-expanded="false">Ver detalles</button><span class="tag" id="syncState">Pendiente de integración</span></div><div id="syncDetails" class="hidden"><div class="toolbar" style="align-items:center;gap:18px"><strong>Horarios configurables</strong><span class="message" style="margin:0">Hora Argentina · Todos los días</span></div><p class="message" id="syncNext">Calculando próxima ejecución…</p><div class="toolbar" style="margin:12px 0"><button class="btn hidden" type="button" id="manualClarityImport" title="Disponible al configurar el servicio de sincronización de Clarity en Railway">Importar desde Clarity</button><span class="message" id="manualClarityMessage" role="status" aria-live="polite"></span></div><p class="message" id="clarityExecutionStatus">Último despliegue de Clarity: <strong>Consultando…</strong></p><p class="message">Los horarios se administran desde Usuarios → Configuración de Clarity. Una solicitud aceptada por Railway no garantiza que la importación haya finalizado.</p></div></section>
 <div class="grid"><div class="stat"><strong id="total">—</strong><small>Órdenes registradas</small></div><div class="stat"><strong id="pending">—</strong><small>Pendientes</small></div><div class="stat"><strong id="warranty">—</strong><small>En garantía</small></div><div class="stat"><strong id="claims">—</strong><small>Reclamos abiertos</small></div></div>
 <div class="tabs"><button class="tab active" data-tab="ot">Órdenes de trabajo</button><button class="tab" data-tab="finalizadas">OT finalizadas</button><button class="tab" data-tab="reclamos">Reclamos</button><button class="tab" data-tab="agenda">📅 Agenda</button><button class="tab" data-tab="biblioteca">Biblioteca técnica</button><button class="tab hidden" id="indicatorsTab" data-tab="indicadores">📊 Indicadores</button><button class="tab hidden" id="usersTab" data-tab="usuarios">Usuarios</button><button class="tab" id="logout">Salir</button></div>
-<section id="tab-ot" class="panel"><div class="topline"><h2>Órdenes de trabajo</h2><div class="toolbar"><input id="search" placeholder="Buscar OT o cliente"><select id="otScope" aria-label="Alcance de órdenes"><option value="actual">Última consulta Clarity</option><option value="historico">Todas las OT (histórico)</option></select><button class="btn secondary" id="refresh">Actualizar</button><button class="btn" id="newOT">Nueva OT</button></div></div><div class="tablewrap"><table><thead><tr><th>OT</th><th>Cliente</th><th>Estado</th><th>Subestado</th><th>Actualización</th><th></th></tr></thead><tbody id="otRows"></tbody></table></div><p class="message" id="otMessage"></p></section>
-<section id="tab-finalizadas" class="panel hidden"><div class="topline"><h2>OT finalizadas <span id="finalCount" style="font-size:15px;font-weight:500;color:#52657a"></span></h2><div class="toolbar"><input id="finalSearch" type="search" placeholder="Buscar OT o cliente"><button class="btn secondary" id="finalRefresh">Actualizar</button></div></div><p class="message">Órdenes finalizadas en Clarity durante los últimos 10 días completos (hasta ayer, hora Argentina). Las OT finalizadas importadas se muestran exclusivamente en esta solapa.</p><div class="tablewrap"><table><thead><tr><th>OT</th><th>Cliente</th><th>Estado</th><th>Fecha de finalización</th><th></th></tr></thead><tbody id="finalRows"></tbody></table></div><div class="toolbar" style="justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap"><span id="finalMessage" class="message" aria-live="polite"></span><div class="toolbar"><button type="button" class="btn secondary" id="finalPrevPage">Anterior</button><span id="finalPageNumber" aria-live="polite"></span><button type="button" class="btn secondary" id="finalNextPage">Siguiente</button></div></div></section>
+<section id="tab-ot" class="panel"><div class="topline"><h2>Órdenes de trabajo</h2><div class="toolbar"><input id="search" placeholder="Buscar OT o cliente"><select id="otScope" aria-label="Alcance de órdenes"><option value="historico">Todas las OT pendientes</option><option value="actual">Última consulta Clarity</option></select><button class="btn secondary" id="refresh">Actualizar</button><button class="btn" id="newOT">Nueva OT</button></div></div><div class="tablewrap"><table><thead><tr><th>OT</th><th>Cliente</th><th>Estado</th><th>Subestado</th><th>Actualización</th><th></th></tr></thead><tbody id="otRows"></tbody></table></div><p class="message" id="otMessage"></p></section>
+<section id="tab-finalizadas" class="panel hidden"><div class="topline"><h2>OT finalizadas <span id="finalCount" style="font-size:15px;font-weight:500;color:#52657a"></span></h2><div class="toolbar"><input id="finalSearch" type="search" placeholder="Buscar OT o cliente"><button class="btn secondary" id="finalRefresh">Actualizar</button></div></div><p class="message">Todas las OT que figuran como finalizadas en Supabase, sin límite de fechas. Se conserva el historial.</p><div class="tablewrap"><table><thead><tr><th>OT</th><th>Cliente</th><th>Estado</th><th>Fecha de finalización</th><th></th></tr></thead><tbody id="finalRows"></tbody></table></div><div class="toolbar" style="justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap"><span id="finalMessage" class="message" aria-live="polite"></span><div class="toolbar"><button type="button" class="btn secondary" id="finalPrevPage">Anterior</button><span id="finalPageNumber" aria-live="polite"></span><button type="button" class="btn secondary" id="finalNextPage">Siguiente</button></div></div></section>
 <section id="tab-agenda" class="panel hidden" aria-label="Agenda de Mesa de Ayuda">
 <div class="topline"><div><h2>Agenda del equipo</h2><p class="message">Recordatorios y próximas acciones del equipo.</p></div><div class="toolbar"><button type="button" class="btn secondary" id="toggleAgendaDetails" aria-expanded="true" aria-controls="agendaDetails">Ocultar detalles</button><button class="btn secondary" id="agendaRefresh">Actualizar</button></div></div>
 <div id="agendaDetails">
@@ -119,6 +119,7 @@ function currentClarityOrders(items){
     : !x.snapshot.ejecucionId&&Math.abs(Date.parse(x.snapshot.fechaExtraccion)-Date.parse(latest.fechaExtraccion))<=600000)
     .map(x=>x.ot);
 }
+async function loadAllOrders(){const result=[];const pageSize=500;for(let start=0;start<100000;start+=pageSize){const {data,error}=await db.from('mesa_ot').select('*').order('updated_at',{ascending:false}).order('id',{ascending:true}).range(start,start+pageSize-1);if(error)return {data:result,error};result.push(...(data||[]));if(!data||data.length<pageSize)return {data:result,error:null};}return {data:result,error:new Error('Se alcanzó el límite de lectura de OT')};}
 async function loadAllClaims(){
   const result=[];
   const pageSize=500;
@@ -147,7 +148,7 @@ $('slaTargetHours').oninput=renderIndicadores;
 async function load(){
   await loadClarityProducts();
   const [o,c]=await Promise.all([
-    db.from('mesa_ot').select('*').order('updated_at',{ascending:false}).limit(500),
+    loadAllOrders(),
     loadAllClaims()
   ]);
   orders=o.data||[];claims=c.data||[];renderIndicadores();
@@ -156,7 +157,7 @@ async function load(){
   msg('otMessage',o.error?'Error: '+o.error.message:
     visible.length+' OT mostradas · '+currentOrders.length+' de la última consulta Clarity · '+orders.length+' en histórico'+
     (latestClarityDate?' · Extracción: '+clarityDate(latestClarityDate):' · Sin extracción verificada')+
-    (orders.length===500?' · Límite de lectura: 500':''),
+    '',
     !!o.error);
   msg('claimMessage',c.error?'Error: '+c.error.message:filteredClaims().length+' reclamos mostrados de '+claims.length+' cargados',!!c.error);
   $('total').textContent=visible.length;
@@ -209,13 +210,13 @@ function finalWindow(){
   return {start:start.toISOString().slice(0,10),end:today};
 }
 function renderFinalizadas(){
- const w=finalWindow(),q=$('finalSearch').value.toLowerCase();
- const list=orders.filter(x=>isFinalizada(x)&&finalDate(x)&&claimDate(finalDate(x))>=w.start&&claimDate(finalDate(x))<w.end).filter(x=>(x.numero+' '+x.cliente).toLowerCase().includes(q)).sort((a,b)=>claimDate(finalDate(b)).localeCompare(claimDate(finalDate(a))));
+ const q=$('finalSearch').value.toLowerCase();
+ const list=orders.filter(isFinalizada).filter(x=>(x.numero+' '+x.cliente).toLowerCase().includes(q)).sort((a,b)=>(claimDate(finalDate(b))||'').localeCompare(claimDate(finalDate(a))||''));
  const pages=Math.max(1,Math.ceil(list.length/FINAL_PAGE_SIZE));finalPage=Math.min(finalPage,pages-1);
  const pageItems=list.slice(finalPage*FINAL_PAGE_SIZE,(finalPage+1)*FINAL_PAGE_SIZE);
  $('finalRows').innerHTML=pageItems.map(x=>'<tr><td>'+escapeHTML(x.numero)+'</td><td>'+escapeHTML(String(x.cliente||'').toLocaleUpperCase('es-AR'))+'</td><td>'+escapeHTML(x.estado)+'</td><td>'+escapeHTML(fechaVisible(finalDate(x)))+'</td><td><button class="btn secondary" data-final-ot="'+escapeHTML(x.id)+'">Editar</button></td></tr>').join('')||'<tr><td colspan="5">No hay OT finalizadas importadas para este período</td></tr>';
  $('finalCount').textContent='('+list.length+' OT)';
- $('finalMessage').textContent='Finalizadas desde '+fechaVisible(w.start)+' hasta '+fechaVisible(new Date(new Date(w.end+'T00:00:00Z').getTime()-86400000).toISOString().slice(0,10))+' · '+list.length+' OT · Mostrando '+(list.length?finalPage*FINAL_PAGE_SIZE+1:0)+'–'+Math.min((finalPage+1)*FINAL_PAGE_SIZE,list.length);
+ $('finalMessage').textContent='Histórico completo en Supabase · '+list.length+' OT · Mostrando '+(list.length?finalPage*FINAL_PAGE_SIZE+1:0)+'–'+Math.min((finalPage+1)*FINAL_PAGE_SIZE,list.length);
  $('finalPageNumber').textContent='Página '+(finalPage+1)+' de '+pages;
  $('finalPrevPage').disabled=finalPage===0;$('finalNextPage').disabled=finalPage>=pages-1;
  document.querySelectorAll('[data-final-ot]').forEach(b=>b.onclick=()=>edit('ot',orders.find(x=>x.id===b.dataset.finalOt)));
