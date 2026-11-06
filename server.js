@@ -491,14 +491,14 @@ async function githubFeedback(endpoint, options = {}) {
 
 function feedbackSeverity(description) {
   if (/contraseñ|token|credencial|permisos|datos personales|filtraci[oó]n|p[eé]rdida de datos|facturaci[oó]n|seguridad|autorizaci[oó]n/i.test(description)) return 'CRÍTICO - requiere aprobación de Marcelo';
-  if (/no (puedo|funciona|abre|guarda)|error 5\\d\\d|bloquea|ca[ií]do|inaccesible/i.test(description)) return 'ALTO - revisión prioritaria';
+  if (/no (puedo|funciona|abre|guarda)|error 5\d\d|bloquea|ca[ií]do|inaccesible/i.test(description)) return 'ALTO - revisión prioritaria';
   return 'NORMAL - pendiente de diagnóstico';
 }
 
 async function createFeedbackIssue(description, email, kind = 'bug') {
   const feature = kind === 'feature';
   const title = (feature ? '[Función solicitada] ' : '[Bug Mesa de Ayuda] ') +
-    description.replace(/\\s+/g, ' ').slice(0, 95);
+    description.replace(/\s+/g, ' ').slice(0, 95);
   const body = [
     '## Reporte desde Agente Moretti',
     '- Tipo: ' + (feature ? 'Solicitud de función' : 'Bug'),
@@ -520,7 +520,7 @@ async function createFeedbackIssue(description, email, kind = 'bug') {
     '- [ ] Confirmar con Valeria o Marcelo y cerrar el ticket',
     '',
     '> La creación del ticket NO implica que el bug esté corregido ni desplegado.'
-  ].join('\\n');
+  ].join('\n');
   return githubFeedback('/issues', {
     method: 'POST',
     body: JSON.stringify({ title, body })
@@ -577,7 +577,7 @@ async function assistantChat(req, res) {
   const email = identityEmail.trim().toLowerCase();
   const isBug = /^(?:reportar )?(?:bug|error):/i.test(question);
   const isFeature = /^(?:(?:solicitar|pedir) )?(?:funci[oó]n nueva|nueva funci[oó]n|mejora):/i.test(question);
-  const statusMatch = question.match(/^(?:estado|seguimiento) (?:del )?(?:bug|ticket)\\s*#?(\\d+)\\s*\\??$/i);
+  const statusMatch = question.match(/^(?:estado|seguimiento) (?:del )?(?:bug|ticket)\s*#?(\d+)\s*\??$/i);
   if (isBug || isFeature) {
     if (isFeature && email !== FEATURE_OWNER)
       return json(res, 403, { error: 'Solo Marcelo puede solicitar funciones nuevas.' });
@@ -590,7 +590,7 @@ async function assistantChat(req, res) {
       const issue = await createFeedbackIssue(description, email, isFeature ? 'feature' : 'bug');
       return json(res, 200, { respuesta: 'Registré ' + (isFeature ? 'la solicitud' : 'el bug') +
         ' #' + issue.number + '. ' + issue.html_url +
-        '\\nEstado: pendiente de revisión técnica. Todavía no fue corregido ni desplegado.' });
+        '\nEstado: pendiente de revisión técnica. Todavía no fue corregido ni desplegado.' });
     } catch (error) {
       console.error('Feedback error', error.message);
       return json(res, 503, { error: 'No se pudo registrar el ticket en GitHub. Contactá a Sistemas.' });
@@ -601,7 +601,7 @@ async function assistantChat(req, res) {
       return json(res, 403, { error: 'No tenés permisos para consultar tickets.' });
     try {
       const issue = await getFeedbackIssue(Number(statusMatch[1]));
-      if (!/^(\\[Bug Mesa de Ayuda\\]|\\[Bug Valeria\\]|\\[Función solicitada\\])/.test(issue.title || ''))
+      if (!/^(\[Bug Mesa de Ayuda\]|\[Bug Valeria\]|\[Función solicitada\])/.test(issue.title || ''))
         return json(res, 404, { error: 'No se encontró un ticket del Agente Moretti con ese número.' });
       const labels = (issue.labels || []).map(x => typeof x === 'string' ? x : x.name);
       const status = issue.state === 'closed' ? 'Cerrado en GitHub (QA no verificado por este comando)' :
