@@ -137,9 +137,10 @@ async function loadAllClaims(){
 }
 const kpiHolidays=new Map();
 const kpiHolidayPending=new Set();
+const kpiHolidayFailed=new Set();
 function kpiDateKey(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
 async function kpiLoadHolidays(year){
- if(kpiHolidays.has(year)||kpiHolidayPending.has(year))return;
+ if(kpiHolidays.has(year)||kpiHolidayPending.has(year)||kpiHolidayFailed.has(year))return;
  kpiHolidayPending.add(year);
  try {
   const response=await fetch('https://api.argentinadatos.com/v1/feriados/'+year,{signal:AbortSignal.timeout(10000)});
@@ -147,7 +148,7 @@ async function kpiLoadHolidays(year){
   const data=await response.json();
   if(!Array.isArray(data))throw Error('Formato de feriados inválido');
   kpiHolidays.set(year,new Set(data.filter(x=>x.fecha).map(x=>String(x.fecha).slice(0,10))));
- } catch(e){console.warn('No se pudo cargar el calendario de feriados '+year,e);}
+ } catch(e){kpiHolidayFailed.add(year);console.warn('No se pudo cargar el calendario de feriados '+year,e);}
  finally{kpiHolidayPending.delete(year);renderIndicadores();}
 }
 function kpiBusinessDays(start,end){
@@ -155,7 +156,7 @@ function kpiBusinessDays(start,end){
  let minutes=0;const day=new Date(start);day.setHours(0,0,0,0);
  const years=new Set();
  for(let d=new Date(day);d.getTime()<end;d.setDate(d.getDate()+1))years.add(d.getFullYear());
- for(const year of years)if(!kpiHolidays.has(year)){kpiLoadHolidays(year);return null;}
+ for(const year of years)if(!kpiHolidays.has(year)){if(!kpiHolidayFailed.has(year))kpiLoadHolidays(year);return null;}
  for(;day.getTime()<end;day.setDate(day.getDate()+1)){
   const wd=day.getDay();if(wd===0||wd===6||kpiHolidays.get(day.getFullYear()).has(kpiDateKey(day)))continue;
   const a=new Date(day);a.setHours(7,0,0,0);
@@ -194,7 +195,7 @@ function renderIndicadores(){
  const ages=new Map(active.map(x=>[x.id,kpiBusinessDays(Date.parse(x.created_at),Date.now())]));
  const ready=[...ages.values()].every(v=>v!==null);
  const overdue=active.filter(x=>(ages.get(x.id)??0)>target);
- $('kpiHolidayStatus').textContent=ready?'Calendario de feriados cargado. Jornada 07:00–17:00, lunes a viernes.':'Cargando calendario de feriados argentinos. Los SLA se muestran pendientes hasta validarlo.';
+ $('kpiHolidayStatus').textContent=ready?'Calendario de feriados cargado. Jornada 07:00–17:00, lunes a viernes.':(kpiHolidayFailed.size?'No se pudo obtener el calendario de feriados. Los SLA quedan pendientes; reintentá al recargar la página.':'Cargando calendario de feriados argentinos. Los SLA se muestran pendientes hasta validarlo.');
  $('kpiNew').textContent=selected.length;
  $('kpiOpen').textContent=active.length;
  $('kpiOver').textContent=ready?overdue.length:'—';
@@ -298,7 +299,7 @@ function productoReclamo(nombre){const normal=x=>String(x||'').normalize('NFD').
 function edit(type,item){editing={type,item};show('editor',true);$('editorTitle').textContent=(item&&!item._nuevo?'Editar ':'Nuevo ')+(type==='ot'?'orden de trabajo':'reclamo');if(type==='claim'){const n=item&&!item._nuevo?item.drive_id:Math.max(544,...claims.map(x=>Number(x.drive_id)||0))+1;const ot=orders.find(x=>x.id===item?.ot_id);$('editorTitle').textContent+=' · Reclamo N.º '+n+(item?._nuevo?' (estimado hasta guardar)':'');if(ot)$('editorTitle').textContent+=' · OT '+ot.numero;} $('editMessage').textContent='';if(type==='ot')$('editFields').innerHTML=field('Número OT','numero',item?.numero||'')+field('Cliente','cliente',String(item?.cliente||'').toLocaleUpperCase('es-AR'))+field('Estado','estado',item?.estado||'Pendiente')+field('Subestado','subestado',item?.subestado||'')+field('Observaciones','observaciones',item?.observaciones||'')+
 '<label>Producto (Clarity)<input readonly value="'+escapeHTML(item?.clarity_snapshot?.filas?.[0]?.valores?.[5]||'No disponible')+'"></label>'+
 '<label>Número de serie (Clarity)<input readonly value="'+escapeHTML(item?.clarity_snapshot?.filas?.map(x=>x.valores?.[7]).filter(Boolean).join(' / ')||'No disponible')+'"></label>'+
-'<button class="btn secondary" type="button" id="createClaimFromOt">Crear reclamo vinculado a esta OT</button>';else {const otOrigen=orders.find(x=>x.id===item?.ot_id);const datos=datosOtReclamo(otOrigen);const prodOrigen=productoReclamo(datos.producto);const prodActual=item?.drive_historico?.Producto||prodOrigen;const prodOtro=datos.producto&&!prodOrigen?datos.producto:'';$('editFields').innerHTML=field('Asunto','asunto',item?.asunto||'')+field('Cliente','cliente_reclamo',item?.drive_historico?.Cliente||datos.cliente||String(item?.asunto||'').split(' - ')[0]||'')+(otOrigen?'<label>Cliente (Clarity)<input readonly value="'+escapeHTML(datos.cliente)+'"></label>':'')+
+'<button class="btn secondary" type="button" id="createClaimFromOt">Crear reclamo vinculado a esta OT</button>';else {const otOrigen=orders.find(x=>x.id===item?.ot_id);const datos=datosOtReclamo(otOrigen);const prodOrigen=productoReclamo(datos.producto);const prodActual=item?.drive_historico?.Producto||prodOrigen;const prodOtro=datos.producto&&!prodOrigen?datos.producto:'';$('editFields').innerHTML=field('Cliente','cliente_reclamo',item?.drive_historico?.Cliente||datos.cliente||String(item?.asunto||'').split(' - ')[0]||'')+(otOrigen?'<label>Cliente (Clarity)<input readonly value="'+escapeHTML(datos.cliente)+'"></label>':'')+
 '<label>Motivo<select name="motivo" id="claimMotivo"><option value="">Seleccionar motivo</option>'+CLAIM_MOTIVOS.map(m=>'<option value="'+escapeHTML(m)+'"'+(m===(item?.drive_historico?.Motivo||'')?' selected':'')+'>'+escapeHTML(m)+'</option>').join('')+'<option value="__otro">Otro (especificar)</option></select></label>'+field('Otro motivo','motivo_otro','')+'<label>Producto (buscá por nombre o ID Clarity)<input name="producto" id="claimProducto" list="claimProductOptions" autocomplete="off" placeholder="Escribí para filtrar productos..." value="'+escapeHTML(item?.producto_clarity_id&&clarityProducts.find(p=>p.codigo===item.producto_clarity_id)?catalogProductLabel(clarityProducts.find(p=>p.codigo===item.producto_clarity_id)):prodActual)+'"><datalist id="claimProductOptions">'+clarityProducts.map(p=>'<option value="'+escapeHTML(catalogProductLabel(p))+'"></option>').join('')+CLAIM_PRODUCTOS.filter(p=>!clarityProducts.some(c=>c.producto===p)).sort((a,b)=>a.localeCompare(b,'es')).map(p=>'<option value="'+escapeHTML(p)+'"></option>').join('')+'</datalist></label>'+
 (otOrigen?'<label>Número de serie (Clarity)<input readonly value="'+escapeHTML(datos.serie||'No informado')+'"></label>':'')+
 '<label>Reingreso<select name="reingreso" id="claimReingreso" required><option value=""'+(!['SI','NO'].includes(String(item?.drive_historico?.Reingreso||'').toUpperCase())?' selected':'')+' disabled>Seleccionar</option><option value="SI"'+(String(item?.drive_historico?.Reingreso||'').toUpperCase()==='SI'?' selected':'')+'>SI</option><option value="NO"'+(String(item?.drive_historico?.Reingreso||'').toUpperCase()==='NO'?' selected':'')+'>NO</option></select></label>'+ '<label>Responsable<select name="responsable"><option value="">Sin asignar</option>'+Object.keys(RESPONSABLES).map(n=>'<option value="'+n+'"'+(item?.responsable===n?' selected':'')+'>'+RESPONSABLES[n].emoji+' '+(n==='Estefania'?'Estefanía':n)+'</option>').join('')+'</select></label>'+field('Tipo de caso','caso_tipo',item?.caso_tipo||'Sin clasificar','text',['Sin clasificar','Garantía de equipo nuevo','Garantía de reparación','Consulta técnica','Otro'])+
@@ -321,7 +322,7 @@ function edit(type,item){editing={type,item};show('editor',true);$('editorTitle'
   void showEvidence(item);
 }if(type==='claim'){const reingreso=$('claimReingreso');const prioridad=$('editFields').querySelector('[name="prioridad"]');if(reingreso&&prioridad){const syncReingreso=()=>{if(reingreso.value==='SI'){prioridad.value='ALTA';prioridad.disabled=true;}else{prioridad.disabled=false;}};reingreso.addEventListener('change',syncReingreso);syncReingreso();}}if(type==='ot'&&item)$('createClaimFromOt').onclick=()=>edit('claim',{ot_id:item.id,asunto:'Seguimiento OT '+item.numero,estado:'ABIERTO',prioridad:'MEDIA',caso_tipo:'Sin clasificar',_nuevo:true});show('claimInitialActions',type==='claim'&&(!item||item._nuevo));$('saveRecordButton').textContent=type==='claim'&&(!item||item._nuevo)?'Crear reclamo':'Guardar cambios';if(type==='claim'&&(!item||item._nuevo)){$('claimInitialFollowup').value='';$('claimInitialReminder').value='';$('claimInitialWhen').value='';$('claimInitialTarget').value='RESPONSABLE';}show('followupArea',!!item&&!item._nuevo);if(item&&!item._nuevo)void followups();$('editor').scrollIntoView({behavior:'smooth'})}
 $('editFields').addEventListener('input',e=>{if(e.target.matches('[name="cliente"], [name="cliente_reclamo"]')){const start=e.target.selectionStart,end=e.target.selectionEnd;e.target.value=e.target.value.toLocaleUpperCase('es-AR');e.target.setSelectionRange(start,end);}});
-$('editForm').onsubmit=async e=>{e.preventDefault();if(!editing)return;const f=Object.fromEntries(new FormData(e.target).entries()),{type,item}=editing;for(const k in f)f[k]=f[k].trim();if(type==='ot'&&f.cliente)f.cliente=f.cliente.toLocaleUpperCase('es-AR');if(type==='claim'&&f.cliente_reclamo)f.cliente_reclamo=f.cliente_reclamo.toLocaleUpperCase('es-AR');if(type==='claim'&&!f.responsable)f.responsable=null;if(type==='ot'&&(!f.numero||!f.cliente)){msg('editMessage','Número y cliente son obligatorios',true);return}if(type==='claim'&&$('claimReingreso')?.value==='SI')f.prioridad='ALTA';if(type==='claim'&&!f.asunto){msg('editMessage','El asunto es obligatorio',true);return}if(type==='claim'){
+$('editForm').onsubmit=async e=>{e.preventDefault();if(!editing)return;const f=Object.fromEntries(new FormData(e.target).entries()),{type,item}=editing;for(const k in f)f[k]=f[k].trim();if(type==='ot'&&f.cliente)f.cliente=f.cliente.toLocaleUpperCase('es-AR');if(type==='claim'&&f.cliente_reclamo)f.cliente_reclamo=f.cliente_reclamo.toLocaleUpperCase('es-AR');if(type==='claim'&&!f.responsable)f.responsable=null;if(type==='ot'&&(!f.numero||!f.cliente)){msg('editMessage','Número y cliente son obligatorios',true);return}if(type==='claim'&&$('claimReingreso')?.value==='SI')f.prioridad='ALTA';if(type==='claim'&&!f.cliente_reclamo){msg('editMessage','El cliente es obligatorio',true);return}if(type==='claim'){
   if(!['SI','NO'].includes(f.reingreso)){msg('editMessage','Seleccioná SI o NO en Reingreso',true);return;}const reingreso=f.reingreso;const motivo=f.motivo==='__otro'?f.motivo_otro:f.motivo;
   if(!motivo){msg('editMessage','Seleccioná un motivo o especificá otro',true);return;}
   const selectedProduct=clarityProducts.find(p=>catalogProductLabel(p)===f.producto);const producto=selectedProduct?selectedProduct.producto:f.producto;
@@ -334,6 +335,7 @@ $('editForm').onsubmit=async e=>{e.preventDefault();if(!editing)return;const f=O
    hist['Fecha ingreso']=fechaIngreso;
    hist['Último contacto']=fechaArgentinaHoy();hist['Origen registro']='APP';
   }
+  f.asunto=f.cliente_reclamo; // Compatibilidad con esquema histórico: no se elimina la columna.
   f.drive_historico=hist;
   f.producto_clarity_id=selectedProduct?selectedProduct.codigo:null;
   delete f.reingreso;delete f.cliente_reclamo;delete f.motivo;delete f.motivo_otro;delete f.producto;delete f.producto_otro;
