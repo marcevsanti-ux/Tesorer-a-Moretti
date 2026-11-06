@@ -820,7 +820,7 @@ function generarCSV(registros) {
 function rangoFinalizadas(){
  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Argentina/Buenos_Aires',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  const fin=new Date(today+'T00:00:00Z'),desde=new Date(fin),hasta=new Date(fin);
- desde.setUTCDate(desde.getUTCDate()-10);hasta.setUTCDate(hasta.getUTCDate()-1);
+ desde.setUTCDate(desde.getUTCDate()-10); // Incluir el día actual: una OT puede finalizar hoy.
  return {desde:desde.toISOString().slice(0,10),hasta:hasta.toISOString().slice(0,10)};
 }
 async function aplicarFinalizadas(frame){
@@ -1018,6 +1018,26 @@ async function main() {
 
     const resultadoSync = await sincronizar(registros);
     console.log('Resultado Supabase:', JSON.stringify(resultadoSync));
+
+    // Segunda consulta: OT pendientes sin repuesto. Solo se actualizan las
+    // órdenes previamente conocidas; no se importan OT ajenas a Garantía.
+    // Si falla esta etapa, la ejecución falla en vez de aparentar éxito.
+    const opcionesSubestado = await frameFiltro.locator('#cboSubEstado_control option')
+      .evaluateAll(items => items.map(o => ({value:o.value,text:o.text.trim()})));
+    const repuesto = opcionesSubestado.find(o =>
+      /^(?:7\s*[-–]\s*)?falta\s+de\s+repuesto$/i.test(o.text));
+    if (!repuesto) throw Error('Clarity no ofrece SubEstado 7 - Falta de Repuesto');
+    await seleccionarFiltro(frameFiltro,'#cboSubEstado_control',repuesto.value,
+      'SubEstado 7 - Falta de Repuesto');
+    await presionarListar(page);
+    await esperar(2500);
+    const primeraRepuesto = await esperarResultados(page);
+    const extraccionRepuesto = await extraerTodasLasPaginas(page,primeraRepuesto);
+    console.log('OT pendientes por falta de repuesto:',extraccionRepuesto.registros.length);
+    const resultadoRepuesto = await sincronizar(extraccionRepuesto.registros,{
+      subestado:'7 - Falta de Repuesto',subestadoID:repuesto.value,existingOnly:true
+    });
+    console.log('Resultado conciliación repuestos:',JSON.stringify(resultadoRepuesto));
     if(process.env.CLARITY_FINALIZADAS_ENABLED==='true'){
       let rango;
       try { rango=await aplicarFinalizadas(frameFiltro); }
@@ -1039,7 +1059,7 @@ async function main() {
       console.log('OT finalizadas extraídas:',finalizadas.registros.length,'Rango:',JSON.stringify(rango));
       if(process.env.CLARITY_FINALIZADAS_WRITE==='true'){
         if(finalizadas.registros.some(r=>!r.fechaFinalizacion))throw Error('Escritura bloqueada: no se pudo leer Fecha Final. Vehículo de todas las OT.');
-        const resultado=await sincronizar(finalizadas.registros,{estado:'Finalizado',fechaDesde:rango.desde,fechaHasta:rango.hasta});
+        const resultado=await sincronizar(finalizadas.registros,{estado:'Finalizado',fechaDesde:rango.desde,fechaHasta:rango.hasta,existingOnly:true});
         console.log('Resultado Supabase finalizadas:',JSON.stringify(resultado));
       }else console.log('OT finalizadas en modo diagnóstico: sin escritura');
       }
