@@ -3,7 +3,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const assert=require('node:assert/strict');
 const html=fs.readFileSync('mesa-de-ayuda.html','utf8');
-const scripts=[...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)].map(m=>m[1]).filter(Boolean);
+const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
 assert(scripts.length,'No se encontraron scripts embebidos');
 for(const code of scripts)new vm.Script(code,{filename:'mesa-de-ayuda.html'});
 assert(!html.includes('slaTargetHours'),'Quedó el control antiguo en horas');
