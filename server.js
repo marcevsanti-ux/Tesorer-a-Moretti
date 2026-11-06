@@ -487,7 +487,6 @@ async function assistantChat(req, res) {
 
   let userId;
   let jwt;
-  let identityEmail = '';
   try {
     jwt = authorization.slice(7);
     const identity = await sb('/auth/v1/user', ANON_KEY, {
@@ -496,7 +495,6 @@ async function assistantChat(req, res) {
     if (!identity.ok || !identity.data.id)
       return json(res, 401, { error: 'Sesión inválida' });
     userId = identity.data.id;
-    identityEmail = identity.data.email || '';
     const perms = await sb(
       '/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.' + encodeURIComponent(userId),
       ANON_KEY, { headers: { Authorization: 'Bearer ' + jwt } }
@@ -507,16 +505,6 @@ async function assistantChat(req, res) {
   } catch (e) {
     console.error('Assistant auth failed', e.message);
     return json(res, 502, { error: 'No se pudo validar la sesión' });
-  }
-
-  const bugMatch = question.match(/^\\s*(?:reportar\\s+)?(?:bug|error)\\s*:\\s*(.+)$/is);
-  if (bugMatch) {
-    if (String(identityEmail).toLowerCase() !== 'valeriat@moretti.com.ar')
-      return json(res, 403, { error: 'Solo Valeria puede reportar bugs.' });
-    const description = bugMatch[1].trim();
-    if (description.length < 15)
-      return json(res, 400, { error: 'Describí el error con más detalle después de Bug:' });
-    return registerValeriaBug(res, description);
   }
 
   // Serialize queries from the same user to avoid mixing answers.
