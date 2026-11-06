@@ -46,7 +46,7 @@ const reminderResult=await createChatReminder(q);if(reminderResult!==null){pendi
 <div class="toolbar" style="margin:16px 0;align-items:end"><label>Responsable<br><select id="agendaOwner"><option value="TODOS">Todo el equipo</option><option value="Valeria">🟣 Valeria</option><option value="Estefania">🟢 Estefanía</option><option value="Samanta">🟠 Samanta</option><option value="SIN_ASIGNAR">Sin asignar</option></select></label><label>Estado<br><select id="agendaStatus"><option value="ACTIVOS">Activos</option><option value="TODOS">Todos</option></select></label></div>
 <div class="grid" id="agendaStats" aria-live="polite"></div>
 <form id="agendaReminderForm" class="toolbar" style="margin:16px 0;align-items:end;flex-wrap:wrap">
-<label>Reclamo<br><input id="agendaClaimSearch" type="search" autocomplete="off" placeholder="Buscar por número, cliente o asunto..." aria-label="Buscar reclamo" style="min-width:360px;width:100%"><select id="agendaClaim" style="display:block;width:100%;max-width:580px;margin-top:6px"></select><span class="message" id="agendaClaimCount" aria-live="polite"></span></label>
+<label>Reclamo<br><input id="agendaClaimSearch" type="search" autocomplete="off" placeholder="Buscar por número, cliente o asunto..." aria-label="Buscar reclamo" style="min-width:360px;width:100%"><select id="agendaClaim" style="display:block;width:100%;max-width:580px;margin-top:6px"></select><span class="message" id="agendaClaimCount" aria-live="polite"></span></label><div id="agendaExistingNotice" class="message" role="status" style="flex-basis:100%"></div>
 <label>Próxima acción<br><input id="agendaDetail" maxlength="2000" placeholder="Contactar al cliente" required></label>
 <label>Fecha y hora<br><input id="agendaWhen" type="datetime-local" required></label>
 <label>Destinatario<br><select id="agendaTarget"><option value="EQUIPO">Todo el equipo</option><option value="Valeria">🟣 Valeria</option><option value="Estefania">🟢 Estefanía</option><option value="Samanta">🟠 Samanta</option></select></label>
@@ -323,6 +323,7 @@ function edit(type,item){editing={type,item};show('editor',true);$('editorTitle'
     $('agendaStatus').value='TODOS';
     renderAgenda();
     $('agendaClaim').value=String(item.id);
+    syncAgendaExisting();
     if(item.responsable&&['Valeria','Estefania','Samanta'].includes(item.responsable))$('agendaTarget').value=item.responsable;
     $('agendaDetail').focus();
     $('agendaReminderForm').scrollIntoView({behavior:'smooth',block:'center'});
@@ -694,12 +695,14 @@ function renderAgenda(){
  select.innerHTML='<option value="">Sin reclamo (recordatorio general)</option>'+matching.map(x=>'<option value="'+escapeHTML(x.id)+'">#'+escapeHTML(x.drive_id??'—')+' · '+escapeHTML(x.asunto||'Reclamo')+'</option>').join('');
  if(matching.some(x=>String(x.id)===String(previous)))select.value=previous;
  $('agendaClaimCount').textContent=matching.length+' de '+claims.length+' reclamos';
+ syncAgendaExisting();
   document.querySelectorAll('[data-agenda-claim]').forEach(button=>button.onclick=()=>{
     const claim=claims.find(x=>String(x.id)===button.dataset.agendaClaim);
     if(!claim)return;
     $('agendaClaimSearch').value='';
     renderAgenda();
     $('agendaClaim').value=String(claim.id);
+    syncAgendaExisting();
     if(claim.responsable&&['Valeria','Estefania','Samanta'].includes(claim.responsable))$('agendaTarget').value=claim.responsable;
     $('agendaDetail').focus();
     $('agendaReminderForm').scrollIntoView({behavior:'smooth',block:'center'});
@@ -734,7 +737,28 @@ function renderAgenda(){
  };
  $('agendaMessage').textContent=subset.length+' reclamos visibles · '+visibleReminders.filter(x=>x.estado==='PENDIENTE').length+' recordatorios pendientes.';
 }
-$('agendaReminderForm').onsubmit=async e=>{e.preventDefault();const reclamo_id=$('agendaClaim').value,detalle=$('agendaDetail').value.trim(),fecha_hora=$('agendaWhen').value,destinatario=$('agendaTarget').value;if(!detalle||!fecha_hora)return;const {error}=await db.from('mesa_reclamo_recordatorios').insert({reclamo_id:reclamo_id||null,detalle,fecha_hora:new Date(fecha_hora).toISOString(),destinatario,creado_por:session.user.id});if(error)msg('agendaMessage','No se pudo guardar: '+error.message,true);else{$('agendaDetail').value='';await load();}};
+function syncAgendaExisting(){
+ const id=$('agendaClaim').value;
+ const reminder=id?agendaReminders.filter(x=>String(x.reclamo_id)===String(id)&&x.estado==='PENDIENTE').sort((a,b)=>new Date(a.fecha_hora)-new Date(b.fecha_hora))[0]:null;
+ const notice=$('agendaExistingNotice');
+ const submit=$('agendaReminderForm').querySelector('[type="submit"]');
+ submit.disabled=Boolean(reminder);
+ if(reminder){
+  notice.innerHTML='<strong>Ya existe una acción pendiente:</strong> '+escapeHTML(reminder.detalle)+' · '+escapeHTML(fechaHoraVisible(reminder.fecha_hora))+' <button type="button" class="btn secondary" id="agendaEditExisting">Postergar acción existente</button>';
+  $('agendaEditExisting').onclick=()=>openPostponeReminder(reminder);
+ }else notice.textContent='';
+}
+function openPostponeReminder(reminder){
+ $('postponeId').value=reminder.id;
+ $('postponeOriginal').textContent=reminder.detalle+' · '+fechaHoraVisible(reminder.fecha_hora);
+ $('postponeWhen').value='';
+ $('postponeReason').value='';
+ $('postponeForm').classList.remove('hidden');
+ $('postponeWhen').focus();
+ $('postponeForm').scrollIntoView({behavior:'smooth',block:'center'});
+}
+$('agendaClaim').addEventListener('change',syncAgendaExisting);
+$('agendaReminderForm').onsubmit=async e=>{e.preventDefault();const reclamo_id=$('agendaClaim').value,detalle=$('agendaDetail').value.trim(),fecha_hora=$('agendaWhen').value,destinatario=$('agendaTarget').value;if(!detalle||!fecha_hora)return;if(reclamo_id&&agendaReminders.some(x=>String(x.reclamo_id)===String(reclamo_id)&&x.estado==='PENDIENTE')){syncAgendaExisting();msg('agendaMessage','Este reclamo ya tiene una acción pendiente. Usá Postergar.',true);return;}const {error}=await db.from('mesa_reclamo_recordatorios').insert({reclamo_id:reclamo_id||null,detalle,fecha_hora:new Date(fecha_hora).toISOString(),destinatario,creado_por:session.user.id});if(error)msg('agendaMessage','No se pudo guardar: '+error.message,true);else{$('agendaDetail').value='';await load();}};
 $('agendaClaimSearch').addEventListener('input',renderAgenda);
 $('agendaOwner').onchange=renderAgenda;
 $('agendaStatus').onchange=renderAgenda;
