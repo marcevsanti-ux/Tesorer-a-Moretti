@@ -467,30 +467,74 @@ function structuredClaimCount(question,records){
  return {respuesta:'Hay '+matched.length+' reclamos'+detail+'.'+(matched.length?' IDs: '+matched.slice(0,20).map(r=>'#'+(r.drive_id??r.id)).join(', ')+(matched.length>20?' (primeros 20 de '+matched.length+')':''):'') ,tipo:'supabase',cantidad:matched.length};
 }
 
-async function createFeedbackIssue(description) {
+const FEEDBACK_REPO = 'marcevsanti-ux/Tesorer-a-Moretti';
+const FEEDBACK_USERS = new Set(['valeriat@moretti.com.ar', 'marcelos@moretti.com.ar']);
+const FEATURE_OWNER = 'marcelos@moretti.com.ar';
+
+async function githubFeedback(endpoint, options = {}) {
   const token = process.env.GITHUB_FEEDBACK_TOKEN;
-  if (!token) throw new Error('Feedback no configurado');
-  const response = await fetch('https://api.github.com/repos/marcevsanti-ux/Tesorer-a-Moretti/issues', {
-    method: 'POST',
+  if (!token) throw new Error('Feedback GitHub no configurado');
+  const response = await fetch('https://api.github.com/repos/' + FEEDBACK_REPO + endpoint, {
+    ...options,
     headers: {
       Authorization: 'Bearer ' + token,
       Accept: 'application/vnd.github+json',
       'Content-Type': 'application/json',
-      'User-Agent': 'moretti-mesa-feedback'
+      'User-Agent': 'moretti-mesa-feedback',
+      ...(options.headers || {})
     },
-    body: JSON.stringify({
-      title: '[Bug Valeria] ' + description.slice(0, 100),
-      body: 'Reportado desde Agente Moretti por Valeria.\n\n' + description
-    }),
     signal: AbortSignal.timeout(12000)
   });
-  if (!response.ok) throw new Error('GitHub no aceptó el reporte');
+  if (!response.ok) throw new Error('GitHub HTTP ' + response.status);
   return response.json();
 }
 
+function feedbackSeverity(description) {
+  if (/contraseñ|token|credencial|permisos|datos personales|filtraci[oó]n|p[eé]rdida de datos|facturaci[oó]n|seguridad|autorizaci[oó]n/i.test(description)) return 'CRÍTICO - requiere aprobación de Marcelo';
+  if (/no (puedo|funciona|abre|guarda)|error 5\\d\\d|bloquea|ca[ií]do|inaccesible/i.test(description)) return 'ALTO - revisión prioritaria';
+  return 'NORMAL - pendiente de diagnóstico';
+}
+
+async function createFeedbackIssue(description, email, kind = 'bug') {
+  const feature = kind === 'feature';
+  const title = (feature ? '[Función solicitada] ' : '[Bug Mesa de Ayuda] ') +
+    description.replace(/\\s+/g, ' ').slice(0, 95);
+  const body = [
+    '## Reporte desde Agente Moretti',
+    '- Tipo: ' + (feature ? 'Solicitud de función' : 'Bug'),
+    '- Reportado por: ' + email,
+    '- Fecha de recepción: ' + new Date().toISOString(),
+    '- Prioridad inicial (heurística, no diagnóstico): ' + (feature ? 'Pendiente de evaluación' : feedbackSeverity(description)),
+    '- Estado: Pendiente de revisión técnica',
+    '',
+    '## Descripción del usuario',
+    description,
+    '',
+    '## Flujo requerido',
+    '- [ ] Reproducir y validar el problema / alcance',
+    '- [ ] Diagnóstico técnico y plan de cambio',
+    '- [ ] Implementar corrección en rama de trabajo',
+    '- [ ] Ejecutar pruebas automatizadas y QA funcional',
+    '- [ ] Revisar permisos, datos y riesgos; solicitar aprobación para cambios críticos',
+    '- [ ] Desplegar y verificar la versión de producción',
+    '- [ ] Confirmar con Valeria o Marcelo y cerrar el ticket',
+    '',
+    '> La creación del ticket NO implica que el bug esté corregido ni desplegado.'
+  ].join('\\n');
+  return githubFeedback('/issues', {
+    method: 'POST',
+    body: JSON.stringify({ title, body })
+  });
+}
+
+async function getFeedbackIssue(number) {
+  if (!Number.isSafeInteger(number) || number <= 0) throw new Error('Número de ticket inválido');
+  return githubFeedback('/issues/' + number);
+}
+
 async function assistantChat(req, res) {
-  if (!valid || !SERVICE_KEY || !PUENTES_API_KEY)
-    return json(res, 503, { error: 'Asistente Puentes no configurado' });
+  if (!valid || !SERVICE_KEY)
+    return json(res, 503, { error: 'Asistente no configurado' });
   const authorization = req.headers.authorization || '';
   if (!/^Bearer [A-Za-z0-9_.-]+$/.test(authorization))
     return json(res, 401, { error: 'Iniciá sesión' });
@@ -498,11 +542,11 @@ async function assistantChat(req, res) {
   try {
     for await (const chunk of req) {
       body += chunk;
-      if (body.length > 4096) return json(res, 413, { error: 'Mensaje demasiado largo' });
+      if (body.length > 8192) return json(res, 413, { error: 'Mensaje demasiado largo' });
     }
   } catch { return json(res, 400, { error: 'Solicitud inválida' }); }
   let question;
-  try { question = String(JSON.parse(body).mensaje || '').trim().slice(0, 600); }
+  try { question = String(JSON.parse(body).mensaje || '').trim().slice(0, 3000); }
   catch { return json(res, 400, { error: 'JSON inválido' }); }
   if (!question) return json(res, 400, { error: 'Escribí una consulta' });
 
@@ -530,21 +574,47 @@ async function assistantChat(req, res) {
     return json(res, 502, { error: 'No se pudo validar la sesión' });
   }
 
+  const email = identityEmail.trim().toLowerCase();
   const isBug = /^(?:reportar )?(?:bug|error):/i.test(question);
-  if (isBug) {
-    if (!['valeriat@moretti.com.ar', 'marcelos@moretti.com.ar'].includes(identityEmail.trim().toLowerCase()))
+  const isFeature = /^(?:(?:solicitar|pedir) )?(?:funci[oó]n nueva|nueva funci[oó]n|mejora):/i.test(question);
+  const statusMatch = question.match(/^(?:estado|seguimiento) (?:del )?(?:bug|ticket)\\s*#?(\\d+)\\s*\\??$/i);
+  if (isBug || isFeature) {
+    if (isFeature && email !== FEATURE_OWNER)
+      return json(res, 403, { error: 'Solo Marcelo puede solicitar funciones nuevas.' });
+    if (isBug && !FEEDBACK_USERS.has(email))
       return json(res, 403, { error: 'Solo Valeria y Marcelo pueden reportar bugs.' });
     const description = question.slice(question.indexOf(':') + 1).trim();
     if (description.length < 15)
       return json(res, 400, { error: 'Describí el problema con al menos 15 caracteres.' });
     try {
-      const issue = await createFeedbackIssue(description);
-      return json(res, 200, { respuesta: 'Registré el bug #' + issue.number + '. ' + issue.html_url });
+      const issue = await createFeedbackIssue(description, email, isFeature ? 'feature' : 'bug');
+      return json(res, 200, { respuesta: 'Registré ' + (isFeature ? 'la solicitud' : 'el bug') +
+        ' #' + issue.number + '. ' + issue.html_url +
+        '\\nEstado: pendiente de revisión técnica. Todavía no fue corregido ni desplegado.' });
     } catch (error) {
       console.error('Feedback error', error.message);
-      return json(res, 503, { error: 'No se pudo registrar el bug. Contactá a Sistemas.' });
+      return json(res, 503, { error: 'No se pudo registrar el ticket en GitHub. Contactá a Sistemas.' });
     }
   }
+  if (statusMatch) {
+    if (!FEEDBACK_USERS.has(email))
+      return json(res, 403, { error: 'No tenés permisos para consultar tickets.' });
+    try {
+      const issue = await getFeedbackIssue(Number(statusMatch[1]));
+      if (!/^(\\[Bug Mesa de Ayuda\\]|\\[Bug Valeria\\]|\\[Función solicitada\\])/.test(issue.title || ''))
+        return json(res, 404, { error: 'No se encontró un ticket del Agente Moretti con ese número.' });
+      const labels = (issue.labels || []).map(x => typeof x === 'string' ? x : x.name);
+      const status = issue.state === 'closed' ? 'Cerrado en GitHub (QA no verificado por este comando)' :
+        labels.includes('qa-aprobado') ? 'QA aprobado (según etiqueta GitHub)' :
+        labels.includes('en-qa') ? 'En QA (según etiqueta GitHub)' : 'Abierto, pendiente de revisión/corrección';
+      return json(res, 200, { respuesta: 'Ticket #' + issue.number + ': ' + status + '. ' + issue.html_url });
+    } catch (error) {
+      console.error('Feedback status error', error.message);
+      return json(res, 502, { error: 'No se pudo consultar el estado del ticket.' });
+    }
+  }
+  if (!PUENTES_API_KEY)
+    return json(res, 503, { error: 'Asistente Puentes no configurado' });
 
   // Serialize queries from the same user to avoid mixing answers.
   if (assistantLocks.has(userId))
