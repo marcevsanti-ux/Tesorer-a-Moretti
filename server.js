@@ -508,6 +508,7 @@ async function assistantChat(req, res) {
 
   let userId;
   let jwt;
+  let identityEmail = '';
   try {
     jwt = authorization.slice(7);
     const identity = await sb('/auth/v1/user', ANON_KEY, {
@@ -516,6 +517,7 @@ async function assistantChat(req, res) {
     if (!identity.ok || !identity.data.id)
       return json(res, 401, { error: 'Sesión inválida' });
     userId = identity.data.id;
+    identityEmail = String(identity.data.email || '');
     const perms = await sb(
       '/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.' + encodeURIComponent(userId),
       ANON_KEY, { headers: { Authorization: 'Bearer ' + jwt } }
@@ -526,6 +528,22 @@ async function assistantChat(req, res) {
   } catch (e) {
     console.error('Assistant auth failed', e.message);
     return json(res, 502, { error: 'No se pudo validar la sesión' });
+  }
+
+  const isBug = /^(?:reportar )?(?:bug|error):/i.test(question);
+  if (isBug) {
+    if (identityEmail.toLowerCase() !== 'valeriat@moretti.com.ar')
+      return json(res, 403, { error: 'Solo Valeria puede reportar bugs.' });
+    const description = question.slice(question.indexOf(':') + 1).trim();
+    if (description.length < 15)
+      return json(res, 400, { error: 'Describí el problema con al menos 15 caracteres.' });
+    try {
+      const issue = await createFeedbackIssue(description);
+      return json(res, 200, { respuesta: 'Registré el bug #' + issue.number + '. ' + issue.html_url });
+    } catch (error) {
+      console.error('Feedback error', error.message);
+      return json(res, 503, { error: 'No se pudo registrar el bug. Contactá a Sistemas.' });
+    }
   }
 
   // Serialize queries from the same user to avoid mixing answers.
