@@ -481,9 +481,10 @@ function clarityDate(value){
   return Number.isNaN(d.getTime())?'Sin datos':new Intl.DateTimeFormat('es-AR',{timeZone:'America/Argentina/Buenos_Aires',dateStyle:'short',timeStyle:'medium'}).format(d)+' (Argentina)';
 }
 async function refreshClarityStatus(){
-  if(role!=='ADMIN'||!session)return;
+  if(role!=='ADMIN'||!session){$('clarityExecutionStatus').textContent='Estado de Clarity disponible para administradores.';return;}
+  $('clarityExecutionStatus').textContent='Consultando estado de Railway…';
   try{
-    const response=await fetch('/api/clarity/ejecucion',{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'});
+    const response=await fetch('/api/clarity/ejecucion',{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store',signal:AbortSignal.timeout(15000)});
     const data=await response.json();
     if(!response.ok)throw Error(data.error||'No se pudo consultar Railway');
     const deployment=data.deployment;
