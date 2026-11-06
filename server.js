@@ -467,6 +467,27 @@ function structuredClaimCount(question,records){
  return {respuesta:'Hay '+matched.length+' reclamos'+detail+'.'+(matched.length?' IDs: '+matched.slice(0,20).map(r=>'#'+(r.drive_id??r.id)).join(', ')+(matched.length>20?' (primeros 20 de '+matched.length+')':''):'') ,tipo:'supabase',cantidad:matched.length};
 }
 
+async function createFeedbackIssue(description) {
+  const token = process.env.GITHUB_FEEDBACK_TOKEN;
+  if (!token) throw new Error('Feedback no configurado');
+  const response = await fetch('https://api.github.com/repos/marcevsanti-ux/Tesorer-a-Moretti/issues', {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + token,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+      'User-Agent': 'moretti-mesa-feedback'
+    },
+    body: JSON.stringify({
+      title: '[Bug Valeria] ' + description.slice(0, 100),
+      body: 'Reportado desde Agente Moretti por Valeria.\n\n' + description
+    }),
+    signal: AbortSignal.timeout(12000)
+  });
+  if (!response.ok) throw new Error('GitHub no aceptó el reporte');
+  return response.json();
+}
+
 async function assistantChat(req, res) {
   if (!valid || !SERVICE_KEY || !PUENTES_API_KEY)
     return json(res, 503, { error: 'Asistente Puentes no configurado' });
