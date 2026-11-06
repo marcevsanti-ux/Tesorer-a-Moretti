@@ -200,18 +200,18 @@ function renderIndicadores(){
  });
  const active=selected.filter(x=>x.estado==='ABIERTO'||x.estado==='EN_PROCESO');
  const target=Math.max(0.1,Number($('slaTargetDays').value)||2);
- const ages=new Map(active.map(x=>[x.id,kpiBusinessDays(Date.parse(x.created_at),Date.now())]));
- const ready=[...ages.values()].every(v=>v!==null);
+ const ages=new Map(selected.map(x=>[x.id,kpiBusinessDays(Date.parse(x.created_at),Date.parse(x.closed_at||x.fecha_cierre||'')||Date.now())]));
+ const ready=[...active].every(x=>ages.get(x.id)!==null);
  const overdue=active.filter(x=>(ages.get(x.id)??0)>target);
  $('kpiHolidayStatus').textContent=ready?'Calendario de feriados cargado. Jornada 07:00–17:00, lunes a viernes.':(kpiHolidayFailed.size?'No se pudo obtener el calendario de feriados. Los SLA quedan pendientes; reintentá al recargar la página.':'Cargando calendario de feriados argentinos. Los SLA se muestran pendientes hasta validarlo.');
  $('kpiNew').textContent=selected.length;
  $('kpiOpen').textContent=active.length;
  $('kpiOver').textContent=ready?overdue.length:'—';
  $('kpiCompliance').textContent=ready?(active.length?((active.length-overdue.length)/active.length*100).toFixed(1)+'%':'—'):'—';
- $('kpiRows').innerHTML=active.slice().sort((a,b)=>(ages.get(b.id)||0)-(ages.get(a.id)||0)).map(x=>{
+ $('kpiRows').innerHTML=selected.slice().sort((a,b)=>(ages.get(b.id)||0)-(ages.get(a.id)||0)).map(x=>{
   const age=ages.get(x.id);
-  return '<tr><td>'+escapeHTML(kpiClaimField(x,'Cliente')||'—')+'</td><td>'+escapeHTML(x.responsable||'Sin asignar')+'</td><td>'+escapeHTML(x.estado)+'</td><td>'+escapeHTML(kpiClaimField(x,'Motivo')||'—')+'</td><td>'+escapeHTML(kpiClaimField(x,'Producto')||'—')+'</td><td>'+(age===null?'Pendiente':age.toFixed(2))+'</td><td>'+(age===null?'Pendiente':age>target?'Fuera de objetivo':'Dentro de objetivo')+'</td></tr>';
- }).join('')||'<tr><td colspan="7">No hay reclamos activos con estos filtros.</td></tr>';
+  return '<tr><td>'+escapeHTML(kpiClaimField(x,'Cliente')||'—')+'</td><td>'+escapeHTML(x.responsable||'Sin asignar')+'</td><td>'+escapeHTML(x.estado)+'</td><td>'+escapeHTML(kpiClaimField(x,'Motivo')||'—')+'</td><td>'+escapeHTML(kpiClaimField(x,'Producto')||'—')+'</td><td>'+(age===null?'Pendiente':age.toFixed(2))+'</td><td>'+(x.estado==='ABIERTO'||x.estado==='EN_PROCESO'?(age===null?'Pendiente':age>target?'Fuera de objetivo':'Dentro de objetivo'):'No aplica (cerrado)')+'</td></tr>';
+ }).join('')||'<tr><td colspan="7">No hay reclamos con estos filtros.</td></tr>';
 }
 for(const id of ['slaTargetDays','kpiCliente','kpiResponsable','kpiEstado','kpiMotivo','kpiProducto','kpiDesde','kpiHasta'])$(id).addEventListener('input',renderIndicadores);
 $('kpiLimpiar').onclick=()=>{for(const id of ['kpiCliente','kpiResponsable','kpiEstado','kpiMotivo','kpiProducto','kpiDesde','kpiHasta'])$(id).value='';renderIndicadores();};
