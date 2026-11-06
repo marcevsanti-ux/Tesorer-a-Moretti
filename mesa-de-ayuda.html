@@ -690,10 +690,10 @@ function renderAgenda(){
  const select=$('agendaClaim');const previous=select.value;
  const normalize=t=>String(t||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
  const query=normalize($('agendaClaimSearch').value.trim());
- const matching=subset.filter(x=>!query||normalize([x.drive_id,x.asunto,x.drive_historico?.Cliente,x.responsable].join(' ')).includes(query));
+ const matching=claims.filter(x=>!query||normalize([x.drive_id,x.asunto,x.drive_historico?.Cliente,x.responsable].join(' ')).includes(query));
  select.innerHTML='<option value="">Sin reclamo (recordatorio general)</option>'+matching.map(x=>'<option value="'+escapeHTML(x.id)+'">#'+escapeHTML(x.drive_id??'—')+' · '+escapeHTML(x.asunto||'Reclamo')+'</option>').join('');
  if(matching.some(x=>String(x.id)===String(previous)))select.value=previous;
- $('agendaClaimCount').textContent=matching.length+' de '+subset.length+' reclamos';
+ $('agendaClaimCount').textContent=matching.length+' de '+claims.length+' reclamos';
   document.querySelectorAll('[data-agenda-claim]').forEach(button=>button.onclick=()=>{
     const claim=claims.find(x=>String(x.id)===button.dataset.agendaClaim);
     if(!claim)return;
