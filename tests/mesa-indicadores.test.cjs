@@ -26,3 +26,14 @@ assert.equal(days(friday,monday),0.2,'Feriado lunes: deben contarse solo 2h vier
 vm.runInContext('kpiHolidays.set(2026,new Set())',context);
 assert.equal(days(friday,monday),0.5,'Viernes 15 a lunes 10 debe ser 0,5 días');
 console.log('OK: sintaxis JavaScript, formulario y cálculo SLA');
+
+const partFn=html.slice(html.indexOf('function isMissingPart('),html.indexOf('function render(){',html.indexOf('function isMissingPart(')));
+assert(partFn.includes('function isMissingPart'),'Falta detección de repuesto');
+const otCtx={};vm.createContext(otCtx);
+vm.runInContext("function isFinalizada(ot){return /^finalizad[oa]$/i.test(String(ot.estado||'').trim());}"+partFn,otCtx);
+const missing=ot=>vm.runInContext('isMissingPart('+JSON.stringify(ot)+')',otCtx);
+assert.equal(missing({estado:'Pendiente',subestado:'7 - Falta de Repuesto'}),true,'La OT 71663 debe ser prioritaria');
+assert.equal(missing({estado:'Pendiente',subestado:'8 - Garantia'}),false,'Garantía no debe ser prioritaria');
+assert.equal(missing({estado:'Finalizado',subestado:'Finalizado'}),false,'La OT 71743 no debe figurar como falta de repuesto');
+assert(html.includes('prefers-reduced-motion:reduce'),'Debe respetarse movimiento reducido');
+console.log('OK: priorización de falta de repuesto y exclusión de finalizadas');
