@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Moretti | Mesa de Ayuda</title><link rel="icon" type="image/svg+xml" href="/moretti-m-blue.svg?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{font-family:'DM Sans',sans-serif;color:#202a35;background:#f4f6f8;--red:#cc202d;--navy:#182d41;--muted:#687887;--line:#e1e7ec}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.58}.sync-spinner{display:inline-block;width:15px;height:15px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-3px;margin-right:7px;animation:sync-spin .75s linear infinite}@keyframes sync-spin{to{transform:rotate(360deg)}}header{background:white;border-bottom:1px solid var(--line);padding:17px 5%;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{font:800 25px Montserrat,sans-serif;letter-spacing:-1px;color:var(--navy)}.brand span{color:var(--red)}.sub{font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:700}.shell{max-width:1250px;margin:auto;padding:28px 24px}.hero{background:linear-gradient(115deg,#162b40,#31516a);border-radius:17px;padding:30px 36px;color:white;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;gap:20px}.hero h1{font:700 28px Montserrat;margin:0 0 8px}.hero p{margin:0;color:#d3dfe8}.pill{border:1px solid #b8c7d2;border-radius:99px;padding:7px 13px;font-size:12px;white-space:nowrap}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}.stat,.panel{background:white;border:1px solid var(--line);border-radius:14px;box-shadow:0 4px 20px #1b304008}.stat{padding:19px}.stat strong{display:block;font:700 29px Montserrat;color:var(--navy)}.stat small{color:var(--muted)}.panel{padding:23px;margin-bottom:18px}.topline{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}h2{font:700 18px Montserrat;margin:0}.toolbar{display:flex;gap:9px;flex-wrap:wrap}input,select,textarea{padding:11px 12px;border:1px solid #cdd7df;border-radius:9px;background:white;max-width:100%}textarea{width:100%;min-height:90px}.btn{background:var(--navy);color:white;border:0;border-radius:9px;padding:11px 15px;font-weight:700}.btn.secondary{background:#edf1f4;color:var(--navy)}.btn.red{background:var(--red)}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;text-align:left}th{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);background:#f7f9fa}td,th{padding:13px;border-bottom:1px solid var(--line);white-space:nowrap}td{font-size:13px}.tag{display:inline-block;border-radius:7px;background:#edf3f7;color:#36526a;padding:5px 8px;font-size:12px}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}.tab{border:1px solid var(--line);background:white;padding:11px 16px;border-radius:9px;font-weight:700;color:var(--navy)}.tab.active{background:var(--navy);color:white}.hidden{display:none!important}.notice{border-left:4px solid #dba03c;background:#fff9e9;padding:12px 15px;border-radius:6px;color:#725119;font-size:13px;margin-bottom:18px}.login{max-width:430px;margin:60px auto}.login input{display:block;width:100%;margin:12px 0}.login .btn{width:100%}.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.formgrid label{display:grid;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}.formgrid input,.formgrid select{width:100%}.wide{grid-column:1/-1}.message{font-size:13px;color:var(--muted);margin-top:12px}.error{color:#b4232c}footer{color:#87939c;text-align:center;font-size:12px;padding:20px}@media(max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}.hero{display:block;padding:24px}.hero .pill{display:inline-block;margin-top:15px}.formgrid{grid-template-columns:1fr}.shell{padding:16px}header{padding:16px}.stat{padding:14px}}
+.notification-wrap{position:relative}.notification-panel{position:absolute;right:0;top:calc(100% + 12px);width:min(380px,90vw);max-height:65vh;overflow:auto;background:#fff;border:1px solid #dce4ea;border-radius:14px;box-shadow:0 12px 30px #172c4033;padding:14px;z-index:100}.notification-entry{padding:12px 0;border-bottom:1px solid #e6ebef;font-size:13px}.notification-entry strong{display:block}.notification-entry small{color:#66798b}.notification-entry.late{border-left:3px solid #c92534;padding-left:8px}#notificationCount{display:inline-block;min-width:19px;text-align:center;font-weight:700}@media(max-width:760px){.notification-panel{right:-65px}} </style></head>
+<body><header><div><div class="brand">MORETTI<span>.</span></div><div class="sub">MESA DE AYUDA</div></div><div style="display:flex;align-items:center;gap:14px"><div class="notification-wrap"><button id="notificationBell" class="btn secondary" type="button" aria-label="Ver recordatorios" aria-expanded="false">🔔 <span id="notificationCount">0</span></button><div id="notificationPanel" class="notification-panel hidden"><div class="topline"><strong>Recordatorios</strong><button type="button" id="notificationTest" class="btn secondary" title="Escuchar campanita">🔊 Probar</button><button type="button" id="notificationClose" class="btn secondary">Cerrar</button></div><p id="notificationHint" class="message">Las alertas se muestran mientras esta página está abierta.</p><div id="notificationItems"></div><button type="button" id="notificationAgenda" class="btn secondary" style="width:100%;margin-top:10px">Abrir agenda</button></div></div><span id="who" class="sub">PORTAL INTERNO</span><span title="Versión de Mesa de Ayuda" style="font:600 11px Montserrat,sans-serif;color:#687887;white-space:nowrap">v0.2.2</span></div></header>
+<main class="shell">
+<section id="login" class="panel login"><h2>Acceso al portal</h2><p class="message">Ingresá con tu usuario corporativo autorizado.</p><form id="loginForm"><input id="email" type="email" placeholder="Correo corporativo" required autocomplete="username"><input id="password" type="password" placeholder="Contraseña" required autocomplete="current-password"><button class="btn" type="submit">Ingresar</button></form><div id="loginMessage" class="message"></div><div id="inviteSetup" class="hidden" style="margin-top:18px"><h3>Activar cuenta</h3><p class="message">Definí una contraseña para completar tu invitación.</p><form id="inviteSetupForm"><input id="invitePassword" type="password" minlength="8" required autocomplete="new-password" placeholder="Nueva contraseña (mínimo 8 caracteres)"><input id="invitePasswordConfirm" type="password" minlength="8" required autocomplete="new-password" placeholder="Repetir contraseña"><button class="btn" type="submit">Activar cuenta</button></form><div id="inviteSetupMessage" class="message"></div></div></section>
+<section id="app" class="hidden"><div id="moretti-ai" style="position:fixed;right:20px;bottom:20px;z-index:9999;font-family:DM Sans,Arial,sans-serif">
+<div id="moretti-ai-panel" hidden style="width:min(390px,calc(100vw - 30px));height:min(530px,calc(100dvh - 105px));margin-bottom:10px;background:white;color:#182d41;border:1px solid #dce4ea;border-radius:16px;box-shadow:0 12px 40px #0004;overflow:hidden;display:flex;flex-direction:column">
+<div style="background:#182d41;color:white;padding:15px 17px;display:flex;justify-content:space-between;align-items:center"><span style="display:flex;align-items:center;gap:9px"><svg viewBox="0 0 64 64" width="36" height="36" aria-hidden="true" style="border-radius:50%;flex-shrink:0"><circle cx="32" cy="32" r="32" fill="#dbeafe"/><path d="M13 53c2-14 5-27 8-34C26 7 42 8 47 20c4 9 4 23 6 33" fill="#283d64"/><path d="M13 64c1-14 8-20 19-20s18 6 19 20" fill="#b3244b"/><ellipse cx="32" cy="30" rx="14" ry="17" fill="#f4c8b3"/><path d="M18 28c0-17 10-21 18-19 9 2 13 10 12 19-4-3-6-7-8-12-5 8-14 11-22 12" fill="#283d64"/><circle cx="27" cy="30" r="1.4" fill="#26334d"/><circle cx="37" cy="30" r="1.4" fill="#26334d"/><path d="M28 39q4 4 8 0" fill="none" stroke="#a74b5b" stroke-width="1.6" stroke-linecap="round"/><path d="M14 54q6-9 18-9t18 9" fill="none" stroke="#f8d6e2" stroke-width="2"/></svg><strong>Asistente Moretti</strong></span><button id="moretti-ai-close" type="button" aria-label="Cerrar chat" style="border:0;background:transparent;color:white;font-size:23px">×</button></div>
+<div id="moretti-ai-messages" role="log" aria-live="polite" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;font-size:13px"><div style="background:#f1f5f8;padding:12px;border-radius:12px;align-self:flex-start;max-width:92%">¡Hola! Puedo consultar reclamos y órdenes de trabajo de Mesa de Ayuda: motivos, clientes, productos, estados y cantidades.</div></div>
+<form id="moretti-ai-form" style="display:flex;gap:8px;padding:12px;border-top:1px solid #e1e7ec"><input id="moretti-ai-input" aria-label="Tu mensaje" placeholder="Escribí tu consulta..." maxlength="600" required style="min-width:0;flex:1;font-size:13px"><button id="moretti-ai-send" type="submit" style="background:#d4000a;color:white;border:0;border-radius:8px;padding:0 14px">Enviar</button></form>
+<div style="font-size:10px;color:#687887;padding:0 14px 10px">Consultas sobre reclamos y OT; los recordatorios permiten completar y reprogramar acciones.</div></div>
+<button id="moretti-ai-toggle" type="button" aria-expanded="false" style="background:#d4000a;color:#fff;border:0;border-radius:30px;padding:14px 18px;font-weight:700;box-shadow:0 8px 25px #0004;cursor:pointer;display:flex;align-items:center;gap:8px"><svg viewBox="0 0 64 64" width="36" height="36" aria-hidden="true" style="border-radius:50%;flex-shrink:0"><circle cx="32" cy="32" r="32" fill="#dbeafe"/><path d="M13 53c2-14 5-27 8-34C26 7 42 8 47 20c4 9 4 23 6 33" fill="#283d64"/><path d="M13 64c1-14 8-20 19-20s18 6 19 20" fill="#b3244b"/><ellipse cx="32" cy="30" rx="14" ry="17" fill="#f4c8b3"/><path d="M18 28c0-17 10-21 18-19 9 2 13 10 12 19-4-3-6-7-8-12-5 8-14 11-22 12" fill="#283d64"/><circle cx="27" cy="30" r="1.4" fill="#26334d"/><circle cx="37" cy="30" r="1.4" fill="#26334d"/><path d="M28 39q4 4 8 0" fill="none" stroke="#a74b5b" stroke-width="1.6" stroke-linecap="round"/><path d="M14 54q6-9 18-9t18 9" fill="none" stroke="#f8d6e2" stroke-width="2"/></svg><span>Asistente Moretti</span></button></div>
+<script>(function(){
+const b=document.getElementById('moretti-ai-toggle'),p=document.getElementById('moretti-ai-panel'),f=document.getElementById('moretti-ai-form'),i=document.getElementById('moretti-ai-input'),log=document.getElementById('moretti-ai-messages'),send=document.getElementById('moretti-ai-send');
+p.style.display="none";
+function open(v){p.hidden=!v;p.style.display=v?"flex":"none";b.setAttribute('aria-expanded',String(v));if(v)i.focus()}
+b.addEventListener('click',()=>open(p.hidden));document.getElementById('moretti-ai-close').addEventListener('click',()=>open(false));
+function message(t,from){const d=document.createElement('div');d.textContent=t;d.style.cssText='padding:12px;border-radius:12px;max-width:92%;white-space:pre-wrap;overflow-wrap:anywhere;align-self:'+(from==='user'?'flex-end;background:#e7f0f8':'flex-start;background:#f1f5f8');log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+f.addEventListener('submit',async e=>{e.preventDefault();const q=i.value.trim();if(!q||send.disabled)return;message(q,'user');i.value='';send.disabled=true;const pending=message('Consultando...','bot');try{
+const {data}=await db.auth.getSession();if(!data.session)throw Error('Tu sesión expiró. Volvé a ingresar.');
+const reminderResult=await createChatReminder(q);if(reminderResult!==null){pending.textContent=reminderResult;return;}const r=await fetch('/api/asistente/chat',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+data.session.access_token},body:JSON.stringify({mensaje:q})});const result=await r.json();if(!r.ok)throw Error(result.error||'No se pudo responder');pending.textContent=result.respuesta;
+}catch(err){pending.textContent=err.message||'Error de conexión';}finally{send.disabled=false;i.focus();log.scrollTop=log.scrollHeight;}});
+})();</script><div class="hero"><div><h1>Mesa de Ayuda</h1><p>Órdenes de trabajo, garantías, reclamos y seguimiento técnico.</p></div><span class="pill" id="roleLabel">Acceso interno</span></div>
+
+<section class="panel" id="agendaDashboard" aria-label="Resumen de agenda" style="margin-bottom:18px">
+<div class="topline"><h2>📅 Agenda de Mesa de Ayuda</h2><div class="toolbar"><button type="button" class="btn secondary" id="toggleAgendaDashboard" aria-expanded="true" aria-controls="agendaDashboardDetails">Ocultar detalles</button><span class="tag">Gestiones del equipo</span></div></div><div id="agendaDashboardDetails">
+<div class="grid" style="margin:20px 0"><div class="stat"><strong id="dashToday">0</strong><small>Para hoy</small></div><div class="stat"><strong id="dashOverdue" style="color:#b91c1c">0</strong><small>Vencidas</small></div><div class="stat"><strong id="dashUpcoming">0</strong><small>Próximas</small></div></div>
+<div class="topline"><h3>Próximas gestiones</h3><span class="message" id="dashInfo">Cargando recordatorios…</span></div>
+<div id="dashItems" style="margin:12px 0"></div>
+<button type="button" class="btn" id="openAgendaDashboard" style="width:100%">Ver agenda completa →</button>
+</div></section>
+<section class="panel" id="syncMonitor" aria-label="Programación de sincronización de Clarity"><div class="topline"><h2>⏱ Sincronización de Clarity</h2><button type="button" class="btn secondary" id="toggleSyncDetails" aria-expanded="false">Ver detalles</button><span class="tag" id="syncState">Pendiente de integración</span></div><div id="syncDetails" class="hidden"><div class="toolbar" style="align-items:center;gap:18px"><strong>Horarios configurables</strong><span class="message" style="margin:0">Hora Argentina · Todos los días</span></div><p class="message" id="syncNext">Calculando próxima ejecución…</p><div class="toolbar" style="margin:12px 0"><button class="btn hidden" type="button" id="manualClarityImport" title="Disponible al configurar el servicio de sincronización de Clarity en Railway">Importar desde Clarity</button><span class="message" id="manualClarityMessage" role="status" aria-live="polite"></span></div><p class="message" id="clarityExecutionStatus">Último despliegue de Clarity: <strong>Consultando…</strong></p><p class="message">Los horarios se administran desde Usuarios → Configuración de Clarity. Una solicitud aceptada por Railway no garantiza que la importación haya finalizado.</p></div></section>
+<div class="grid"><div class="stat"><strong id="total">—</strong><small>Órdenes registradas</small></div><div class="stat"><strong id="pending">—</strong><small>Pendientes</small></div><div class="stat"><strong id="warranty">—</strong><small>En garantía</small></div><div class="stat"><strong id="claims">—</strong><small>Reclamos abiertos</small></div></div>
+<div class="tabs"><button class="tab active" data-tab="ot">Órdenes de trabajo</button><button class="tab" data-tab="finalizadas">OT finalizadas</button><button class="tab" data-tab="reclamos">Reclamos</button><button class="tab" data-tab="agenda">📅 Agenda</button><button class="tab" data-tab="biblioteca">Biblioteca técnica</button><button class="tab hidden" id="indicatorsTab" data-tab="indicadores">📊 Indicadores</button><button class="tab hidden" id="usersTab" data-tab="usuarios">Usuarios</button><button class="tab" id="logout">Salir</button></div>
+<section id="tab-ot" class="panel"><div class="topline"><h2>Órdenes de trabajo</h2><div class="toolbar"><input id="search" placeholder="Buscar OT o cliente"><select id="otScope" aria-label="Alcance de órdenes"><option value="historico">Todas las OT pendientes</option><option value="actual">Última consulta Clarity</option></select><button class="btn secondary" id="refresh">Actualizar</button><button class="btn" id="newOT">Nueva OT</button></div></div><div class="tablewrap"><table><thead><tr><th>OT</th><th>Cliente</th><th>Estado</th><th>Subestado</th><th>Actualización</th><th></th></tr></thead><tbody id="otRows"></tbody></table></div><p class="message" id="otMessage"></p></section>
+<section id="tab-finalizadas" class="panel hidden"><div class="topline"><h2>OT finalizadas <span id="finalCount" style="font-size:15px;font-weight:500;color:#52657a"></span></h2><div class="toolbar"><input id="finalSearch" type="search" placeholder="Buscar OT o cliente"><button class="btn secondary" id="finalRefresh">Actualizar</button></div></div><p class="message">Solo OT que previamente ingresaron a Órdenes de trabajo como Pendiente / Garantía y luego finalizaron en Clarity durante los últimos 10 días completos (hasta ayer, hora Argentina).</p><div class="tablewrap"><table><thead><tr><th>OT</th><th>Cliente</th><th>Estado</th><th>Fecha de finalización</th><th></th></tr></thead><tbody id="finalRows"></tbody></table></div><div class="toolbar" style="justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap"><span id="finalMessage" class="message" aria-live="polite"></span><div class="toolbar"><button type="button" class="btn secondary" id="finalPrevPage">Anterior</button><span id="finalPageNumber" aria-live="polite"></span><button type="button" class="btn secondary" id="finalNextPage">Siguiente</button></div></div></section>
+<section id="tab-agenda" class="panel hidden" aria-label="Agenda de Mesa de Ayuda">
+<div class="topline"><div><h2>Agenda del equipo</h2><p class="message">Recordatorios y próximas acciones del equipo.</p></div><div class="toolbar"><button type="button" class="btn secondary" id="toggleAgendaDetails" aria-expanded="true" aria-controls="agendaDetails">Ocultar detalles</button><button class="btn secondary" id="agendaRefresh">Actualizar</button></div></div>
+<div id="agendaDetails">
+<div class="toolbar" style="margin:16px 0;align-items:end"><label>Responsable<br><select id="agendaOwner"><option value="TODOS">Todo el equipo</option><option value="Valeria">🟣 Valeria</option><option value="Estefania">🟢 Estefanía</option><option value="Samanta">🟠 Samanta</option><option value="SIN_ASIGNAR">Sin asignar</option></select></label><label>Estado<br><select id="agendaStatus"><option value="ACTIVOS">Activos</option><option value="TODOS">Todos</option></select></label></div>
+<div class="grid" id="agendaStats" aria-live="polite"></div>
+<form id="agendaReminderForm" class="toolbar" style="margin:16px 0;align-items:end;flex-wrap:wrap">
+<label>Reclamo<br><input id="agendaClaimSearch" type="search" autocomplete="off" placeholder="Buscar por número, cliente o asunto..." aria-label="Buscar reclamo" style="min-width:360px;width:100%"><select id="agendaClaim" style="display:block;width:100%;max-width:580px;margin-top:6px"></select><span class="message" id="agendaClaimCount" aria-live="polite"></span></label><div id="agendaExistingNotice" class="message" role="status" style="flex-basis:100%"></div>
+<label>Próxima acción<br><input id="agendaDetail" maxlength="2000" placeholder="Contactar al cliente" required></label>
+<label>Fecha y hora<br><input id="agendaWhen" type="datetime-local" required></label>
+<label>Destinatario<br><select id="agendaTarget"><option value="EQUIPO">Todo el equipo</option><option value="Valeria">🟣 Valeria</option><option value="Estefania">🟢 Estefanía</option><option value="Samanta">🟠 Samanta</option></select></label>
+<button class="btn" type="submit">Programar recordatorio</button></form>
+</div>
+<div class="topline"><h3>Próximas acciones</h3><span class="message">Notificaciones dentro del portal, sin WhatsApp</span></div>
+<div class="tablewrap"><table><thead><tr><th>Fecha / hora</th><th>Reclamo</th><th>Acción</th><th>Destinatario</th><th>Estado</th></tr></thead><tbody id="agendaReminderRows"></tbody></table></div>
+<div class="tablewrap"><table><thead><tr><th>Reclamo</th><th>Asunto / Cliente</th><th>Responsable</th><th>Estado</th><th>Próxima acción</th></tr></thead><tbody id="agendaRows"></tbody></table></div>
+<form id="postponeForm" class="panel hidden" style="margin:16px 0"><h3>Postergar acción</h3><p id="postponeOriginal"></p><input type="hidden" id="postponeId"><div class="formgrid"><label>Nueva fecha y hora<input type="datetime-local" id="postponeWhen" required></label><label>Motivo de postergación<textarea id="postponeReason" maxlength="2000" required placeholder="Qué se realizó y qué falta confirmar"></textarea></label></div><div class="toolbar"><button class="btn" type="submit">Confirmar postergación</button><button class="btn secondary" id="postponeCancel" type="button">Cancelar</button></div></form><p class="message" id="agendaMessage" role="status"></p>
+</section>
+<section id="tab-reclamos" class="panel hidden"><div class="topline"><h2>Reclamos</h2><div class="toolbar"><label for="claimStatus" style="font-size:14px">Estado</label><select id="claimStatus" aria-label="Filtrar reclamos por estado"><option value="EN_PROCESO">En proceso</option><option value="ABIERTO">Abiertos</option><option value="CERRADO">Cerrados</option><option value="RESUELTO">Resueltos</option><option value="TODOS">Todos</option></select><button class="btn" id="newClaim">Nuevo reclamo</button></div></div><div class="toolbar" style="margin:12px 0;flex-wrap:wrap"><input id="claimIdFilter" type="search" placeholder="ID" aria-label="Filtrar por ID" style="max-width:90px"><input id="claimDateFilter" type="date" aria-label="Filtrar por fecha de ingreso"><input id="claimClientFilter" type="search" placeholder="Cliente" aria-label="Filtrar por cliente"><input id="claimReasonFilter" type="search" placeholder="Motivo" aria-label="Filtrar por motivo"><input id="claimProductFilter" type="search" placeholder="Producto" aria-label="Filtrar por producto"><input id="claimContactFilter" type="date" aria-label="Filtrar por último contacto"><select id="claimOwnerFilter" aria-label="Filtrar reclamos por responsable" style="min-width:165px"><option value="TODOS">Todos los responsables</option><option value="Valeria">@vale · Valeria</option><option value="Estefania">@tefa · Estefanía</option><option value="Samanta">@sami · Samanta</option><option value="SIN_ASIGNAR">Sin asignar</option></select><button class="btn secondary" id="clearClaimFilters" type="button">Limpiar filtros</button></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Fecha de ingreso</th><th>Clientes</th><th>Motivo</th><th>Producto</th><th>Último contacto</th><th>Responsable</th><th></th></tr></thead><tbody id="claimRows"></tbody></table></div><div class="toolbar" style="justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap"><span id="claimPageInfo" class="message" aria-live="polite"></span><div class="toolbar"><button type="button" class="btn secondary" id="claimPrevPage">Anterior</button><span id="claimPageNumber" aria-live="polite"></span><button type="button" class="btn secondary" id="claimNextPage">Siguiente</button></div></div><p id="claimMessage" class="message"></p></section>
+<section id="tab-biblioteca" class="panel hidden"><h2>Biblioteca técnica</h2><p class="message">Próxima integración: búsqueda de documentos técnicos en Google Drive mediante Railway / MCP Puentes.</p></section>
+<section id="tab-indicadores" class="panel hidden"><div class="topline"><h2>📊 Indicadores · Reclamos creados en la app</h2><label>Objetivo SLA (días hábiles)<input id="slaTargetDays" type="number" min="0.1" max="365" step="0.1" value="2" style="width:100px"></label></div><p class="message">SLA de atención: lunes a viernes de 07:00 a 17:00 (Argentina), excluyendo feriados. Un día hábil equivale a 10 horas. No equivale al SLA de resolución. Solo se incluyen reclamos creados en la aplicación.</p><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px;margin-bottom:14px"><label>Cliente<input id="kpiCliente" placeholder="Filtrar cliente"></label><label>Responsable<select id="kpiResponsable"><option value="">Todos</option></select></label><label>Estado<select id="kpiEstado"><option value="">Todos</option></select></label><label>Motivo<input id="kpiMotivo" list="kpiMotivoOptions" placeholder="Escribí para buscar"><datalist id="kpiMotivoOptions"></datalist></label><label>Producto<input id="kpiProducto" list="kpiProductoOptions" placeholder="Escribí nombre o código"><datalist id="kpiProductoOptions"></datalist></label><label>Desde<input type="date" id="kpiDesde"></label><label>Hasta<input type="date" id="kpiHasta"></label><button type="button" id="kpiLimpiar">Limpiar filtros</button></div><p id="kpiHolidayStatus" class="message"></p><div class="grid"><div class="stat"><strong id="kpiNew">0</strong><small>Reclamos filtrados</small></div><div class="stat"><strong id="kpiOpen">0</strong><small>Activos</small></div><div class="stat"><strong id="kpiOver">0</strong><small>Activos fuera del SLA</small></div><div class="stat"><strong id="kpiCompliance">—</strong><small>Activos dentro del SLA</small></div></div><div class="tablewrap"><table><thead><tr><th>Cliente</th><th>Responsable</th><th>Estado</th><th>Motivo</th><th>Producto</th><th>Antigüedad (días hábiles)</th><th>SLA</th></tr></thead><tbody id="kpiRows"></tbody></table></div><p class="message">Para medir resolución se incorporará una fecha de cierre verificable y una definición formal de SLA.</p></section><section id="tab-usuarios" class="panel hidden"><h2>Administración de usuarios</h2><div class="topline"><h3>Usuarios registrados</h3><button class="btn secondary" id="refreshUsers" type="button">Actualizar listado</button></div><div class="tablewrap"><table><thead><tr><th>Correo corporativo</th><th>Rol</th><th>Estado</th><th>Agenda</th><th>Alias en chat</th></tr></thead><tbody id="usersRows"><tr><td colspan="5">Cargando…</td></tr></tbody></table></div><p id="usersMessage" class="message"></p><div style="border-top:1px solid #e1e7ec;margin:26px 0 20px;padding-top:20px" id="claritySettings"><h3>Configuración de Clarity</h3><p class="message">Horarios de ejecución automática en Argentina. Solo administradores.</p><label style="display:flex;align-items:center;gap:10px;margin:14px 0"><input type="checkbox" id="clarityAutoEnabled"> Activar sincronización automática</label><div class="formgrid"><label>Primera ejecución<input type="time" id="clarityTime1" value="07:00"></label><label>Segunda ejecución<input type="time" id="clarityTime2" value="12:00"></label></div><div class="toolbar" style="margin-top:14px"><button type="button" class="btn" id="saveClaritySchedule">Guardar programación</button><button type="button" class="btn secondary" id="reloadClaritySchedule">Actualizar</button></div><p id="clarityScheduleMessage" class="message" role="status"></p><p class="message">Antes de activar, verificá que no exista otro programador externo. La programación se ejecuta desde el backend de Mesa de Ayuda.</p></div><p class="message">Invitá usuarios corporativos. Recibirán un correo para establecer su contraseña. El acceso queda limitado a Mesa de Ayuda.</p><form id="inviteForm" class="formgrid"><label>Correo electrónico<input name="email" type="email" placeholder="usuario@moretti.com.ar" required></label><label>Rol<select name="rol"><option value="USUARIO">USUARIO — gestionar OT y reclamos</option><option value="ADMIN">ADMIN — administrar usuarios</option></select></label><div class="wide"><button class="btn" type="submit">Enviar invitación</button></div></form><p id="inviteMessage" class="message"></p></section>
+<section id="editor" class="panel hidden"><div class="topline"><h2 id="editorTitle">Editar registro</h2><button class="btn secondary" id="cancelEdit">Cerrar</button></div><form id="editForm"><div id="editFields" class="formgrid"></div><p class="message" id="editMessage"></p><button class="btn red" type="submit" id="saveRecordButton">Guardar cambios</button></form><div id="claimInitialActions" class="hidden" style="margin-top:20px;border-top:1px solid #dce4ea;padding-top:16px"><h3>Seguimiento y próxima acción</h3><p class="message">Opcional: registrá la primera gestión y programá un recordatorio al crear el reclamo.</p><label>Primer seguimiento<textarea id="claimInitialFollowup" maxlength="5000" placeholder="¿Qué gestión se realizó?"></textarea></label><div class="formgrid" style="margin-top:12px"><label>Próxima acción<input id="claimInitialReminder" maxlength="2000" placeholder="Ej.: llamar al cliente"></label><label>Fecha y hora<input id="claimInitialWhen" type="datetime-local"></label><label>Notificar a<select id="claimInitialTarget"><option value="RESPONSABLE">Responsable del reclamo</option><option value="EQUIPO">Todo el equipo</option><option value="Valeria">@vale</option><option value="Samanta">@sami</option><option value="Estefania">@tefa</option></select></label></div><p class="message" id="claimInitialMessage">El recordatorio se incorporará a Agenda al guardar el reclamo.</p></div><div id="followupArea" class="hidden"><h2 style="margin:24px 0 12px">Seguimiento</h2><textarea id="followupText" maxlength="5000" placeholder="Registrar seguimiento... (Guardar cambios también registra este texto)"></textarea><p class="message">Podés usar «Agregar seguimiento» para guardarlo por separado, o «Guardar cambios» para guardar todo junto. Enter agrega una línea nueva.</p><button class="btn" id="addFollowup">Agregar seguimiento</button><div id="followupList" class="message"></div></div></section>
+</section></main><footer>© Moretti · Portal interno de Mesa de Ayuda · <span title="Versión de la aplicación">v0.1.0 (Beta)</span></footer>
+<script>
+'use strict';
+// Configurar desde el despliegue. La anon key es pública; NUNCA incluir service_role.
+const CONFIG={url:'REEMPLAZAR_SUPABASE_URL',anonKey:'REEMPLAZAR_SUPABASE_ANON_KEY'};
+const ready=CONFIG.url.startsWith('https://')&&!CONFIG.anonKey.startsWith('REEMPLAZAR');
+const db=ready?window.supabase.createClient(CONFIG.url,CONFIG.anonKey):null;
+const $=id=>document.getElementById(id);let session=null,role=null,orders=[],claims=[],editing=null,claimPage=0;
+let clarityProducts=[];
+async function loadClarityProducts(){const {data,error}=await db.from('mesa_productos_clarity').select('codigo,producto,categoria,variantes').order('producto',{ascending:true}).limit(2000);if(!error)clarityProducts=data||[];else console.warn('Catálogo Clarity no disponible',error.message);}
+function catalogProductLabel(p){return p.producto+' · ID Clarity '+p.codigo;}
+function nombreProductoReclamo(x){const codigo=String(x.producto_clarity_id||'');const producto=clarityProducts.find(p=>String(p.codigo)===codigo);return producto?.producto||x.drive_historico?.Producto||'—';}
+const CLAIM_PAGE_SIZE=10;
+const FINAL_PAGE_SIZE=20;
+let finalPage=0;let agendaReminders=[];let agendaIdentity=null;let lastNotifiedIds=new Set();let notificationsInitialized=false;let notificationAudio=null;
+const RESPONSABLES={Valeria:{emoji:'🟣',color:'#7c3aed'},Estefania:{emoji:'🟢',color:'#15803d'},Samanta:{emoji:'🟠',color:'#c2410c'}};
+function responsableBadge(nombre){const r=RESPONSABLES[nombre];return r?'<span style="font-weight:600;color:'+r.color+'">'+r.emoji+' '+escapeHTML(nombre==='Estefania'?'Estefanía':nombre)+'</span>':'<span style="color:#64748b">Sin asignar</span>';}
+function msg(id,text,error=false){$(id).textContent=text;$(id).classList.toggle('error',error)}
+function show(id,yes){$(id).classList.toggle('hidden',!yes)}
+function escapeHTML(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+const CLAIM_PRODUCTOS=["DC / Pesas Patron","AD8127","DUECENTO PRO","RRA","VULCANO","NAPOLI","APC","GP","MIXER-20","MIXER-30","MIXER-40","MIXER-60","HANDY-16","HANDY-30","MIXER-10","ANAFE","LPA","SHOP","SPINNER-350","SPINNER-850","SPINNER-220","SPINNER-270","MIXER-5","MIXER-5n","MIXER-7","MIXER-7n","DYNAMIX-10","DYNAMIX-20","DYNAMIX-30","ULTRA-10","ULTRA-20","ULTRA-30","ULTRA-40","ULTRA-60","ULTRA-80","CR-KINDER","TRECENTO","FAMILY","TRECENTO DE PRO","DUECENTO-20","TRECENTO 30","AUTOTRECENTO","BLACK 220","CENTO95","DUECENTO50","HOME 190","FILLERPRO-10","FILLERPRO-15","FILLERPRO-5","CUBE 20","CUBE 25","CUBE-40","CUBE-60","FRYERTEC-16","FRYERTEC-23","FRYERTEC-8","FRYER DOBLE-8","FRYER-11","FRYER-8","DELI-4N","DELI-4","TOSTADORA BUN TOASTER","BAKERY-4","BAKERY-5","OVEN-70","GENESIS","ACLAS","LAMINADORA-140","LAMINADORA-160","LAMINADORA-180","LAMINADORA-240","MASTERBLEND","POWERBLEND","MESA DE 120 ACERO","MESA DE 140 ACERO","MESA DE 160 ACERO","MESA DE 200 ACERO","MICROPRO-25","MICROPRO-34","CUTTER-18","CUTTER-9","CUTTER-9 PRO","KATANA","PEELER-18","GRINDER-32","GRIDTEC-60","GRIDTEC-90","VC-65","MINI VC","VEGGIECHOP","CHEESER","MINI BONE","BONE","HANDY-44","HANDY-58","MIXER-11","MIXER-6","MIXER-8","MIXER-7XP","DYNAMIX-40","DYNAMIX-50","DYNAMIX-60"];
+const CLAIM_MOTIVOS=["Arquibola","Bowl atascado","Cable cortado","Cables sueltos","Cambio en garantía","Conector roto por mal embalaje","Consulta DC / Pesas Patrón","Consulta estado reparación","Consulta repuestos","Consulta sobre calibración","Consulta uso general","Coordinación de retiro","Demora en servicio técnico","Descalibrada","Descalibrada por fabricacion deficiente","Entrega incompleta","Envio a S.T. en garantía","Equipo con faltantes","Error en pantalla","Error en producto entregado","Falla intermitente","faltante de repuestos en equipo nuevo","garantia en domicilio","Hace Ruido","Mala fabricacion","No calienta","No corta","No enciende","No hace hielo","No imprime","Peso incorrecto","Plancha doblada","Problema con batería","Problema con repuestos","Reclama contacto de otro sector","Reclamo de servicio tecnico","Reingreso a S.T.","S.T. Cordoba","S.T. Mendoza","S.T. Tucuman","Se frena funcionamiento","Se mueve eje/brazo","solicitud de certificado de calibracion","Solicitud de servicio técnico","Tecla no funciona"];
+function field(label,name,value='',kind='text',options){const input=options?'<select name="'+name+'">'+options.map(x=>'<option '+(x===value?'selected':'')+'>'+escapeHTML(x)+'</option>').join('')+'</select>':'<input name="'+name+'" type="'+kind+'" value="'+escapeHTML(value)+'">';return '<label>'+label+input+'</label>'}
+async function boot(){if(!ready){msg('loginMessage','Falta configurar Supabase URL y anon key antes de habilitar el acceso.',true);return}
+const hash=new URLSearchParams(location.hash.slice(1));const query=new URLSearchParams(location.search);
+const inviteFlow=['invite','recovery'].includes(hash.get('type'))||['invite','recovery'].includes(query.get('type'));
+if(inviteFlow)sessionStorage.setItem('mesa_invite_pending','1');
+const {data}=await db.auth.getSession();
+const pending=sessionStorage.getItem('mesa_invite_pending')==='1';
+if(pending){show('login',true);show('app',false);show('loginForm',false);show('inviteSetup',true);if(!data.session)msg('inviteSetupMessage','Abrí el enlace de invitación completo desde tu correo. Si venció, solicitá uno nuevo.',true);}
+else await setSession(data.session);
+db.auth.onAuthStateChange((event,s)=>{if(event==='PASSWORD_RECOVERY'||(event==='SIGNED_IN'&&sessionStorage.getItem('mesa_invite_pending')==='1')){show('login',true);show('app',false);show('loginForm',false);show('inviteSetup',true);return}if(!s)void setSession(null)});
+}
+$('inviteSetupForm').onsubmit=async e=>{e.preventDefault();const a=$('invitePassword').value,b=$('invitePasswordConfirm').value;if(a!==b){msg('inviteSetupMessage','Las contraseñas no coinciden.',true);return;}const {data:auth}=await db.auth.getSession();if(!auth.session){msg('inviteSetupMessage','La invitación no está activa. Volvé a abrir el enlace del correo.',true);return;}const {error}=await db.auth.updateUser({password:a});if(error){msg('inviteSetupMessage',error.message,true);return;}sessionStorage.removeItem('mesa_invite_pending');history.replaceState(null,'',location.pathname);show('inviteSetup',false);show('loginForm',true);msg('loginMessage','Cuenta activada. Ya podés ingresar con tu correo y contraseña.');await db.auth.signOut();};
+async function setSession(s){if(session?.user?.id!==s?.user?.id){notificationsInitialized=false;lastNotifiedIds=new Set();assistantReminderShown.clear();const chatLog=$('moretti-ai-messages');if(chatLog)chatLog.innerHTML='<div style="background:#f1f5f8;padding:12px;border-radius:12px;align-self:flex-start;max-width:92%">¡Hola! Soy el Asistente Moretti. Voy a mostrarte acá tus recordatorios vencidos.</div>';}session=s;show('login',!s);show('app',!!s);if(!s)return;const {data,error}=await db.from('mesa_usuarios').select('rol,activo').eq('user_id',s.user.id).maybeSingle();if(error||!data?.activo){await db.auth.signOut();msg('loginMessage','Tu cuenta no está autorizada para Mesa de Ayuda.',true);return}role=data.rol;const {data:identity}=await db.from('mesa_agenda_integrantes').select('responsable,supervisor').eq('user_id',s.user.id).maybeSingle();agendaIdentity=identity||null;$('agendaOwner').value=role==='ADMIN'||agendaIdentity?.supervisor?'TODOS':agendaIdentity?.responsable||'SIN_ASIGNAR';$('agendaOwner').disabled=role!=='ADMIN'&&!agendaIdentity?.supervisor;$('who').textContent=s.user.email;$('roleLabel').textContent=role==='ADMIN'?'Administrador':'Usuario';show('usersTab',role==='ADMIN');show('indicatorsTab',role==='ADMIN');show('manualClarityImport',role==='ADMIN');if(role==='ADMIN'){void loadMesaUsers();try{const cfg=await fetch('/api/clarity/estado',{headers:{Authorization:'Bearer '+session.access_token}}).then(r=>r.json());if(!cfg.manual_configurada){$('manualClarityImport').disabled=true;msg('manualClarityMessage','Importación manual pendiente de configurar en Railway.');}else{msg('manualClarityMessage','Importación manual disponible.');}}catch{msg('manualClarityMessage','No se pudo verificar la configuración de Clarity.',true);}}await load()}
+$('loginForm').onsubmit=async e=>{e.preventDefault();if(!db)return;msg('loginMessage','Ingresando...');const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){msg('loginMessage',error.message,true);return}await setSession(data.session)};
+$('logout').onclick=async()=>{if(db)await db.auth.signOut();await setSession(null)};
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');for(const t of ['ot','finalizadas','reclamos','agenda','biblioteca','indicadores','usuarios'])show('tab-'+t,b.dataset.tab===t);show('editor',false)});
+let currentOrders=[];let otHistory=[];let historyError=null;
+function isFinalizada(ot){return /^finalizad[oa]$/i.test(String(ot.estado||'').trim());}
+function activeOrders(items){return items.filter(ot=>!isFinalizada(ot));}
+let latestClarityDate=null;
+function claritySnapshot(ot){const v=ot.clarity_snapshot;return v&&typeof v==='object'&&v.fuente==='Clarity'?v:null;}
+function currentClarityOrders(items){
+  const synced=items.map(ot=>({ot,snapshot:claritySnapshot(ot)}))
+    .filter(x=>x.snapshot&&Number.isFinite(Date.parse(x.snapshot.fechaExtraccion)));
+  if(!synced.length){latestClarityDate=null;return [];}
+  synced.sort((a,b)=>Date.parse(b.snapshot.fechaExtraccion)-Date.parse(a.snapshot.fechaExtraccion));
+  const latest=synced[0].snapshot;
+  latestClarityDate=latest.fechaExtraccion;
+  const batch=latest.ejecucionId;
+  // Registros anteriores al identificador de lote: ventana de 10 minutos.
+  // Se aplica solo al lote más reciente y nunca se alteran los históricos.
+  return synced.filter(x=>batch
+    ? x.snapshot.ejecucionId===batch
+    : !x.snapshot.ejecucionId&&Math.abs(Date.parse(x.snapshot.fechaExtraccion)-Date.parse(latest.fechaExtraccion))<=600000)
+    .map(x=>x.ot);
+}
+async function loadAllOrders(){const result=[];const pageSize=500;for(let start=0;start<100000;start+=pageSize){const {data,error}=await db.from('mesa_ot').select('*').order('updated_at',{ascending:false}).order('id',{ascending:true}).range(start,start+pageSize-1);if(error)return {data:result,error};result.push(...(data||[]));if(!data||data.length<pageSize)return {data:result,error:null};}return {data:result,error:new Error('Se alcanzó el límite de lectura de OT')};}
+async function loadAllOtHistory(){const result=[];const pageSize=500;for(let start=0;start<100000;start+=pageSize){const {data,error}=await db.from('mesa_ot_historial').select('id,ot_id,estado_anterior,estado_nuevo,subestado_anterior,subestado_nuevo,fecha_cambio,origen,observaciones').order('id',{ascending:true}).range(start,start+pageSize-1);if(error)return {data:result,error};result.push(...(data||[]));if(!data||data.length<pageSize)return {data:result,error:null};}return {data:result,error:new Error('Límite de historial alcanzado')};}
+function traceEventsFor(ot){return otHistory.filter(h=>h.ot_id===ot.numero);}
+function eligibleOtForFinalizadas(ot){return otHistory.some(h=>h.ot_id===ot.numero&&((/pendiente/i.test(String(h.estado_nuevo||''))&&/garant/i.test(String(h.subestado_nuevo||'')))||(/pendiente/i.test(String(h.estado_anterior||''))&&/garant/i.test(String(h.subestado_anterior||'')))));}
+function traceWarranty(ot){return traceEventsFor(ot).some(h=>/garant/i.test([h.subestado_anterior,h.subestado_nuevo,h.estado_anterior,h.estado_nuevo].join(' ')))||/garant/i.test([ot.estado,ot.subestado].join(' '));}
+async function loadAllClaims(){
+  const result=[];
+  const pageSize=500;
+  for(let start=0;start<100000;start+=pageSize){
+    const {data,error}=await db.from('mesa_reclamos').select('*').order('updated_at',{ascending:false}).order('id',{ascending:true}).range(start,start+pageSize-1);
+    if(error)return {data:result,error};
+    result.push(...(data||[]));
+    if(!data||data.length<pageSize)return {data:result,error:null};
+  }
+  return {data:result,error:new Error('Se alcanzó el límite de lectura de reclamos')};
+}
+const kpiHolidays=new Map();
+const kpiHolidayPending=new Set();
+const kpiHolidayFailed=new Set();
+function kpiDateKey(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
+async function kpiLoadHolidays(year){
+ if(kpiHolidays.has(year)||kpiHolidayPending.has(year)||kpiHolidayFailed.has(year))return;
+ kpiHolidayPending.add(year);
+ try {
+  const response=await fetch('https://api.argentinadatos.com/v1/feriados/'+year,{signal:AbortSignal.timeout(10000)});
+  if(!response.ok)throw Error('HTTP '+response.status);
+  const data=await response.json();
+  if(!Array.isArray(data))throw Error('Formato de feriados inválido');
+  kpiHolidays.set(year,new Set(data.filter(x=>x.fecha).map(x=>String(x.fecha).slice(0,10))));
+ } catch(e){kpiHolidayFailed.add(year);console.warn('No se pudo cargar el calendario de feriados '+year,e);}
+ finally{kpiHolidayPending.delete(year);renderIndicadores();}
+}
+function kpiBusinessDays(start,end){
+ if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)return 0;
+ let minutes=0;const day=new Date(start);day.setHours(0,0,0,0);
+ const years=new Set();
+ for(let d=new Date(day);d.getTime()<end;d.setDate(d.getDate()+1))years.add(d.getFullYear());
+ for(const year of years)if(!kpiHolidays.has(year)){if(!kpiHolidayFailed.has(year))kpiLoadHolidays(year);return null;}
+ for(;day.getTime()<end;day.setDate(day.getDate()+1)){
+  const wd=day.getDay();if(wd===0||wd===6||kpiHolidays.get(day.getFullYear()).has(kpiDateKey(day)))continue;
+  const a=new Date(day);a.setHours(7,0,0,0);
+  const b=new Date(day);b.setHours(17,0,0,0);
+  minutes+=Math.max(0,Math.min(end,b.getTime())-Math.max(start,a.getTime()))/60000;
+ }
+ return minutes/600;
+}
+function kpiClaimField(x,key){
+ const h=x.drive_historico||{};
+ if(key==='Cliente')return String(h.Cliente||String(x.asunto||'').split(' - ')[0]||'');
+ if(key==='Producto')return String(h.Producto||'');
+ if(key==='Motivo')return String(h.Motivo||'');
+ return String(x[key]||'');
+}
+function renderIndicadores(){
+ if(role!=='ADMIN')return;
+ const cohort=claims.filter(x=>x.drive_historico?.['Origen registro']==='APP');
+ const filters=[['kpiResponsable','responsable'],['kpiEstado','estado']];
+ for(const [id,key] of filters){
+  const select=$(id),previous=select.value;
+  const options=[...new Set([...cohort.map(x=>kpiClaimField(x,key)),...(key==='responsable'?Object.keys(RESPONSABLES):[])].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  select.innerHTML='<option value="">Todos</option>'+options.map(v=>'<option value="'+escapeHTML(v)+'">'+escapeHTML(v)+'</option>').join('');
+  select.value=options.includes(previous)?previous:'';
+ }
+ const motivos=[...new Set([...CLAIM_MOTIVOS,...claims.map(x=>kpiClaimField(x,'Motivo'))].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+ $('kpiMotivoOptions').innerHTML=motivos.map(v=>'<option value="'+escapeHTML(v)+'"></option>').join('');
+ const productos=[...new Set([...clarityProducts.map(x=>x.producto),...CLAIM_PRODUCTOS,...claims.map(x=>kpiClaimField(x,'Producto'))].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+ $('kpiProductoOptions').innerHTML=productos.map(v=>'<option value="'+escapeHTML(v)+'"></option>').join('');
+ const client=$('kpiCliente').value.trim().toLocaleLowerCase('es');
+ const desde=$('kpiDesde').value,hasta=$('kpiHasta').value;
+ const selected=cohort.filter(x=>{
+  if(client&&!kpiClaimField(x,'Cliente').toLocaleLowerCase('es').includes(client))return false;
+  if(filters.some(([id,key])=>$(id).value&&$(id).value!==kpiClaimField(x,key)))return false;
+  const motivo=$('kpiMotivo').value.trim().toLocaleLowerCase('es');
+  if(motivo&&!kpiClaimField(x,'Motivo').toLocaleLowerCase('es').includes(motivo))return false;
+  const producto=$('kpiProducto').value.trim().toLocaleLowerCase('es');
+  if(producto&&!kpiClaimField(x,'Producto').toLocaleLowerCase('es').includes(producto)&&!String(x.producto_clarity_id||'').toLocaleLowerCase('es').includes(producto))return false;
+  const date=String(x.created_at||'').slice(0,10);
+  return (!desde||date>=desde)&&(!hasta||date<=hasta);
+ });
+ const active=selected.filter(x=>x.estado==='ABIERTO'||x.estado==='EN_PROCESO');
+ const target=Math.max(0.1,Number($('slaTargetDays').value)||2);
+ const ages=new Map(selected.map(x=>[x.id,kpiBusinessDays(Date.parse(x.created_at),Date.parse(x.closed_at||x.fecha_cierre||'')||Date.now())]));
+ const ready=[...active].every(x=>ages.get(x.id)!==null);
+ const overdue=active.filter(x=>(ages.get(x.id)??0)>target);
+ $('kpiHolidayStatus').textContent=ready?'Calendario de feriados cargado. Jornada 07:00–17:00, lunes a viernes.':(kpiHolidayFailed.size?'No se pudo obtener el calendario de feriados. Los SLA quedan pendientes; reintentá al recargar la página.':'Cargando calendario de feriados argentinos. Los SLA se muestran pendientes hasta validarlo.');
+ $('kpiNew').textContent=selected.length;
+ $('kpiOpen').textContent=active.length;
+ $('kpiOver').textContent=ready?overdue.length:'—';
+ $('kpiCompliance').textContent=ready?(active.length?((active.length-overdue.length)/active.length*100).toFixed(1)+'%':'—'):'—';
+ $('kpiRows').innerHTML=selected.slice().sort((a,b)=>(ages.get(b.id)||0)-(ages.get(a.id)||0)).map(x=>{
+  const age=ages.get(x.id);
+  return '<tr><td>'+escapeHTML(kpiClaimField(x,'Cliente')||'—')+'</td><td>'+escapeHTML(x.responsable||'Sin asignar')+'</td><td>'+escapeHTML(x.estado)+'</td><td>'+escapeHTML(kpiClaimField(x,'Motivo')||'—')+'</td><td>'+escapeHTML(kpiClaimField(x,'Producto')||'—')+'</td><td>'+(age===null?'Pendiente':age.toFixed(2))+'</td><td>'+(x.estado==='ABIERTO'||x.estado==='EN_PROCESO'?(age===null?'Pendiente':age>target?'Fuera de objetivo':'Dentro de objetivo'):'No aplica (cerrado)')+'</td></tr>';
+ }).join('')||'<tr><td colspan="7">No hay reclamos con estos filtros.</td></tr>';
+}
+for(const id of ['slaTargetDays','kpiCliente','kpiResponsable','kpiEstado','kpiMotivo','kpiProducto','kpiDesde','kpiHasta'])$(id).addEventListener('input',renderIndicadores);
+$('kpiLimpiar').onclick=()=>{for(const id of ['kpiCliente','kpiResponsable','kpiEstado','kpiMotivo','kpiProducto','kpiDesde','kpiHasta'])$(id).value='';renderIndicadores();};
+async function load(){
+  await loadClarityProducts();
+  const [o,c,h]=await Promise.all([
+    loadAllOrders(),
+    loadAllClaims(),
+    loadAllOtHistory()
+  ]);
+  orders=o.data||[];claims=c.data||[];otHistory=h.data||[];historyError=h.error;renderIndicadores();
+  currentOrders=currentClarityOrders(activeOrders(orders));
+  const visible=$('otScope').value==='historico'?activeOrders(orders):currentOrders;
+  msg('otMessage',o.error?'Error: '+o.error.message:
+    visible.length+' OT mostradas · '+currentOrders.length+' de la última consulta Clarity · '+orders.length+' en histórico'+
+    (latestClarityDate?' · Extracción: '+clarityDate(latestClarityDate):' · Sin extracción verificada')+
+    '',
+    !!o.error);
+  msg('claimMessage',c.error?'Error: '+c.error.message:filteredClaims().length+' reclamos mostrados de '+claims.length+' cargados',!!c.error);
+  $('total').textContent=visible.length;
+  $('pending').textContent=visible.filter(x=>/pendiente/i.test(x.estado||'')).length;
+  $('warranty').textContent=visible.filter(x=>/garant/i.test(x.subestado||'')).length;
+  $('claims').textContent=claims.filter(x=>!['CERRADO','RESUELTO'].includes(String(x.estado||'').toUpperCase())).length;
+  const {data:reminders,error:agendaError}=await db.from("mesa_reclamo_recordatorios").select("*").order("fecha_hora",{ascending:true}).limit(500);agendaReminders=reminders||[];if(agendaError)msg("agendaMessage","No se pudieron cargar recordatorios: "+agendaError.message,true);
+  render();deliverAssistantReminders();
+}
+$('claimStatus').onchange=updateClaimFilters;
+$('claimPrevPage').onclick=()=>{if(claimPage>0){claimPage--;render();}};
+$('claimNextPage').onclick=()=>{if((claimPage+1)*CLAIM_PAGE_SIZE<filteredClaims().length){claimPage++;render();}};
+function claimDate(value){
+  const s=String(value||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);
+  const m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
+  if(!m)return '';
+  const year=m[3].length===2?'20'+m[3]:m[3];
+  return year+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+}
+function fechaVisible(value){const iso=claimDate(value);return iso?iso.slice(8,10)+'-'+iso.slice(5,7)+'-'+iso.slice(0,4):String(value??'');}
+function fechaHoraVisible(value){if(!value)return '—';const d=new Date(value);if(!Number.isFinite(d.getTime()))return fechaVisible(value);const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(d);const get=t=>parts.find(p=>p.type===t)?.value||'';return get('day')+'-'+get('month')+'-'+get('year')+' '+get('hour')+':'+get('minute');}
+function filteredClaims(){
+  const value=id=>$(id).value.trim().toLocaleLowerCase('es-AR');
+  const match=(field,id)=>String(field||'').toLocaleLowerCase('es-AR').includes(value(id));
+  return claims.filter(x=>{
+    const h=x.drive_historico||{},parts=String(x.asunto||'').split(' - ');
+    return ($('claimStatus').value==='TODOS'||String(x.estado||'').toUpperCase()===$('claimStatus').value)
+      &&match(x.drive_id,'claimIdFilter')
+      &&(!value('claimDateFilter')||claimDate(h['Fecha ingreso']||x.fecha_ingreso_historica||x.created_at)===value('claimDateFilter'))
+      &&match(h.Cliente||parts[0],'claimClientFilter')
+      &&match(h.Motivo||parts.slice(1).join(' - '),'claimReasonFilter')
+      &&match(nombreProductoReclamo(x)+' '+(h.Producto||''),'claimProductFilter')
+      &&($('claimOwnerFilter').value==='TODOS'||($('claimOwnerFilter').value==='SIN_ASIGNAR'?!x.responsable:String(x.responsable||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')===$('claimOwnerFilter').value))
+      &&(!value('claimContactFilter')||claimDate(h['Último contacto'])===value('claimContactFilter'));
+  }).sort((a,b)=>{
+    const date=x=>claimDate(x.drive_historico?.['Fecha ingreso']||x.fecha_ingreso_historica||x.created_at)||'9999-12-31';
+    return date(a).localeCompare(date(b))||Number(a.drive_id||0)-Number(b.drive_id||0);
+  });
+}
+function updateClaimFilters(){claimPage=0;render();msg('claimMessage',filteredClaims().length+' reclamos mostrados de '+claims.length+' cargados');}
+['claimIdFilter','claimDateFilter','claimClientFilter','claimReasonFilter','claimProductFilter','claimContactFilter'].forEach(id=>$(id).addEventListener('input',updateClaimFilters));
+$('claimOwnerFilter').addEventListener('change',updateClaimFilters);
+$('clearClaimFilters').onclick=()=>{['claimIdFilter','claimDateFilter','claimClientFilter','claimReasonFilter','claimProductFilter','claimContactFilter'].forEach(id=>$(id).value='');$('claimOwnerFilter').value='TODOS';updateClaimFilters();};
+function finalDate(ot){const v=ot.clarity_snapshot||{};return v.fechaFinalizacion||v.fecha_finalizacion||ot.fecha_finalizacion||'';}
+function finalWindow(){
+  const now=new Date();
+  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Argentina/Buenos_Aires',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
+  const end=new Date(today+'T00:00:00Z');const start=new Date(end);start.setUTCDate(start.getUTCDate()-10);
+  return {start:start.toISOString().slice(0,10),end:today};
+}
+function renderFinalizadas(){
+ const w=finalWindow(),q=$('finalSearch').value.toLowerCase();
+ const list=orders.filter(x=>isFinalizada(x)&&eligibleOtForFinalizadas(x)&&finalDate(x)&&claimDate(finalDate(x))>=w.start&&claimDate(finalDate(x))<w.end).filter(x=>(x.numero+' '+x.cliente).toLowerCase().includes(q)).sort((a,b)=>claimDate(finalDate(b)).localeCompare(claimDate(finalDate(a))));
+ const pages=Math.max(1,Math.ceil(list.length/FINAL_PAGE_SIZE));finalPage=Math.min(finalPage,pages-1);
+ const pageItems=list.slice(finalPage*FINAL_PAGE_SIZE,(finalPage+1)*FINAL_PAGE_SIZE);
+ $('finalRows').innerHTML=pageItems.map(x=>'<tr><td>'+escapeHTML(x.numero)+'</td><td>'+escapeHTML(String(x.cliente||'').toLocaleUpperCase('es-AR'))+'</td><td>'+escapeHTML(x.estado)+'</td><td>'+escapeHTML(fechaVisible(finalDate(x)))+'</td><td><button class="btn secondary" data-final-ot="'+escapeHTML(x.id)+'">Editar</button></td></tr>').join('')||'<tr><td colspan="5">No hay OT finalizadas importadas para este período</td></tr>';
+ $('finalCount').textContent='('+list.length+' OT)';
+ $('finalMessage').textContent='Finalizadas desde '+fechaVisible(w.start)+' hasta '+fechaVisible(new Date(new Date(w.end+'T00:00:00Z').getTime()-86400000).toISOString().slice(0,10))+' · '+list.length+' OT · Mostrando '+(list.length?finalPage*FINAL_PAGE_SIZE+1:0)+'–'+Math.min((finalPage+1)*FINAL_PAGE_SIZE,list.length);
+ $('finalPageNumber').textContent='Página '+(finalPage+1)+' de '+pages;
+ $('finalPrevPage').disabled=finalPage===0;$('finalNextPage').disabled=finalPage>=pages-1;
+ document.querySelectorAll('[data-final-ot]').forEach(b=>b.onclick=()=>edit('ot',orders.find(x=>x.id===b.dataset.finalOt)));
+}
+$('finalSearch').oninput=()=>{finalPage=0;renderFinalizadas()};$('finalRefresh').onclick=load;
+$('finalPrevPage').onclick=()=>{if(finalPage>0){finalPage--;renderFinalizadas()}};
+$('finalNextPage').onclick=()=>{finalPage++;renderFinalizadas()};
+function render(){renderNotifications();renderDashboardAgenda();renderAgenda();renderFinalizadas();const q=$('search').value.toLowerCase();$('otRows').innerHTML=($('otScope').value==='historico'?activeOrders(orders):currentOrders).filter(x=>(x.numero+' '+x.cliente).toLowerCase().includes(q)).map(x=>'<tr><td><b>'+escapeHTML(x.numero)+'</b></td><td>'+escapeHTML(x.cliente)+'</td><td><span class="tag">'+escapeHTML(x.estado)+'</span></td><td>'+escapeHTML(x.subestado)+'</td><td>'+escapeHTML(fechaVisible(x.updated_at))+'</td><td><button class="btn secondary" data-ot="'+escapeHTML(x.id)+'">Editar</button></td></tr>').join('')||'<tr><td colspan="6">Sin registros</td></tr>';const allFilteredClaims=filteredClaims();const pageCount=Math.max(1,Math.ceil(allFilteredClaims.length/CLAIM_PAGE_SIZE));claimPage=Math.min(claimPage,pageCount-1);const visibleClaims=allFilteredClaims.slice(claimPage*CLAIM_PAGE_SIZE,(claimPage+1)*CLAIM_PAGE_SIZE);$('claimPageInfo').textContent=allFilteredClaims.length?'Mostrando '+(claimPage*CLAIM_PAGE_SIZE+1)+'–'+Math.min((claimPage+1)*CLAIM_PAGE_SIZE,allFilteredClaims.length)+' de '+allFilteredClaims.length+' reclamos':'0 reclamos';$('claimPageNumber').textContent='Página '+(claimPage+1)+' de '+pageCount;$('claimPrevPage').disabled=claimPage===0;$('claimNextPage').disabled=claimPage>=pageCount-1;$('claimRows').innerHTML=visibleClaims.map(x=>{const h=x.drive_historico||{};const parts=String(x.asunto||'').split(' - ');const values=[x.drive_id??'—',fechaVisible(h['Fecha ingreso']||x.fecha_ingreso_historica||x.created_at)||'—',String(h.Cliente||parts[0]||'—').toLocaleUpperCase('es-AR'),h.Motivo||parts.slice(1).join(' - ')||'—',nombreProductoReclamo(x),fechaVisible(h['Último contacto'])||'—'];return '<tr>'+values.map(v=>'<td>'+escapeHTML(v)+'</td>').join('')+'<td>'+responsableBadge(x.responsable)+'</td><td><button class="btn secondary" data-claim="'+escapeHTML(x.id)+'">Editar</button></td></tr>'}).join('')||'<tr><td colspan="8">Sin reclamos para estos filtros</td></tr>';document.querySelectorAll('[data-ot]').forEach(b=>b.onclick=()=>edit('ot',orders.find(x=>x.id===b.dataset.ot)));document.querySelectorAll('[data-claim]').forEach(b=>b.onclick=()=>edit('claim',claims.find(x=>x.id===b.dataset.claim)))}
+$('search').oninput=render;$('otScope').onchange=load;$('refresh').onclick=load;$('newOT').onclick=()=>edit('ot',null);$('newClaim').onclick=()=>edit('claim',null);$('cancelEdit').onclick=()=>show('editor',false);
+function datosOtReclamo(ot){const filas=ot?.clarity_snapshot?.filas||[];const productos=[...new Set(filas.map(x=>String(x.valores?.[5]||'').trim()).filter(Boolean))];const series=[...new Set(filas.map(x=>String(x.valores?.[7]||'').trim()).filter(Boolean))];return {cliente:ot?.cliente||'',producto:productos.join(' / '),serie:series.join(' / '),numero:ot?.numero||''};}
+function fechaArgentinaHoy(){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Argentina/Buenos_Aires',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
+function fechaOrigenOt(ot){
+ const filas=ot?.clarity_snapshot?.filas||[];
+ return claimDate(filas.find(x=>x.fecha||x.valores?.[2])?.fecha||filas[0]?.valores?.[2]||'');
+}
+function productoReclamo(nombre){const normal=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');const n=normal(nombre);return CLAIM_PRODUCTOS.find(p=>normal(p)===n)||CLAIM_PRODUCTOS.filter(p=>normal(p).length>=5&&n.includes(normal(p))).sort((a,b)=>b.length-a.length)[0]||'';}
+function edit(type,item){editing={type,item};show('editor',true);$('editorTitle').textContent=(item&&!item._nuevo?'Editar ':'Nuevo ')+(type==='ot'?'orden de trabajo':'reclamo');if(type==='claim'){const n=item&&!item._nuevo?item.drive_id:Math.max(544,...claims.map(x=>Number(x.drive_id)||0))+1;const ot=orders.find(x=>x.id===item?.ot_id);$('editorTitle').textContent+=' · Reclamo N.º '+n+(item?._nuevo?' (estimado hasta guardar)':'');if(ot)$('editorTitle').textContent+=' · OT '+ot.numero;} $('editMessage').textContent='';if(type==='ot')$('editFields').innerHTML=field('Número OT','numero',item?.numero||'')+field('Cliente','cliente',String(item?.cliente||'').toLocaleUpperCase('es-AR'))+field('Estado','estado',item?.estado||'Pendiente')+field('Subestado','subestado',item?.subestado||'')+field('Observaciones','observaciones',item?.observaciones||'')+
+'<label>Producto (Clarity)<input readonly value="'+escapeHTML(item?.clarity_snapshot?.filas?.[0]?.valores?.[5]||'No disponible')+'"></label>'+
+'<label>Número de serie (Clarity)<input readonly value="'+escapeHTML(item?.clarity_snapshot?.filas?.map(x=>x.valores?.[7]).filter(Boolean).join(' / ')||'No disponible')+'"></label>'+
+'<button class="btn secondary" type="button" id="createClaimFromOt">Crear reclamo vinculado a esta OT</button>';else {const otOrigen=orders.find(x=>x.id===item?.ot_id);const datos=datosOtReclamo(otOrigen);const prodOrigen=productoReclamo(datos.producto);const prodActual=item?.drive_historico?.Producto||prodOrigen;const prodOtro=datos.producto&&!prodOrigen?datos.producto:'';$('editFields').innerHTML=field('Cliente','cliente_reclamo',item?.drive_historico?.Cliente||datos.cliente||String(item?.asunto||'').split(' - ')[0]||'')+(otOrigen?'<label>Cliente (Clarity)<input readonly value="'+escapeHTML(datos.cliente)+'"></label>':'')+
+'<label>Motivo<select name="motivo" id="claimMotivo"><option value="">Seleccionar motivo</option>'+CLAIM_MOTIVOS.map(m=>'<option value="'+escapeHTML(m)+'"'+(m===(item?.drive_historico?.Motivo||'')?' selected':'')+'>'+escapeHTML(m)+'</option>').join('')+'<option value="__otro">Otro (especificar)</option></select></label>'+field('Otro motivo','motivo_otro','')+'<label>Producto (buscá por nombre o ID Clarity)<input name="producto" id="claimProducto" list="claimProductOptions" autocomplete="off" placeholder="Escribí para filtrar productos..." value="'+escapeHTML(item?.producto_clarity_id&&clarityProducts.find(p=>p.codigo===item.producto_clarity_id)?catalogProductLabel(clarityProducts.find(p=>p.codigo===item.producto_clarity_id)):prodActual)+'"><datalist id="claimProductOptions">'+clarityProducts.map(p=>'<option value="'+escapeHTML(catalogProductLabel(p))+'"></option>').join('')+CLAIM_PRODUCTOS.filter(p=>!clarityProducts.some(c=>c.producto===p)).sort((a,b)=>a.localeCompare(b,'es')).map(p=>'<option value="'+escapeHTML(p)+'"></option>').join('')+'</datalist></label>'+
+(otOrigen?'<label>Número de serie (Clarity)<input readonly value="'+escapeHTML(datos.serie||'No informado')+'"></label>':'')+
+'<label>Reingreso<select name="reingreso" id="claimReingreso" required><option value=""'+(!['SI','NO'].includes(String(item?.drive_historico?.Reingreso||'').toUpperCase())?' selected':'')+' disabled>Seleccionar</option><option value="SI"'+(String(item?.drive_historico?.Reingreso||'').toUpperCase()==='SI'?' selected':'')+'>SI</option><option value="NO"'+(String(item?.drive_historico?.Reingreso||'').toUpperCase()==='NO'?' selected':'')+'>NO</option></select></label>'+ '<label>Responsable<select name="responsable"><option value="">Sin asignar</option>'+Object.keys(RESPONSABLES).map(n=>'<option value="'+n+'"'+(item?.responsable===n?' selected':'')+'>'+RESPONSABLES[n].emoji+' '+(n==='Estefania'?'Estefanía':n)+'</option>').join('')+'</select></label>'+field('Tipo de caso','caso_tipo',item?.caso_tipo||'Sin clasificar','text',['Sin clasificar','Garantía de equipo nuevo','Garantía de reparación','Consulta técnica','Otro'])+
+(item?.ot_id?'<label>OT vinculada<input readonly value="'+escapeHTML(orders.find(x=>x.id===item.ot_id)?.numero||item.ot_id)+'"></label>':'')+field('Estado','estado',item?.estado||'ABIERTO','text',['ABIERTO','EN_PROCESO','CERRADO'])+field('Prioridad','prioridad',item?.prioridad||'MEDIA','text',['BAJA','MEDIA','ALTA'])+field('Descripción','descripcion',item?.descripcion||'')+ '<label>EVIDENCIA (PDF, fotos o videos · máximo 50 MB por archivo)<input id="claimEvidence" type="file" accept=".pdf,application/pdf,image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/x-msvideo,video/3gpp,video/x-matroska,.mov,.mp4,.webm,.avi,.mkv,.3gp" multiple></label><div id="evidenceList"></div>';}if(type==='claim'&&item&&!item._nuevo){
+  const button=document.createElement('button');
+  button.type='button';button.className='btn secondary';button.id='claimGoAgenda';
+  button.textContent='📅 Programar próxima acción';
+  $('editFields').append(button);
+  button.onclick=()=>{
+    const tab=document.querySelector('[data-tab="agenda"]');if(tab)tab.click();
+    $('agendaClaimSearch').value='';
+    $('agendaOwner').value='TODOS';
+    $('agendaStatus').value='TODOS';
+    renderAgenda();
+    $('agendaClaim').value=String(item.id);
+    syncAgendaExisting();
+    if(item.responsable&&['Valeria','Estefania','Samanta'].includes(item.responsable))$('agendaTarget').value=item.responsable;
+    $('agendaDetail').focus();
+    $('agendaReminderForm').scrollIntoView({behavior:'smooth',block:'center'});
+  };
+  void showEvidence(item);
+}if(type==='claim'){const reingreso=$('claimReingreso');const prioridad=$('editFields').querySelector('[name="prioridad"]');if(reingreso&&prioridad){const syncReingreso=()=>{if(reingreso.value==='SI'){prioridad.value='ALTA';prioridad.disabled=true;}else{prioridad.disabled=false;}};reingreso.addEventListener('change',syncReingreso);syncReingreso();}}if(type==='ot'&&item)$('createClaimFromOt').onclick=()=>edit('claim',{ot_id:item.id,asunto:'Seguimiento OT '+item.numero,estado:'ABIERTO',prioridad:'MEDIA',caso_tipo:'Sin clasificar',_nuevo:true});show('claimInitialActions',type==='claim'&&(!item||item._nuevo));$('saveRecordButton').textContent=type==='claim'&&(!item||item._nuevo)?'Crear reclamo':'Guardar cambios';if(type==='claim'&&(!item||item._nuevo)){$('claimInitialFollowup').value='';$('claimInitialReminder').value='';$('claimInitialWhen').value='';$('claimInitialTarget').value='RESPONSABLE';}show('followupArea',!!item&&!item._nuevo);if(item&&!item._nuevo)void followups();$('editor').scrollIntoView({behavior:'smooth'})}
+$('editFields').addEventListener('input',e=>{if(e.target.matches('[name="cliente"], [name="cliente_reclamo"]')){const start=e.target.selectionStart,end=e.target.selectionEnd;e.target.value=e.target.value.toLocaleUpperCase('es-AR');e.target.setSelectionRange(start,end);}});
+$('editForm').onsubmit=async e=>{e.preventDefault();if(!editing)return;const f=Object.fromEntries(new FormData(e.target).entries()),{type,item}=editing;for(const k in f)f[k]=f[k].trim();if(type==='ot'&&f.cliente)f.cliente=f.cliente.toLocaleUpperCase('es-AR');if(type==='claim'&&f.cliente_reclamo)f.cliente_reclamo=f.cliente_reclamo.toLocaleUpperCase('es-AR');if(type==='claim'&&!f.responsable)f.responsable=null;if(type==='ot'&&(!f.numero||!f.cliente)){msg('editMessage','Número y cliente son obligatorios',true);return}if(type==='claim'&&$('claimReingreso')?.value==='SI')f.prioridad='ALTA';if(type==='claim'&&!f.cliente_reclamo){msg('editMessage','El cliente es obligatorio',true);return}if(type==='claim'){
+  if(!['SI','NO'].includes(f.reingreso)){msg('editMessage','Seleccioná SI o NO en Reingreso',true);return;}const reingreso=f.reingreso;const motivo=f.motivo==='__otro'?f.motivo_otro:f.motivo;
+  if(!motivo){msg('editMessage','Seleccioná un motivo o especificá otro',true);return;}
+  const selectedProduct=clarityProducts.find(p=>catalogProductLabel(p)===f.producto);const producto=selectedProduct?selectedProduct.producto:f.producto;
+  if(!producto){msg('editMessage','Seleccioná un producto o especificá otro',true);return;}
+  const otOrigen=orders.find(x=>x.id===item?.ot_id);const datos=datosOtReclamo(otOrigen);const hist={...(item?.drive_historico||{}),Motivo:motivo,Producto:producto,Reingreso:reingreso,...(otOrigen?{'Número de serie':datos.serie,'OT vinculada':datos.numero}: {}),Cliente:f.cliente_reclamo||''};
+  if(!item||item._nuevo){
+   const fechaOt=fechaOrigenOt(otOrigen);
+   const fechaIngreso=fechaOt||fechaArgentinaHoy();
+   f.fecha_ingreso_historica=fechaIngreso;
+   hist['Fecha ingreso']=fechaIngreso;
+   hist['Último contacto']=fechaArgentinaHoy();hist['Origen registro']='APP';
+  }
+  f.asunto=f.cliente_reclamo; // Compatibilidad con esquema histórico: no se elimina la columna.
+  f.drive_historico=hist;
+  f.producto_clarity_id=selectedProduct?selectedProduct.codigo:null;
+  delete f.reingreso;delete f.cliente_reclamo;delete f.motivo;delete f.motivo_otro;delete f.producto;delete f.producto_otro;
+  if(item?.ot_id)f.ot_id=item.ot_id;else f.ot_id=null;
+ }
+const firstFollowup=type==='claim'&&(!item||item._nuevo)?$('claimInitialFollowup').value.trim():'';
+const firstAction=type==='claim'&&(!item||item._nuevo)?$('claimInitialReminder').value.trim():'';
+const firstWhen=type==='claim'&&(!item||item._nuevo)?$('claimInitialWhen').value:'';
+const firstTarget=type==='claim'&&(!item||item._nuevo)?$('claimInitialTarget').value:'';
+if(firstFollowup.length>5000||firstAction.length>2000){msg('editMessage','El texto supera el máximo permitido.',true);return;}
+if(Boolean(firstAction)!==Boolean(firstWhen)){msg('editMessage','Completá próxima acción y fecha/hora para programar un recordatorio.',true);return;}
+if(firstAction&&firstTarget==='RESPONSABLE'&&!f.responsable){msg('editMessage','Seleccioná una responsable o elegí notificar a todo el equipo.',true);return;}
+if(firstWhen&&(!Number.isFinite(new Date(firstWhen).getTime())||new Date(firstWhen)<=new Date())){msg('editMessage','La fecha del recordatorio debe ser futura.',true);return;}
+const table=type==='ot'?'mesa_ot':'mesa_reclamos';const isUpdate=!!item&&!item._nuevo;const query=isUpdate?db.from(table).update(f).eq('id',item.id).select('id,drive_id').single():db.from(table).insert(f).select('id,drive_id').single();const {data:saved,error}=await query;if(error){msg('editMessage',error.message,true);return}if(type==='claim'){const files=[...($('claimEvidence')?.files||[])];if(files.length){const issues=await uploadEvidence(saved.id,files);if(issues.length){msg('editMessage','Reclamo guardado, pero falló la evidencia: '+issues.join('; '),true);await load();return}}}
+let actionErrors=[];
+if(isUpdate&&$('followupArea')&&!$('followupArea').classList.contains('hidden')){
+ const pendingFollowup=$('followupText').value.trim();
+ if(pendingFollowup){
+  const followupTable=type==='claim'?'mesa_reclamo_seguimientos':'mesa_seguimientos';
+  const followupPayload=type==='claim'?{reclamo_id:saved.id,texto:pendingFollowup}:{ot_id:saved.id,contenido:pendingFollowup};
+  const {error:pendingError}=await db.from(followupTable).insert(followupPayload);
+  if(pendingError){
+   msg('editMessage','Los cambios del registro se guardaron, pero el seguimiento NO: '+pendingError.message+'. El texto permanece para reintentar con Agregar seguimiento.',true);
+   return;
+  }
+  $('followupText').value='';
+  if(type==='claim'){
+   const historial={...(item.drive_historico||{}),'Último contacto':fechaArgentinaHoy()};
+   const {error:contactError}=await db.from('mesa_reclamos').update({drive_historico:historial}).eq('id',saved.id);
+   if(contactError){msg('editMessage','Seguimiento guardado, pero no se actualizó Último contacto: '+contactError.message,true);await load();return;}
+  }
+ }
+}
+if(type==='claim'&&!isUpdate){
+ if(firstFollowup){const {error:followupError}=await db.from('mesa_reclamo_seguimientos').insert({reclamo_id:saved.id,texto:firstFollowup});if(followupError)actionErrors.push('Seguimiento: '+followupError.message);}
+ if(firstAction){const recipient=firstTarget==='RESPONSABLE'?f.responsable:firstTarget;const {error:reminderError}=await db.from('mesa_reclamo_recordatorios').insert({reclamo_id:saved.id,detalle:firstAction,fecha_hora:new Date(firstWhen).toISOString(),destinatario:recipient});if(reminderError)actionErrors.push('Recordatorio: '+reminderError.message);}
+}
+await load();
+if(actionErrors.length){msg('editMessage','Reclamo N.º '+saved.drive_id+' creado, pero falló: '+actionErrors.join(' | ')+'. No vuelvas a crearlo; abrilo desde Reclamos.',true);return;}
+show('editor',false);
+if(type==='claim'&&!isUpdate)alert('Reclamo N.º '+saved.drive_id+' creado correctamente'+(firstAction?' y recordatorio enviado a Agenda':'')+(item?.ot_id?' y vinculado a la OT.':'.'))};
+async function showEvidence(claim){
+  const {data,error}=await db.from('mesa_reclamos_evidencias').select('id,nombre,path,created_at').eq('reclamo_id',claim.id).order('created_at',{ascending:false});
+  if(!$('evidenceList'))return;
+  if(error){$('evidenceList').textContent='Evidencias no disponibles: '+error.message;return;}
+  const el=$('evidenceList');el.textContent='';
+  for(const file of data||[]){
+    const link=document.createElement('button');link.type='button';link.className='btn secondary';link.textContent=file.nombre;
+    link.onclick=async()=>{const {data,error}=await db.storage.from('mesa-evidencias').createSignedUrl(file.path,120);if(error){msg('editMessage',error.message,true);return;}window.open(data.signedUrl,'_blank','noopener');};
+    el.append(link);
+  }
+}
+async function uploadEvidence(claimId,files){
+  const errors=[];
+  for(const file of files){
+    const allowedTypes=['application/pdf','image/jpeg','image/png','image/webp','image/gif','image/heic','image/heif','video/mp4','video/quicktime','video/webm','video/x-msvideo','video/3gpp','video/x-matroska'];
+    if(!allowedTypes.includes(file.type.toLowerCase())){errors.push(file.name+': formato no permitido (PDF, imágenes o videos compatibles)');continue;}
+    if(file.size>50*1024*1024){errors.push(file.name+': supera 50 MB');continue;}
+    const path=claimId+'/'+crypto.randomUUID()+'-'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const {error}=await db.storage.from('mesa-evidencias').upload(path,file,{contentType:file.type,upsert:false});
+    if(error){errors.push(file.name+': '+error.message);continue;}
+    const {error:metaError}=await db.from('mesa_reclamos_evidencias').insert({reclamo_id:claimId,nombre:file.name,path,mime_type:file.type,tamano:file.size});
+    if(metaError){errors.push(file.name+': '+metaError.message);await db.storage.from('mesa-evidencias').remove([path]);}
+  }
+  return errors;
+}
+async function followups(){
+ const {type,item}=editing;if(!item)return;
+ const isClaim=type==='claim';
+ const query=isClaim?db.from('mesa_reclamo_seguimientos').select('texto,creado_at,autor_id').eq('reclamo_id',item.id).order('creado_at',{ascending:false}):db.from('mesa_seguimientos').select('contenido,created_at').eq('ot_id',item.id).order('created_at',{ascending:false});
+ const {data,error}=await query;
+ const ids=[...new Set((data||[]).map(x=>x.autor_id).filter(Boolean))];
+ let names={};
+ if(ids.length){const {data:members}=await db.from('mesa_agenda_integrantes').select('user_id,responsable').in('user_id',ids);names=Object.fromEntries((members||[]).map(x=>[x.user_id,x.responsable]));}
+ $('followupList').textContent=error?error.message:(data||[]).map(x=>fechaHoraVisible(x.creado_at||x.created_at)+' · '+(isClaim?(names[x.autor_id]||'Usuario interno'):'Equipo')+' — '+(x.texto||x.contenido)).join('\n')||'Sin seguimientos';
+ $('followupList').style.whiteSpace='pre-wrap';
+}
+$('addFollowup').onclick=async()=>{
+ const t=$('followupText').value.trim();if(!t||!editing?.item)return;
+ const {type,item}=editing;
+ const table=type==='claim'?'mesa_reclamo_seguimientos':'mesa_seguimientos';
+ const payload=type==='claim'?{reclamo_id:item.id,texto:t}:{ot_id:item.id,contenido:t};
+ const {error}=await db.from(table).insert(payload);
+ if(error){msg('editMessage','No se pudo registrar el seguimiento: '+error.message,true);return}
+ if(type==='claim'){
+  const {data:actual,error:readError}=await db.from('mesa_reclamos').select('drive_historico').eq('id',item.id).single();
+  if(readError){msg('editMessage','Seguimiento guardado, pero no se pudo consultar Último contacto: '+readError.message,true);$('followupText').value='';await followups();return;}
+  const historial={...(actual.drive_historico||{}),'Último contacto':fechaArgentinaHoy()};
+  const {error:contactError}=await db.from('mesa_reclamos').update({drive_historico:historial}).eq('id',item.id);
+  if(contactError){msg('editMessage','Seguimiento guardado, pero no se actualizó Último contacto: '+contactError.message,true);$('followupText').value='';await followups();return;}
+  item.drive_historico=historial;
+ }
+ $('followupText').value='';await followups();await load();
+};
+async function loadClaritySchedule(){
+ if(role!=='ADMIN'||!session)return;
+ const {data,error}=await db.from('mesa_clarity_programacion').select('activo,horarios,ultimo_intento,ultimo_estado,ultimo_error').eq('id',1).single();
+ if(error){msg('clarityScheduleMessage','Error al consultar programación: '+error.message,true);return;}
+ $('clarityAutoEnabled').checked=!!data.activo;
+ $('clarityTime1').value=data.horarios?.[0]||'07:00';
+ $('clarityTime2').value=data.horarios?.[1]||'12:00';
+ $('syncState').textContent=data.activo?'Programación activa':'Programación desactivada';
+ $('syncNext').textContent='Horarios configurados: '+(data.horarios||[]).join(' y ')+' (Argentina).';
+ msg('clarityScheduleMessage','Estado: '+(data.activo?'activa':'desactivada')+(data.ultimo_intento?' · Última solicitud: '+clarityDate(data.ultimo_intento)+' · '+(data.ultimo_estado||'Sin estado'):' · Sin ejecuciones programadas registradas')+(data.ultimo_error?' · '+data.ultimo_error:''));
+}
+$('reloadClaritySchedule').onclick=loadClaritySchedule;
+$('saveClaritySchedule').onclick=async()=>{
+ if(role!=='ADMIN'||!session)return;
+ const horarios=[$('clarityTime1').value,$('clarityTime2').value];
+ if(horarios.some(h=>!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(h))||horarios[0]===horarios[1]){msg('clarityScheduleMessage','Ingresá dos horarios válidos y diferentes.',true);return}
+ const activo=$('clarityAutoEnabled').checked;
+ if(activo&&!confirm('¿Confirmás activar la sincronización automática? Verificá antes que no exista otro programador externo para evitar duplicados.'))return;
+ $('saveClaritySchedule').disabled=true;
+ const {error}=await db.from('mesa_clarity_programacion').update({activo,horarios:horarios.sort(),actualizado_en:new Date().toISOString(),actualizado_por:session.user.id}).eq('id',1);
+ $('saveClaritySchedule').disabled=false;
+ if(error){msg('clarityScheduleMessage','No se pudo guardar: '+error.message,true);return}
+ await loadClaritySchedule();
+};
+async function loadMesaUsers(){
+ if(role!=='ADMIN'||!session)return;
+ const {data,error}=await db.rpc('mesa_listar_usuarios');
+ if(error){msg('usersMessage','No se pudo cargar el listado: '+error.message,true);return;}
+ const chatAliases={'egonzalez@moretti.com.ar':'@tefa','marcelos@moretti.com.ar':'@marce','sditullio@moretti.com.ar':'@sami','valeriat@moretti.com.ar':'@vale'};
+ $('usersRows').innerHTML=(data||[]).map(x=>'<tr><td>'+escapeHTML(x.email||'—')+'</td><td>'+escapeHTML(x.rol||'—')+'</td><td>'+(x.activo?'Activo':'Inactivo')+'</td><td>'+escapeHTML(x.integrante||'Sin vincular')+(x.supervisor?' · Supervisora':'')+'</td><td><strong>'+escapeHTML(chatAliases[String(x.email||'').toLowerCase()]||'Sin alias')+'</strong></td></tr>').join('')||'<tr><td colspan="5">No hay usuarios registrados.</td></tr>';
+ msg('usersMessage',(data||[]).length+' usuarios registrados · '+(data||[]).filter(x=>x.integrante).length+' vinculados a Agenda.');
+ await loadClaritySchedule();
+}
+$('refreshUsers').onclick=loadMesaUsers;
+$('inviteForm').onsubmit=async e=>{e.preventDefault();if(role!=='ADMIN'||!session)return;const f=Object.fromEntries(new FormData(e.target).entries());msg('inviteMessage','Enviando invitación...');try{const response=await fetch('/api/usuarios/invitar',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify(f)});const data=await response.json();if(!response.ok)throw Error(data.error||'No se pudo enviar');msg('inviteMessage','Invitación enviada a '+data.email+' con rol '+data.rol);e.target.reset();await loadMesaUsers()}catch(error){msg('inviteMessage',error.message,true)}};
+let clarityPoll=null;
+function clarityDate(value){
+  if(!value)return 'Sin datos';
+  const d=new Date(value);
+  return Number.isNaN(d.getTime())?'Sin datos':new Intl.DateTimeFormat('es-AR',{timeZone:'America/Argentina/Buenos_Aires',dateStyle:'short',timeStyle:'medium'}).format(d)+' (Argentina)';
+}
+async function refreshClarityStatus(){
+  if(role!=='ADMIN'||!session){$('clarityExecutionStatus').textContent='Estado de Clarity disponible para administradores.';return;}
+  $('clarityExecutionStatus').textContent='Consultando estado de Railway…';
+  try{
+    const response=await fetch('/api/clarity/ejecucion',{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store',signal:AbortSignal.timeout(15000)});
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error||'No se pudo consultar Railway');
+    const deployment=data.deployment;
+    const el=$('clarityExecutionStatus');
+    if(!deployment){el.textContent='No hay despliegues registrados en Railway.';return;}
+    const status=String(deployment.status||'UNKNOWN').toUpperCase();
+    const pending=['WAITING','QUEUED','INITIALIZING','BUILDING','DEPLOYING','IN_PROGRESS'].includes(status);
+    const failed=['FAILED','CRASHED','REMOVED','CANCELED'].includes(status);
+    const label=pending?'En proceso':failed?'Falló el despliegue':status==='SUCCESS'?'Despliegue completado':'Estado: '+status;
+    el.textContent='Último despliegue Clarity: '+label+' · Inicio: '+clarityDate(deployment.createdAt);
+    if(clarityPoll){
+      if(pending){msg('manualClarityMessage','⏳ Railway: '+label+'. Esperando actualización…');}
+      else{
+        clearInterval(clarityPoll);clarityPoll=null;
+        msg('manualClarityMessage',failed?'Railway informó un fallo. Revisá los logs.':'Railway finalizó el despliegue. Verificá los logs para confirmar las OT importadas.',failed);
+        const button=$('manualClarityImport');button.disabled=false;button.removeAttribute('aria-busy');button.textContent='Importar desde Clarity';
+      }
+    }
+  }catch(e){$('clarityExecutionStatus').textContent='Estado de Railway no disponible: '+e.message;}
+}
+$('manualClarityImport').onclick=async()=>{
+  if(role!=='ADMIN'||!session)return;
+  if(!window.confirm('¿Solicitar ahora una importación de OT desde Clarity?'))return;
+  const button=$('manualClarityImport');
+  button.disabled=true;
+  button.setAttribute('aria-busy','true');
+  button.innerHTML='<span class="sync-spinner" aria-hidden="true"></span>Procesando…';
+  msg('manualClarityMessage','⏳ Enviando solicitud de importación a Railway…');
+  try{
+    const response=await fetch('/api/clarity/importar',{
+      method:'POST',
+      headers:{Authorization:'Bearer '+session.access_token},
+      signal:AbortSignal.timeout(30000)
+    });
+    const result=await response.json();
+    if(!response.ok)throw Error(result.error||'No se pudo solicitar la importación');
+    msg('manualClarityMessage','⏳ Ejecución solicitada. Consultando estado de Railway…');
+    await refreshClarityStatus();
+    if(!clarityPoll){let checks=0;clarityPoll=setInterval(async()=>{if(++checks>=18){clearInterval(clarityPoll);clarityPoll=null;button.disabled=false;button.removeAttribute('aria-busy');button.textContent='Importar desde Clarity';msg('manualClarityMessage','No se pudo confirmar el resultado tras 3 minutos. Revisá los logs de Railway antes de reintentar.',true);return;}await refreshClarityStatus();},10000);}
+  }catch(error){
+    msg('manualClarityMessage',error.name==='TimeoutError'?'La solicitud superó los 30 segundos. Revisá Railway antes de volver a intentar.':error.message,true);
+  }finally{if(!clarityPoll){button.removeAttribute('aria-busy');button.textContent='Importar desde Clarity';button.disabled=false;}}
+};
+void boot().then(()=>refreshClarityStatus());
+</script><script>(function(){const el=document.getElementById('syncNext');function update(){const now=new Date();const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Argentina/Buenos_Aires',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(now);const p=Object.fromEntries(parts.map(x=>[x.type,x.value]));const m=Number(p.hour)*60+Number(p.minute);const next=m<420?'hoy 07:00':m<720?'hoy 12:00':'mañana 07:00';el.textContent='Horario de referencia: '+next+' (Argentina)';}update();setInterval(update,60000)})();</script>
+<script>
+
+
+
+function parseChatReminder(q){
+ if(!/recordatorio|record[aá]|avis[aá]|agend[aá]|program[aá]/i.test(q))return null;
+ const tag=q.match(/@(vale|valeria|sami|samanta|tefa|estefania|estefanía|equipo)\b/i);
+ const names={vale:'Valeria',valeria:'Valeria',sami:'Samanta',samanta:'Samanta',tefa:'Estefania',estefania:'Estefania','estefanía':'Estefania',equipo:'EQUIPO'};
+ const destinatario=tag?names[tag[1].toLowerCase()]:agendaIdentity?.responsable;
+ if(!destinatario)return {error:'Indicá un destinatario (@vale, @sami o @tefa).'};
+ if(role!=='ADMIN'&&destinatario!==agendaIdentity?.responsable)return {error:'Solo ADMIN puede crear recordatorios para otros usuarios.'};
+ const time=q.match(/(?:a las?|para las?)\s*(\d{1,2})(?::(\d{2}))?\s*(?:hs?)?\b/i);
+ if(!time)return {error:'Indicá una hora, por ejemplo mañana a las 11:30.'};
+ const hh=Number(time[1]),mm=Number(time[2]||0);
+ if(hh>23||mm>59)return {error:'Hora inválida.'};
+ const local=new Date(new Date().toLocaleString('en-US',{timeZone:'America/Argentina/Buenos_Aires'}));
+ const explicit=q.match(/\b(\d{1,2})[-/](\d{1,2})[-/](\d{4})\b/);
+ if(explicit)local.setFullYear(Number(explicit[3]),Number(explicit[2])-1,Number(explicit[1]));
+ else if(/mañana/i.test(q))local.setDate(local.getDate()+1);
+ const year=local.getFullYear(),month=local.getMonth(),day=local.getDate();
+ if(explicit&&(day!==Number(explicit[1])||month!==Number(explicit[2])-1))return {error:'Fecha inválida.'};
+ const fecha_hora=new Date(Date.UTC(year,month,day,hh+3,mm)).toISOString();
+ if(Date.parse(fecha_hora)<=Date.now())return {error:'Indicá una fecha y hora futuras (mañana o DD-MM-AAAA).'};
+ const detalle=q.replace(/@(vale|valeria|sami|samanta|tefa|estefania|estefanía|equipo)\b/ig,'').replace(/\b(hoy|mañana)\b/ig,'').replace(/\b\d{1,2}[-/]\d{1,2}[-/]\d{4}\b/g,'').replace(/(?:a las?|para las?)\s*\d{1,2}(?::\d{2})?\s*(?:hs?)?\b/ig,'').replace(/^\s*(?:gener[aá]|cre[aá]|program[aá]|agend[aá]|record[aá]|avis[aá])\w*\s*(?:un\s+)?(?:recordatorio\s+)?(?:a|para|que)?\s*/i,'').trim().replace(/\s+/g,' ');
+ return {destinatario,detalle:detalle||'Recordatorio',fecha_hora};
+}
+async function createChatReminder(q){
+ const p=parseChatReminder(q);if(!p)return null;if(p.error)return p.error;
+ const {data,error}=await db.from('mesa_reclamo_recordatorios').insert({...p,reclamo_id:null,creado_por:session.user.id}).select('id').single();
+ if(error||!data?.id)return 'No pude guardar el recordatorio: '+(error?.message||'sin confirmación');
+ await refreshReminderNotifications();renderAgenda();
+ return '✓ Recordatorio guardado para '+p.destinatario+'\n'+p.detalle+'\n'+fechaHoraVisible(p.fecha_hora)+'\nDisponible en su Agenda.';
+}
+function visibleReminderAlerts(){
+ const now=Date.now(),end=now+24*60*60*1000;
+ return agendaReminders.filter(x=>x.estado==='PENDIENTE'&&(role==='ADMIN'||agendaIdentity?.supervisor||x.destinatario==='EQUIPO'||x.destinatario===agendaIdentity?.responsable)).filter(x=>{const t=Date.parse(x.fecha_hora);return Number.isFinite(t)&&t<=end}).sort((a,b)=>Date.parse(a.fecha_hora)-Date.parse(b.fecha_hora));
+}
+function playReminderSound(){
+ try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(!notificationAudio)notificationAudio=new C();if(notificationAudio.state!=='running')return;const t=notificationAudio.currentTime;[0,.19].forEach((delay,i)=>{const osc=notificationAudio.createOscillator(),gain=notificationAudio.createGain();osc.type='sine';osc.frequency.value=i?784:659;gain.gain.setValueAtTime(.0001,t+delay);gain.gain.exponentialRampToValueAtTime(.075,t+delay+.025);gain.gain.exponentialRampToValueAtTime(.0001,t+delay+.15);osc.connect(gain).connect(notificationAudio.destination);osc.start(t+delay);osc.stop(t+delay+.16);});}catch(e){console.warn('No se pudo reproducir la alerta sonora');}
+}
+
+const assistantReminderShown=new Set();
+function personalChatReminders(){
+ const now=Date.now();
+ return agendaReminders.filter(x=>x.estado==='PENDIENTE'&&Date.parse(x.fecha_hora)<=now&&
+ (x.destinatario==='EQUIPO'||(agendaIdentity?.responsable&&x.destinatario===agendaIdentity.responsable)))
+ .sort((a,b)=>Date.parse(a.fecha_hora)-Date.parse(b.fecha_hora));
+}
+function assistantReminderCard(x){
+ const log=$('moretti-ai-messages');if(!log)return;
+ const claim=claims.find(c=>c.id===x.reclamo_id);
+ const card=document.createElement('div');card.className='assistant-reminder-card';
+ card.style.cssText='background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:12px;max-width:96%;align-self:flex-start;color:#182d41';
+ const heading=document.createElement('strong');
+ heading.textContent='🔔 '+(x.destinatario==='EQUIPO'?'Equipo':'@'+({Valeria:'vale',Samanta:'sami',Estefania:'tefa'}[x.destinatario]||x.destinatario))+' · Recordatorio';
+ const desc=document.createElement('div');
+ desc.style.cssText='white-space:pre-wrap;margin:8px 0';
+ desc.textContent=(claim?'Reclamo #'+(claim.drive_id||'—')+' · '+(claim.drive_historico?.Cliente||claim.asunto||'Cliente no informado')+'\n':'')+x.detalle+'\n'+fechaHoraVisible(x.fecha_hora);
+ const actions=document.createElement('div');actions.style.cssText='display:flex;flex-wrap:wrap;gap:6px';
+ const complete=document.createElement('button');complete.type='button';complete.textContent='✓ Ya lo hice';
+ const reschedule=document.createElement('button');reschedule.type='button';reschedule.textContent='↻ Reprogramar';
+ const view=document.createElement('button');view.type='button';view.textContent='Ver reclamo';
+ for(const b of [complete,reschedule,view])b.style.cssText='background:white;color:#1e3a5f;border:1px solid #b7c9da;border-radius:7px;padding:7px 9px;cursor:pointer;font-size:12px';
+ const feedback=document.createElement('small');feedback.style.cssText='display:block;margin-top:8px';
+ complete.onclick=async()=>{
+  complete.disabled=true;reschedule.disabled=true;
+  const {data,error}=await db.from('mesa_reclamo_recordatorios').update({estado:'COMPLETADO',actualizado_at:new Date().toISOString()}).eq('id',x.id).eq('estado','PENDIENTE').select('id');
+  if(error||!data?.length){feedback.textContent='No se pudo completar. Actualizá y reintentá.';complete.disabled=false;reschedule.disabled=false;return;}
+  feedback.textContent='✓ Gestión marcada como completada';actions.remove();await refreshReminderNotifications();renderAgenda();
+ };
+ reschedule.onclick=async()=>{
+  const local=new Date(Date.now()+3600000);
+  const pad=n=>String(n).padStart(2,'0');
+  const suggested=local.getFullYear()+'-'+pad(local.getMonth()+1)+'-'+pad(local.getDate())+'T'+pad(local.getHours())+':'+pad(local.getMinutes());
+  const answer=prompt('Nueva fecha y hora (AAAA-MM-DDTHH:MM)',suggested);
+  if(answer===null)return;
+  if(!/^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(answer)||!Number.isFinite(new Date(answer).getTime())||new Date(answer).getTime()<=Date.now()){feedback.textContent='Ingresá una fecha y hora futuras válidas.';return;}
+  complete.disabled=true;reschedule.disabled=true;
+  const {data,error}=await db.from('mesa_reclamo_recordatorios').update({fecha_hora:new Date(answer).toISOString(),actualizado_at:new Date().toISOString()}).eq('id',x.id).eq('estado','PENDIENTE').select('id');
+  if(error||!data?.length){feedback.textContent='No se pudo reprogramar.';complete.disabled=false;reschedule.disabled=false;return;}
+  feedback.textContent='✓ Reprogramado para '+fechaHoraVisible(new Date(answer).toISOString());actions.remove();await refreshReminderNotifications();renderAgenda();
+ };
+ view.onclick=()=>{
+  const tab=document.querySelector('[data-tab="reclamos"]');if(tab)tab.click();
+  if(claim){const input=$('claimIdFilter');if(input){$('claimStatus').value='TODOS';input.value=String(claim.drive_id||'');input.dispatchEvent(new Event('input',{bubbles:true}));}}
+  $('moretti-ai-close').click();
+ };
+ actions.append(complete,reschedule);if(claim)actions.append(view);card.append(heading,desc,actions,feedback);log.append(card);log.scrollTop=log.scrollHeight;
+}
+function deliverAssistantReminders(){
+ if(!session||!$('moretti-ai-messages'))return;
+ for(const x of personalChatReminders()){
+  if(assistantReminderShown.has(x.id))continue;
+  assistantReminderShown.add(x.id);
+  assistantReminderCard(x);
+ }
+}
+function renderNotifications(){
+ if(!$('notificationBell'))return;
+ const alerts=visibleReminderAlerts(),ids=new Set(alerts.map(x=>x.id));
+ const newAlerts=alerts.filter(x=>!lastNotifiedIds.has(x.id));
+ if(notificationsInitialized&&newAlerts.length)playReminderSound();
+ lastNotifiedIds=ids;notificationsInitialized=true;
+ $('notificationCount').textContent=alerts.length>99?'99+':String(alerts.length);
+ $('notificationBell').setAttribute('aria-label',alerts.length+' recordatorios vencidos o para las próximas 24 horas');
+ $('notificationItems').innerHTML=alerts.slice(0,25).map(x=>{const claim=claims.find(c=>c.id===x.reclamo_id);return '<div class="notification-entry '+(Date.parse(x.fecha_hora)<Date.now()?'late':'')+'"><strong>Reclamo #'+escapeHTML(claim?.drive_id??'—')+' · '+escapeHTML(x.destinatario==='EQUIPO'?'Equipo':x.destinatario)+'</strong><div>'+escapeHTML(x.detalle)+'</div><small>'+escapeHTML(fechaHoraVisible(x.fecha_hora))+(Date.parse(x.fecha_hora)<Date.now()?' · Vencido':' · Próximo')+'</small></div>'}).join('')||'<p class="message">No tenés recordatorios vencidos ni próximos en 24 horas.</p>';
+}
+$('notificationBell').onclick=async()=>{const panel=$('notificationPanel'),opening=panel.classList.contains('hidden');panel.classList.toggle('hidden',!opening);$('notificationBell').setAttribute('aria-expanded',String(opening));if(opening){try{const C=window.AudioContext||window.webkitAudioContext;if(C){if(!notificationAudio)notificationAudio=new C();await notificationAudio.resume();}}catch(e){}renderNotifications();}};
+$('notificationTest').onclick=async()=>{try{const C=window.AudioContext||window.webkitAudioContext;if(!C){$('notificationHint').textContent='Este navegador no admite reproducción de audio.';return;}if(!notificationAudio)notificationAudio=new C();await notificationAudio.resume();playReminderSound();$('notificationHint').textContent='Prueba de sonido reproducida. Las alertas funcionan con esta página abierta.';}catch(e){$('notificationHint').textContent='No se pudo reproducir: revisá que la pestaña no esté silenciada.';}};
+$('notificationClose').onclick=()=>{$('notificationPanel').classList.add('hidden');$('notificationBell').setAttribute('aria-expanded','false');};
+$('notificationAgenda').onclick=()=>{$('notificationClose').click();$('openAgendaDashboard').click();};
+async function refreshReminderNotifications(){
+ if(!session||!db||document.hidden)return;
+ const {data,error}=await db.from('mesa_reclamo_recordatorios').select('*').eq('estado','PENDIENTE').order('fecha_hora',{ascending:true}).limit(500);
+ if(!error){const completed=agendaReminders.filter(x=>x.estado!=='PENDIENTE');agendaReminders=[...completed,...(data||[])];renderNotifications();renderDashboardAgenda();deliverAssistantReminders();}
+}
+window.setInterval(refreshReminderNotifications,60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshReminderNotifications();});
+function renderDashboardAgenda(){
+ const target=$('dashItems');if(!target)return;
+ const now=new Date();
+ const localDate=d=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Argentina/Buenos_Aires',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+ const today=localDate(now);
+ const pending=agendaReminders.filter(x=>x.estado==='PENDIENTE'&&(role==='ADMIN'||agendaIdentity?.supervisor||x.destinatario==='EQUIPO'||x.destinatario===agendaIdentity?.responsable));
+ const overdue=pending.filter(x=>new Date(x.fecha_hora)<now);
+ const todayItems=pending.filter(x=>localDate(new Date(x.fecha_hora))===today&&new Date(x.fecha_hora)>=now);
+ const upcoming=pending.filter(x=>localDate(new Date(x.fecha_hora))>today);
+ $('dashToday').textContent=todayItems.length;
+ $('dashOverdue').textContent=overdue.length;
+ $('dashUpcoming').textContent=upcoming.length;
+ const sorted=[...pending].sort((a,b)=>new Date(a.fecha_hora)-new Date(b.fecha_hora)).slice(0,4);
+ target.innerHTML=sorted.map(x=>{
+  const claim=claims.find(c=>c.id===x.reclamo_id);
+  const when=new Date(x.fecha_hora);
+  const late=when<now;
+  return '<div style="padding:14px 0;border-bottom:1px solid #e4e9ee;display:flex;justify-content:space-between;gap:14px;align-items:center"><div><strong>'+escapeHTML(fechaHoraVisible(when.toISOString()))+(claim?' · Reclamo #'+escapeHTML(claim.drive_id??'—'):' · Recordatorio')+'</strong><div>'+escapeHTML(x.detalle)+'</div><small>'+escapeHTML(x.destinatario==='EQUIPO'?'Todo el equipo':x.destinatario)+'</small></div><span class="tag" style="'+(late?'color:#b91c1c':'')+'">'+(late?'Vencida':'Programada')+'</span></div>';
+ }).join('')||'<p class="message">Todavía no hay recordatorios pendientes registrados.</p>';
+ $('dashInfo').textContent=pending.length+' recordatorios pendientes';
+}
+$('toggleAgendaDashboard').onclick=()=>{const hidden=$('agendaDashboardDetails').classList.toggle('hidden');$('toggleAgendaDashboard').textContent=hidden?'Ver detalles':'Ocultar detalles';$('toggleAgendaDashboard').setAttribute('aria-expanded',String(!hidden));};
+$('openAgendaDashboard').onclick=()=>{const b=document.querySelector('[data-tab="agenda"]');if(b){b.click();$('tab-agenda').scrollIntoView({behavior:'smooth'});}};
+function renderAgenda(){
+ const root=$('agendaRows');if(!root)return;
+ const owner=$('agendaOwner').value,status=$('agendaStatus').value;
+ const active=x=>!['CERRADO','RESUELTO'].includes(String(x.estado||'').toUpperCase());
+ const subset=claims.filter(x=>(status==='TODOS'||active(x))&&(owner==='TODOS'||(owner==='SIN_ASIGNAR'?!x.responsable:x.responsable===owner)));
+ const count=name=>claims.filter(x=>active(x)&&x.responsable===name).length;
+ $('agendaStats').innerHTML=['Valeria','Estefania','Samanta'].map(name=>'<div class="stat"><strong>'+count(name)+'</strong><small>'+responsableBadge(name)+' · activos</small></div>').join('')+'<div class="stat"><strong>'+claims.filter(x=>active(x)&&!x.responsable).length+'</strong><small>Sin asignar</small></div>';
+ const pendingByClaim=new Map();
+  for(const reminder of agendaReminders){
+    if(reminder.estado!=='PENDIENTE'||!reminder.reclamo_id)continue;
+    const current=pendingByClaim.get(String(reminder.reclamo_id));
+    if(!current||new Date(reminder.fecha_hora)<new Date(current.fecha_hora))pendingByClaim.set(String(reminder.reclamo_id),reminder);
+  }
+  root.innerHTML=subset.map(x=>{
+    const reminder=pendingByClaim.get(String(x.id));
+    const action=reminder?'<span title="'+escapeHTML(fechaHoraVisible(reminder.fecha_hora))+'">'+escapeHTML(reminder.detalle)+' · '+escapeHTML(fechaHoraVisible(reminder.fecha_hora))+'</span>':'<span class="tag">Sin recordatorio</span>';
+    return '<tr><td>'+escapeHTML(x.drive_id??x.id)+'</td><td>'+escapeHTML(x.asunto||x.drive_historico?.Cliente||'—')+'</td><td>'+responsableBadge(x.responsable)+'</td><td>'+escapeHTML(x.estado||'—')+'</td><td><button type="button" class="btn secondary" data-agenda-claim="'+escapeHTML(x.id)+'" title="Crear nueva acción para este reclamo" style="white-space:normal;text-align:left">'+action+' ＋</button></td></tr>';
+  }).join('')||'<tr><td colspan="5">No hay reclamos para estos filtros.</td></tr>';
+ const select=$('agendaClaim');const previous=select.value;
+ const normalize=t=>String(t||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+ const query=normalize($('agendaClaimSearch').value.trim());
+ const matching=claims.filter(x=>!query||normalize([x.drive_id,x.asunto,x.drive_historico?.Cliente,x.responsable].join(' ')).includes(query));
+ select.innerHTML='<option value="">Sin reclamo (recordatorio general)</option>'+matching.map(x=>'<option value="'+escapeHTML(x.id)+'">#'+escapeHTML(x.drive_id??'—')+' · '+escapeHTML(x.asunto||'Reclamo')+'</option>').join('');
+ if(matching.some(x=>String(x.id)===String(previous)))select.value=previous;
+ $('agendaClaimCount').textContent=matching.length+' de '+claims.length+' reclamos';
+ syncAgendaExisting();
+  document.querySelectorAll('[data-agenda-claim]').forEach(button=>button.onclick=()=>{
+    const claim=claims.find(x=>String(x.id)===button.dataset.agendaClaim);
+    if(!claim)return;
+    $('agendaClaimSearch').value='';
+    renderAgenda();
+    $('agendaClaim').value=String(claim.id);
+    syncAgendaExisting();
+    if(claim.responsable&&['Valeria','Estefania','Samanta'].includes(claim.responsable))$('agendaTarget').value=claim.responsable;
+    $('agendaDetail').focus();
+    $('agendaReminderForm').scrollIntoView({behavior:'smooth',block:'center'});
+  });
+ const visibleReminders=agendaReminders.filter(x=>status==='TODOS'||x.estado==='PENDIENTE').filter(x=>owner==='TODOS'||(owner==='SIN_ASIGNAR'?x.destinatario==='EQUIPO':x.destinatario===owner||x.destinatario==='EQUIPO'));
+ $('agendaReminderRows').innerHTML=visibleReminders.map(x=>{const overdue=x.estado==='PENDIENTE'&&new Date(x.fecha_hora)<new Date();return '<tr><td>'+escapeHTML(fechaHoraVisible(x.fecha_hora))+'</td><td>'+(()=>{const c=claims.find(c=>c.id===x.reclamo_id);return escapeHTML(c?'#'+(c.drive_id??'—')+' · '+(c.drive_historico?.Cliente||c.asunto||'Cliente no informado'):'Recordatorio general');})()+'</td><td>'+escapeHTML(x.detalle)+'</td><td>'+responsableBadge(x.destinatario)+'</td><td>'+(overdue?'🔴 Vencido':escapeHTML(x.estado))+(x.estado==='PENDIENTE'?' <button class="btn secondary" data-complete-reminder="'+escapeHTML(x.id)+'">Completar</button> <button class="btn secondary" data-postpone-reminder="'+escapeHTML(x.id)+'">Postergar</button>':'')+'</td></tr>'}).join('')||'<tr><td colspan="5">No hay recordatorios en esta vista.</td></tr>';
+ document.querySelectorAll('[data-postpone-reminder]').forEach(b=>b.onclick=()=>{
+  const reminder=agendaReminders.find(x=>String(x.id)===b.dataset.postponeReminder);
+  if(!reminder)return;
+  $('postponeId').value=reminder.id;
+  $('postponeOriginal').textContent=reminder.detalle+' · '+fechaHoraVisible(reminder.fecha_hora);
+  $('postponeWhen').value='';
+  $('postponeReason').value='';
+  $('postponeForm').classList.remove('hidden');
+  $('postponeWhen').focus();
+  $('postponeForm').scrollIntoView({behavior:'smooth',block:'center'});
+ });
+ document.querySelectorAll('[data-complete-reminder]').forEach(b=>b.onclick=async()=>{const {error}=await db.from('mesa_reclamo_recordatorios').update({estado:'COMPLETADO',actualizado_at:new Date().toISOString()}).eq('id',b.dataset.completeReminder);if(error)msg('agendaMessage',error.message,true);else await load();});
+ $('postponeCancel').onclick=()=>$('postponeForm').classList.add('hidden');
+ $('postponeForm').onsubmit=async e=>{
+  e.preventDefault();
+  const when=$('postponeWhen').value,reason=$('postponeReason').value.trim();
+  if(!when||reason.length<3)return;
+  const button=$('postponeForm').querySelector('[type="submit"]');button.disabled=true;
+  try{
+   const {error}=await db.rpc('mesa_postergar_recordatorio',{p_id:$('postponeId').value,p_fecha:new Date(when).toISOString(),p_motivo:reason});
+   if(error)throw error;
+   $('postponeForm').classList.add('hidden');
+   await load();
+  }catch(error){msg('agendaMessage','No se pudo postergar: '+error.message,true);}
+  finally{button.disabled=false;}
+ };
+ $('agendaMessage').textContent=subset.length+' reclamos visibles · '+visibleReminders.filter(x=>x.estado==='PENDIENTE').length+' recordatorios pendientes.';
+}
+function syncAgendaExisting(){
+ const id=$('agendaClaim').value;
+ const reminder=id?agendaReminders.filter(x=>String(x.reclamo_id)===String(id)&&x.estado==='PENDIENTE').sort((a,b)=>new Date(a.fecha_hora)-new Date(b.fecha_hora))[0]:null;
+ const notice=$('agendaExistingNotice');
+ const submit=$('agendaReminderForm').querySelector('[type="submit"]');
+ submit.disabled=Boolean(reminder);
+ if(reminder){
+  notice.innerHTML='<strong>Ya existe una acción pendiente:</strong> '+escapeHTML(reminder.detalle)+' · '+escapeHTML(fechaHoraVisible(reminder.fecha_hora))+' <button type="button" class="btn secondary" id="agendaEditExisting">Postergar acción existente</button>';
+  $('agendaEditExisting').onclick=()=>openPostponeReminder(reminder);
+ }else notice.textContent='';
+}
+function openPostponeReminder(reminder){
+ $('postponeId').value=reminder.id;
+ $('postponeOriginal').textContent=reminder.detalle+' · '+fechaHoraVisible(reminder.fecha_hora);
+ $('postponeWhen').value='';
+ $('postponeReason').value='';
+ $('postponeForm').classList.remove('hidden');
+ $('postponeWhen').focus();
+ $('postponeForm').scrollIntoView({behavior:'smooth',block:'center'});
+}
+$('agendaClaim').addEventListener('change',syncAgendaExisting);
+$('agendaReminderForm').onsubmit=async e=>{e.preventDefault();const reclamo_id=$('agendaClaim').value,detalle=$('agendaDetail').value.trim(),fecha_hora=$('agendaWhen').value,destinatario=$('agendaTarget').value;if(!detalle||!fecha_hora)return;if(reclamo_id&&agendaReminders.some(x=>String(x.reclamo_id)===String(reclamo_id)&&x.estado==='PENDIENTE')){syncAgendaExisting();msg('agendaMessage','Este reclamo ya tiene una acción pendiente. Usá Postergar.',true);return;}const {error}=await db.from('mesa_reclamo_recordatorios').insert({reclamo_id:reclamo_id||null,detalle,fecha_hora:new Date(fecha_hora).toISOString(),destinatario,creado_por:session.user.id});if(error)msg('agendaMessage','No se pudo guardar: '+error.message,true);else{$('agendaDetail').value='';await load();}};
+$('agendaClaimSearch').addEventListener('input',renderAgenda);
+$('agendaOwner').onchange=renderAgenda;
+$('agendaStatus').onchange=renderAgenda;
+$('agendaRefresh').onclick=load;
+$('toggleAgendaDetails').onclick=()=>{const hidden=$('agendaDetails').classList.toggle('hidden');$('toggleAgendaDetails').textContent=hidden?'Ver detalles':'Ocultar detalles';$('toggleAgendaDetails').setAttribute('aria-expanded',String(!hidden));};
+$('toggleSyncDetails').onclick=()=>{const hidden=$('syncDetails').classList.toggle('hidden');$('toggleSyncDetails').textContent=hidden?'Ver detalles':'Ocultar detalles';$('toggleSyncDetails').setAttribute('aria-expanded',String(!hidden));};
+</script></body></html>
