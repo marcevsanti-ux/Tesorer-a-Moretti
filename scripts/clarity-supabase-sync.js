@@ -39,6 +39,7 @@ function fechaISO(valor) {
 }
 function normalizar(registros, ejecucionId, fechaExtraccion, opciones = {}) {
   const finalizadas = opciones.estado === 'Finalizado';
+  const faltaRepuesto = opciones.subestado === '7 - Falta de Repuesto';
   if(finalizadas && !opciones.fechaDesde) throw new Error('Falta rango de finalización');
   const porNumero = new Map();
   for (const registro of registros) {
@@ -63,12 +64,12 @@ function normalizar(registros, ejecucionId, fechaExtraccion, opciones = {}) {
     numero,
     cliente: String(filas[0].valores[3] || '').trim(),
     estado: finalizadas ? 'Finalizado' : 'Pendiente',
-    subestado: finalizadas ? 'Finalizado' : '8 - Garantia',
+    subestado: finalizadas ? 'Finalizado' : faltaRepuesto ? '7 - Falta de Repuesto' : '8 - Garantia',
     clarity_snapshot: {
       fuente: 'Clarity',
       fechaExtraccion,
       ejecucionId,
-      filtros: finalizadas ? { estado: 'Finalizado', tipoFecha: 'Finalización', fechaDesde: opciones.fechaDesde, fechaHasta: opciones.fechaHasta, subestado: 'Todos' } : { estadoID: 1, subestadoID: 120 },
+      filtros: finalizadas ? { estado: 'Finalizado', tipoFecha: 'Finalización', fechaDesde: opciones.fechaDesde, fechaHasta: opciones.fechaHasta, subestado: 'Todos' } : { estadoID: 1, subestadoID: faltaRepuesto ? opciones.subestadoID : 120 },
       ...(finalizadas ? { fechaFinalizacion: fechas[fechas.length - 1], fechasFinalizacionDetectadas: fechas } : {}),
       filas
     }
@@ -91,6 +92,9 @@ async function sincronizar(registros, opciones = {}) {
     const params = new URLSearchParams({select:'id,numero,estado,subestado,pendiente_sync',numero:'eq.' + fila.numero,limit:'2'});
     const existentes = await request(url + '?' + params);
     if (existentes.length > 1) throw new Error('OT duplicada: ' + fila.numero);
+    // Las consultas auxiliares solo reconcilian OT ya conocidas: nunca importan
+    // indiscriminadamente órdenes ajenas a la cartera de Garantía.
+    if (opciones.existingOnly && !existentes.length) continue;
     if (existentes.length && existentes[0].pendiente_sync) {
       console.log('Omitida por pendiente_sync:', fila.numero);
       continue;
