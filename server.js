@@ -532,8 +532,8 @@ async function assistantChat(req, res) {
 
   const isBug = /^(?:reportar )?(?:bug|error):/i.test(question);
   if (isBug) {
-    if (identityEmail.toLowerCase() !== 'valeriat@moretti.com.ar')
-      return json(res, 403, { error: 'Solo Valeria puede reportar bugs.' });
+    if (!['valeriat@moretti.com.ar', 'marcelos@moretti.com.ar'].includes(identityEmail.trim().toLowerCase()))
+      return json(res, 403, { error: 'Solo Valeria y Marcelo pueden reportar bugs.' });
     const description = question.slice(question.indexOf(':') + 1).trim();
     if (description.length < 15)
       return json(res, 400, { error: 'Describí el problema con al menos 15 caracteres.' });
