@@ -428,7 +428,15 @@ $('addFollowup').onclick=async()=>{
  const payload=type==='claim'?{reclamo_id:item.id,texto:t}:{ot_id:item.id,contenido:t};
  const {error}=await db.from(table).insert(payload);
  if(error){msg('editMessage','No se pudo registrar el seguimiento: '+error.message,true);return}
- $('followupText').value='';await followups();
+ if(type==='claim'){
+  const {data:actual,error:readError}=await db.from('mesa_reclamos').select('drive_historico').eq('id',item.id).single();
+  if(readError){msg('editMessage','Seguimiento guardado, pero no se pudo consultar Último contacto: '+readError.message,true);$('followupText').value='';await followups();return;}
+  const historial={...(actual.drive_historico||{}),'Último contacto':fechaArgentinaHoy()};
+  const {error:contactError}=await db.from('mesa_reclamos').update({drive_historico:historial}).eq('id',item.id);
+  if(contactError){msg('editMessage','Seguimiento guardado, pero no se actualizó Último contacto: '+contactError.message,true);$('followupText').value='';await followups();return;}
+  item.drive_historico=historial;
+ }
+ $('followupText').value='';await followups();await load();
 };
 async function loadClaritySchedule(){
  if(role!=='ADMIN'||!session)return;
