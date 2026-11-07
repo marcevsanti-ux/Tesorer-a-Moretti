@@ -468,7 +468,7 @@ function structuredClaimCount(question,records){
 }
 
 const FEEDBACK_REPO = 'marcevsanti-ux/Tesorer-a-Moretti';
-const FEEDBACK_USERS = new Set(['valeriat@moretti.com.ar', 'marcelos@moretti.com.ar']);
+const FEEDBACK_USERS = new Set(['valeriat@moretti.com.ar']);
 const FEATURE_OWNER = 'marcelos@moretti.com.ar';
 
 async function githubFeedback(endpoint, options = {}) {
@@ -527,6 +527,13 @@ async function createFeedbackIssue(description, email, kind = 'bug') {
   });
 }
 
+async function registerValeriaBug(description, authenticatedEmail) {
+  if (String(authenticatedEmail || '').trim().toLowerCase() !== 'valeriat@moretti.com.ar') {
+    throw new Error('Usuario no autorizado para reportar bugs');
+  }
+  return createFeedbackIssue(description, authenticatedEmail, 'bug');
+}
+
 async function getFeedbackIssue(number) {
   if (!Number.isSafeInteger(number) || number <= 0) throw new Error('Número de ticket inválido');
   return githubFeedback('/issues/' + number);
@@ -582,12 +589,12 @@ async function assistantChat(req, res) {
     if (isFeature && email !== FEATURE_OWNER)
       return json(res, 403, { error: 'Solo Marcelo puede solicitar funciones nuevas.' });
     if (isBug && !FEEDBACK_USERS.has(email))
-      return json(res, 403, { error: 'Solo Valeria y Marcelo pueden reportar bugs.' });
+      return json(res, 403, { error: 'Solo Valeria puede reportar bugs.' });
     const description = question.slice(question.indexOf(':') + 1).trim();
     if (description.length < 15)
       return json(res, 400, { error: 'Describí el problema con al menos 15 caracteres.' });
     try {
-      const issue = await createFeedbackIssue(description, email, isFeature ? 'feature' : 'bug');
+      const issue = isFeature ? await createFeedbackIssue(description, email, 'feature') : await registerValeriaBug(description, email);
       return json(res, 200, { respuesta: 'Registré ' + (isFeature ? 'la solicitud' : 'el bug') +
         ' #' + issue.number + '. ' + issue.html_url +
         '\nEstado: pendiente de revisión técnica. Todavía no fue corregido ni desplegado.' });
