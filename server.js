@@ -632,6 +632,28 @@ async function assistantChat(req, res) {
     const [reclamos,ordenes]=await Promise.all([
       readMesaTable('mesa_reclamos',jwt),readMesaTable('mesa_ot',jwt)
     ]);
+    // Direct deterministic commands avoid Puentes truncation and unsupported tools.
+    const detailMatch=question.match(/^(?:consultar? |buscar |detalle (?:del? )?)?reclamo\\s*(?:n[uú]mero|nro|#|n[°º])?\\s*(\\d+)\\s*\\??$/i);
+    if(detailMatch){
+      const record=reclamos.find(r=>String(r.drive_id??r.id)===detailMatch[1]);
+      if(!record)return json(res,404,{error:'Reclamo no encontrado'});
+      return json(res,200,{tipo:'supabase',reclamo:{numero:record.drive_id??record.id,motivo:record.drive_historico?.Motivo??record.asunto??null,estado:record.estado??null,responsable:record.responsable??null,created_at:record.created_at??null,updated_at:record.updated_at??null},detalle:record.drive_historico??null});
+    }
+    const statsMatch=question.match(/^(?:estad[ií]sticas|resumen|totales) (?:de )?reclamos(?:\\s+responsable:\\s*(.+))?$/i);
+    if(statsMatch){
+      const selected=statsMatch[1]?reclamos.filter(r=>normalizeMesa(r.responsable)===normalizeMesa(statsMatch[1])):reclamos;
+      const estados={},responsables={};
+      for(const r of selected){const st=r.estado||'SIN_ESTADO',ow=r.responsable||'SIN_RESPONSABLE';estados[st]=(estados[st]||0)+1;responsables[ow]=(responsables[ow]||0)+1;}
+      return json(res,200,{tipo:'supabase',total:selected.length,por_estado:estados,por_responsable:responsables});
+    }
+    const listMatch=question.match(/^listar reclamos(?:\\s+responsable:\\s*([^;]+))?(?:;?\\s*estado:\\s*([^;]+))?(?:;?\\s*limit:\\s*(\\d+))?(?:;?\\s*offset:\\s*(\\d+))?$/i);
+    if(listMatch){
+      const owner=listMatch[1]?.trim(),state=listMatch[2]?.trim();
+      const limit=Math.min(100,Math.max(1,Number(listMatch[3]||10)));
+      const offset=Math.max(0,Number(listMatch[4]||0));
+      const selected=reclamos.filter(r=>(!owner||normalizeMesa(r.responsable)===normalizeMesa(owner))&&(!state||normalizeMesa(r.estado)===normalizeMesa(state))).sort((a,b)=>String(b.created_at??'').localeCompare(String(a.created_at??''))||Number(b.drive_id??0)-Number(a.drive_id??0));
+      return json(res,200,{tipo:'supabase',total:selected.length,limit,offset,reclamos:selected.slice(offset,offset+limit).map(r=>({numero:r.drive_id??r.id,motivo:r.drive_historico?.Motivo??r.asunto??null,estado:r.estado??null,responsable:r.responsable??null}))});
+    }
     const isOT=/\b(?:ot|orden(?:es)?(?: de trabajo)?)\b/i.test(question);
     const table=isOT?'mesa_ot':'mesa_reclamos';
     const records=isOT?ordenes:reclamos;
