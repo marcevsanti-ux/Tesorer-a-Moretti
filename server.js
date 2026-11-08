@@ -706,6 +706,26 @@ async function assistantChat(req, res) {
   }
 }
 
+async function getBugEvidence(req,res) {
+ const auth=req.headers.authorization||'';
+ if(!/^Bearer [A-Za-z0-9_.-]+$/.test(auth))return json(res,401,{error:'Iniciá sesión'});
+ try {
+  const jwt=auth.slice(7);
+  const identity=await sb('/auth/v1/user',ANON_KEY,{headers:{Authorization:'Bearer '+jwt}});
+  if(!identity.ok||!identity.data?.id)return json(res,401,{error:'Sesión inválida'});
+  const email=String(identity.data.email||'').toLowerCase();
+  if(!FEEDBACK_USERS.has(email))return json(res,403,{error:'Sin acceso a evidencias'});
+  const perms=await sb('/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.'+encodeURIComponent(identity.data.id),ANON_KEY,{headers:{Authorization:'Bearer '+jwt}});
+  if(!perms.ok||!Array.isArray(perms.data)||!perms.data.some(x=>x.activo&&['ADMIN','USUARIO'].includes(x.rol)))return json(res,403,{error:'Sin acceso'});
+  const p=new NodeURL(req.url,'http://localhost').searchParams.get('path')||'';
+  if(!/^[0-9a-f-]{36}\\/[0-9a-f-]{36}\\.(?:png|jpg|webp)$/.test(p))return json(res,400,{error:'Ruta inválida'});
+  if(email!=='marcelos@moretti.com.ar' && !p.startsWith(identity.data.id+'/'))return json(res,403,{error:'Evidencia ajena'});
+  const signed=await sb('/storage/v1/object/sign/mesa-bug-evidence/'+p,SERVICE_KEY,{method:'POST',body:JSON.stringify({expiresIn:120})});
+  if(!signed.ok||!signed.data?.signedURL)throw new Error('Firma no disponible');
+  return json(res,200,{url:URL.replace(/\\/$/,'')+'/storage/v1'+signed.data.signedURL});
+ }catch(e){console.error('Evidence error',e.message);return json(res,502,{error:'No se pudo abrir la evidencia'});}
+}
+
 async function listOwnerTickets(req, res) {
   const auth = req.headers.authorization || '';
   if (!/^Bearer [A-Za-z0-9_.-]+$/.test(auth)) return json(res, 401, {error:'Sesión requerida'});
@@ -742,6 +762,7 @@ http.createServer(async (req, res) => {
 
   if (pathname === '/api/asistente/chat' && req.method === 'POST') return assistantChat(req,res);
   if (pathname === '/api/tickets' && req.method === 'GET') return listOwnerTickets(req,res);
+  if (pathname === '/api/tickets/evidence' && req.method === 'GET') return getBugEvidence(req,res);
 
   if (pathname === '/api/clarity/estado' && req.method === 'GET') {
     const auth = req.headers.authorization || '';
