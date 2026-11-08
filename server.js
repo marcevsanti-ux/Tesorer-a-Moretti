@@ -545,12 +545,12 @@ async function saveBugImages(images, userId) {
       (mime==='image/webp'&&bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP');
     if (!magic) throw new Error('El archivo no coincide con el tipo de imagen');
     const key=userId+'/'+randomUUID()+'.'+ext;
-    const response=await fetch(URL.replace(/\\/$/,'')+'/storage/v1/object/mesa-bug-evidence/'+key,{
+    const response=await fetch(URL.replace(/\/$/,'')+'/storage/v1/object/mesa-bug-evidence/'+key,{
       method:'POST',headers:{apikey:SERVICE_KEY,Authorization:'Bearer '+SERVICE_KEY,'Content-Type':mime,'x-upsert':'false'},
       body:bytes,signal:AbortSignal.timeout(15000)
     });
     if (!response.ok) throw new Error('No se pudo guardar la imagen ('+response.status+')');
-    saved.push({name:String(item.name||'captura.'+ext).replace(/[\\r\\n<>]/g,' ').slice(0,90),path:key});
+    saved.push({name:String(item.name||'captura.'+ext).replace(/[\r\n<>]/g,' ').slice(0,90),path:key});
   }
   return saved;
 }
@@ -577,7 +577,7 @@ async function assistantChat(req, res) {
   try {
     for await (const chunk of req) {
       body += chunk;
-      if (body.length > 12582912) return json(res, 413, { error: 'Mensaje o imágenes demasiado grandes' });
+      if (body.length > 14680064) return json(res, 413, { error: 'Mensaje o imágenes demasiado grandes' });
     }
   } catch { return json(res, 400, { error: 'Solicitud inválida' }); }
   let question, images;
@@ -718,11 +718,11 @@ async function getBugEvidence(req,res) {
   const perms=await sb('/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.'+encodeURIComponent(identity.data.id),ANON_KEY,{headers:{Authorization:'Bearer '+jwt}});
   if(!perms.ok||!Array.isArray(perms.data)||!perms.data.some(x=>x.activo&&['ADMIN','USUARIO'].includes(x.rol)))return json(res,403,{error:'Sin acceso'});
   const p=new NodeURL(req.url,'http://localhost').searchParams.get('path')||'';
-  if(!/^[0-9a-f-]{36}\\/[0-9a-f-]{36}\\.(?:png|jpg|webp)$/.test(p))return json(res,400,{error:'Ruta inválida'});
+  if(!/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(?:png|jpg|webp)$/.test(p))return json(res,400,{error:'Ruta inválida'});
   if(email!=='marcelos@moretti.com.ar' && !p.startsWith(identity.data.id+'/'))return json(res,403,{error:'Evidencia ajena'});
   const signed=await sb('/storage/v1/object/sign/mesa-bug-evidence/'+p,SERVICE_KEY,{method:'POST',body:JSON.stringify({expiresIn:120})});
   if(!signed.ok||!signed.data?.signedURL)throw new Error('Firma no disponible');
-  return json(res,200,{url:URL.replace(/\\/$/,'')+'/storage/v1'+signed.data.signedURL});
+  return json(res,200,{url:URL.replace(/\/$/,'')+'/storage/v1'+signed.data.signedURL});
  }catch(e){console.error('Evidence error',e.message);return json(res,502,{error:'No se pudo abrir la evidencia'});}
 }
 
