@@ -22,15 +22,44 @@ p.style.display="none";
 const attachment=document.getElementById('bug-image-input'),attachLabel=document.getElementById('bug-attach-label'),preview=document.getElementById('bug-image-preview');
 function bugMode(){attachLabel.style.display='block';}
 i.addEventListener('input',bugMode);
-attachment.addEventListener('change',()=>{const files=Array.from(attachment.files||[]);const invalid=files.length>3||files.some(x=>!['image/png','image/jpeg','image/webp'].includes(x.type)||x.size>3145728);if(invalid){attachment.value='';preview.textContent='Hasta 3 imágenes JPG, PNG o WebP de 3 MB cada una.';return;}preview.textContent=files.length?files.map(x=>x.name).join(' · '):'';});
+let selectedImages=[];
+function updateImagePreview(){
+ preview.replaceChildren();
+ if(!selectedImages.length)return;
+ const title=document.createElement('div');title.textContent=selectedImages.length+' imagen(es) adjunta(s)';title.style.marginBottom='5px';preview.appendChild(title);
+ const list=document.createElement('div');list.style.cssText='display:flex;flex-wrap:wrap;gap:7px';
+ selectedImages.forEach((file,index)=>{
+  const wrap=document.createElement('div');wrap.style.cssText='display:flex;align-items:center;gap:5px;padding:4px 6px;background:#eef2f6;border-radius:7px';
+  const img=document.createElement('img');img.alt='Vista previa '+(index+1);img.style.cssText='width:42px;height:42px;object-fit:cover;border-radius:5px';
+  const url=URL.createObjectURL(file);img.src=url;img.onload=()=>URL.revokeObjectURL(url);
+  const name=document.createElement('span');name.textContent=file.name;name.style.cssText='max-width:125px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+  const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.title='Quitar imagen';remove.setAttribute('aria-label','Quitar '+file.name);remove.style.cssText='border:0;background:transparent;font-size:20px;cursor:pointer;color:#a52330';
+  remove.addEventListener('click',()=>{selectedImages.splice(index,1);updateImagePreview();});
+  wrap.append(img,name,remove);list.appendChild(wrap);
+ });
+ preview.appendChild(list);
+}
+function addImages(files){
+ const candidates=Array.from(files).filter(file=>file.type.startsWith('image/'));
+ if(!candidates.length)return false;
+ if(selectedImages.length+candidates.length>3){message('Podés adjuntar hasta 3 imágenes por consulta.','bot');return true;}
+ if(candidates.some(file=>!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>3145728||!file.size)){message('Usá imágenes JPG, PNG o WebP de hasta 3 MB cada una.','bot');return true;}
+ selectedImages.push(...candidates);updateImagePreview();return true;
+}
+attachment.addEventListener('change',()=>{addImages(attachment.files||[]);attachment.value='';});
+i.addEventListener('paste',event=>{
+ const items=Array.from(event.clipboardData?.items||[]);
+ const images=items.filter(item=>item.kind==='file'&&item.type.startsWith('image/')).map(item=>item.getAsFile()).filter(Boolean);
+ if(images.length){event.preventDefault();addImages(images);}
+});
 function readImage(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve({name:file.name,type:file.type,data:String(reader.result).split(',')[1]});reader.onerror=()=>reject(Error('No se pudo leer la imagen'));reader.readAsDataURL(file);});}
 
 function open(v){p.hidden=!v;p.style.display=v?"flex":"none";b.setAttribute('aria-expanded',String(v));if(v)i.focus()}
 b.addEventListener('click',()=>open(p.hidden));document.getElementById('moretti-ai-close').addEventListener('click',()=>open(false));
 function message(t,from){const d=document.createElement('div');d.textContent=t;d.style.cssText='padding:12px;border-radius:12px;max-width:92%;white-space:pre-wrap;overflow-wrap:anywhere;align-self:'+(from==='user'?'flex-end;background:#e7f0f8':'flex-start;background:#f1f5f8');log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
-f.addEventListener('submit',async e=>{e.preventDefault();const q=i.value.trim()||(attachment.files.length?'¿Qué se observa en esta imagen?':'');if(!q||send.disabled)return;const chosen=Array.from(attachment.files||[]);message(q+(chosen.length?'\n📎 '+chosen.map(x=>x.name).join(', '):''),'user');send.disabled=true;const pending=message('Consultando...','bot');try{
+f.addEventListener('submit',async e=>{e.preventDefault();const q=i.value.trim()||(selectedImages.length?'¿Qué se observa en esta imagen?':'');if(!q||send.disabled)return;const chosen=[...selectedImages];message(q+(chosen.length?'\n📎 '+chosen.map(x=>x.name).join(', '):''),'user');send.disabled=true;const pending=message('Consultando...','bot');try{
 const {data}=await db.auth.getSession();if(!data.session)throw Error('Tu sesión expiró. Volvé a ingresar.');
-if(!/^(?:reportar\s+)?(?:bug|error)\s*:/i.test(q)){const reminderResult=await createChatReminder(q);if(reminderResult!==null){pending.textContent=reminderResult;return;}}const r=await fetch('/api/asistente/chat',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+data.session.access_token},body:JSON.stringify({mensaje:q,imagenes:chosen.length?await Promise.all(chosen.map(readImage)):[]})});const result=await r.json();if(!r.ok)throw Error(result.error||'No se pudo responder');pending.textContent=result.respuesta;i.value='';attachment.value='';preview.textContent='';bugMode();
+if(!chosen.length && !/^(?:reportar\s+)?(?:bug|error)\s*:/i.test(q)){const reminderResult=await createChatReminder(q);if(reminderResult!==null){pending.textContent=reminderResult;return;}}const r=await fetch('/api/asistente/chat',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+data.session.access_token},body:JSON.stringify({mensaje:q,imagenes:chosen.length?await Promise.all(chosen.map(readImage)):[]})});const result=await r.json();if(!r.ok)throw Error(result.error||'No se pudo responder');pending.textContent=result.respuesta;i.value='';attachment.value='';selectedImages=[];updateImagePreview();bugMode();
 }catch(err){pending.textContent=err.message||'Error de conexión';}finally{send.disabled=false;i.focus();log.scrollTop=log.scrollHeight;}});
 })();</script><div class="hero"><div><h1>Mesa de Ayuda</h1><p>Órdenes de trabajo, garantías, reclamos y seguimiento técnico.</p></div><span class="pill" id="roleLabel">Acceso interno</span></div>
 
