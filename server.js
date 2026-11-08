@@ -585,7 +585,12 @@ async function analyzeAssistantImage(question, images) {
  }
  const response=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.OPENAI_VISION_MODEL||'gpt-4.1-mini',messages:[{role:'user',content}],max_completion_tokens:850}),signal:AbortSignal.timeout(45000)});
  const result=await response.json().catch(()=>({}));
- if(!response.ok)throw new Error('Servicio de análisis de imágenes HTTP '+response.status);
+ if(!response.ok){
+  const code=String(result.error?.code||'');
+  const type=String(result.error?.type||'');
+  const err=new Error('Vision API HTTP '+response.status+' code='+code+' type='+type);
+  err.status=response.status;err.apiCode=code;throw err;
+ }
  const answer=result.choices?.[0]?.message?.content;
  if(typeof answer!=='string'||!answer.trim())throw new Error('El analizador no devolvió respuesta');
  return answer;
@@ -676,7 +681,19 @@ async function assistantChat(req, res) {
   }
   if (images.length) {
     try { return json(res,200,{respuesta:await analyzeAssistantImage(question,images),tipo:'analisis_imagen'}); }
-    catch(e){console.error('Vision error',e.message);return json(res,e.code==='VISION_NOT_CONFIGURED'?503:502,{error:e.code==='VISION_NOT_CONFIGURED'?'Análisis de imágenes pendiente de configurar en el servidor.':'No se pudo analizar la imagen. Verificá el formato o intentá nuevamente.'});}
+    catch(e){
+      console.error('Vision error',e.message);
+      const quota=e.status===429&&/insufficient_quota|billing_hard_limit_reached/.test(e.apiCode||'');
+      const rate=e.status===429&&!quota;
+      const message=e.code==='VISION_NOT_CONFIGURED'?'Análisis de imágenes pendiente de configurar en el servidor.':
+       quota?'La cuenta de OpenAI API no tiene cuota disponible. Revisá la facturación y los créditos de la API.':
+       rate?'OpenAI está limitando las solicitudes (HTTP 429). Revisá los límites de uso de la API o esperá unos minutos.':
+       e.status===401?'La clave de OpenAI API no es válida o fue revocada.':
+       e.status===403?'La cuenta de OpenAI API no tiene permiso para usar el modelo.':
+       e.status===400?'OpenAI rechazó la solicitud de imagen. Revisá el formato y tamaño.':
+       'No se pudo analizar la imagen. Intentá nuevamente.';
+      return json(res,e.code==='VISION_NOT_CONFIGURED'?503:502,{error:message});
+    }
   }
   if (!PUENTES_API_KEY)
     return json(res, 503, { error: 'Asistente Puentes no configurado' });
