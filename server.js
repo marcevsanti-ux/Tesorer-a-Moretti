@@ -596,7 +596,7 @@ async function assistantChat(req, res) {
     try {
       const issue = isFeature ? await createFeedbackIssue(description, email, 'feature') : await registerValeriaBug(description, email);
       return json(res, 200, { respuesta: 'Registré ' + (isFeature ? 'la solicitud' : 'el bug') +
-        ' #' + issue.number + '. ' + issue.html_url +
+        ' #' + issue.number + '.\nTítulo: ' + issue.title + '\nEnlace: ' + issue.html_url +
         '\nEstado: pendiente de revisión técnica. Todavía no fue corregido ni desplegado.' });
     } catch (error) {
       console.error('Feedback error', error.message);
