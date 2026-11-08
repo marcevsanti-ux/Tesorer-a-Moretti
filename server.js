@@ -567,6 +567,30 @@ async function getFeedbackIssue(number) {
   return githubFeedback('/issues/' + number);
 }
 
+async function analyzeAssistantImage(question, images) {
+ const key=process.env.OPENAI_API_KEY||'';
+ if(!key)throw Object.assign(new Error('VISION_NOT_CONFIGURED'),{code:'VISION_NOT_CONFIGURED'});
+ if(!Array.isArray(images)||images.length<1||images.length>3)throw new Error('Se admiten de 1 a 3 imágenes');
+ const content=[{type:'text',text:'Sos un asistente de soporte técnico de Moretti. Analizá las imágenes y respondé en español argentino a la pregunta. Identificá únicamente información visible, diferenciá hechos de hipótesis, sugerí verificaciones seguras. No inventes manuales, documentación interna, tickets ni soluciones verificadas. Si se menciona un ticket, aclarar que no se consultó GitHub en este análisis. Pregunta: '+question}];
+ for(const item of images){
+  const mime=String(item.type||'');
+  if(!['image/jpeg','image/png','image/webp'].includes(mime)||typeof item.data!=='string'||!/^[A-Za-z0-9+/]+={0,2}$/.test(item.data))throw new Error('Imagen inválida');
+  const bytes=Buffer.from(item.data,'base64');
+  if(!bytes.length||bytes.length>3145728)throw new Error('Cada imagen debe pesar menos de 3 MB');
+  const magic=(mime==='image/png'&&bytes.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex')))||
+   (mime==='image/jpeg'&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255)||
+   (mime==='image/webp'&&bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP');
+  if(!magic)throw new Error('Formato de imagen inválido');
+  content.push({type:'image_url',image_url:{url:'data:'+mime+';base64,'+item.data,detail:'high'}});
+ }
+ const response=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.OPENAI_VISION_MODEL||'gpt-4.1-mini',messages:[{role:'user',content}],max_completion_tokens:850}),signal:AbortSignal.timeout(45000)});
+ const result=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error('Servicio de análisis de imágenes HTTP '+response.status);
+ const answer=result.choices?.[0]?.message?.content;
+ if(typeof answer!=='string'||!answer.trim())throw new Error('El analizador no devolvió respuesta');
+ return answer;
+}
+
 async function assistantChat(req, res) {
   if (!valid || !SERVICE_KEY)
     return json(res, 503, { error: 'Asistente no configurado' });
@@ -649,6 +673,10 @@ async function assistantChat(req, res) {
       console.error('Feedback status error', error.message);
       return json(res, 502, { error: 'No se pudo consultar el estado del ticket.' });
     }
+  }
+  if (images.length) {
+    try { return json(res,200,{respuesta:await analyzeAssistantImage(question,images),tipo:'analisis_imagen'}); }
+    catch(e){console.error('Vision error',e.message);return json(res,e.code==='VISION_NOT_CONFIGURED'?503:502,{error:e.code==='VISION_NOT_CONFIGURED'?'Análisis de imágenes pendiente de configurar en el servidor.':'No se pudo analizar la imagen. Verificá el formato o intentá nuevamente.'});}
   }
   if (!PUENTES_API_KEY)
     return json(res, 503, { error: 'Asistente Puentes no configurado' });
