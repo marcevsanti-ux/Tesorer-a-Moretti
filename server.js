@@ -676,6 +676,34 @@ async function assistantChat(req, res) {
   }
 }
 
+async function listOwnerTickets(req, res) {
+  const auth = req.headers.authorization || '';
+  if (!/^Bearer [A-Za-z0-9_.-]+$/.test(auth)) return json(res, 401, {error:'Sesión requerida'});
+  try {
+    const jwt = auth.slice(7);
+    const identity = await sb('/auth/v1/user', ANON_KEY, {headers:{Authorization:'Bearer '+jwt}});
+    if (!identity.ok || !identity.data?.id) return json(res, 401, {error:'Sesión inválida'});
+    if (String(identity.data.email || '').trim().toLowerCase() !== FEATURE_OWNER)
+      return json(res, 403, {error:'Solo Marcelo puede consultar la ticketera'});
+    const perms = await sb('/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.'+
+      encodeURIComponent(identity.data.id), ANON_KEY, {headers:{Authorization:'Bearer '+jwt}});
+    if (!perms.ok || !Array.isArray(perms.data) || !perms.data.some(x=>x.activo && x.rol==='ADMIN'))
+      return json(res, 403, {error:'Acceso de administrador requerido'});
+    const url = new NodeURL(req.url, 'http://localhost');
+    const state = ['open','closed','all'].includes(url.searchParams.get('state')) ? url.searchParams.get('state') : 'all';
+    const page = Math.max(1, Math.min(100, Number.parseInt(url.searchParams.get('page'),10)||1));
+    const issues = await githubFeedback('/issues?state='+state+'&per_page=50&page='+page+'&sort=created&direction=desc');
+    return json(res, 200, {tickets:issues.filter(x=>!x.pull_request && /^\[(?:Bug Mesa de Ayuda|Función solicitada)\]/i.test(x.title||'')).map(x=>({
+      number:x.number,title:x.title,state:x.state,created_at:x.created_at,updated_at:x.updated_at,
+      html_url:x.html_url,body:x.body||'',labels:(x.labels||[]).map(y=>typeof y==='string'?y:y.name),
+      assignee:x.assignee?.login||null
+    })),page,has_more:issues.length===50});
+  } catch(e) {
+    console.error('Ticketera error',e.message);
+    return json(res, 502, {error:'No se pudieron consultar los tickets de GitHub'});
+  }
+}
+
 http.createServer(async (req, res) => {
   const pathname = new NodeURL(
     req.url,
@@ -683,6 +711,7 @@ http.createServer(async (req, res) => {
   ).pathname;
 
   if (pathname === '/api/asistente/chat' && req.method === 'POST') return assistantChat(req,res);
+  if (pathname === '/api/tickets' && req.method === 'GET') return listOwnerTickets(req,res);
 
   if (pathname === '/api/clarity/estado' && req.method === 'GET') {
     const auth = req.headers.authorization || '';
