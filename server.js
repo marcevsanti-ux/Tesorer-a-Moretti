@@ -4,6 +4,7 @@
 const http = require('node:http');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { randomUUID } = require('node:crypto');
 const { URL: NodeURL } = require('node:url');
 
 const PORT = Number(process.env.PORT || 3000);
@@ -495,7 +496,7 @@ function feedbackSeverity(description) {
   return 'NORMAL - pendiente de diagnóstico';
 }
 
-async function createFeedbackIssue(description, email, kind = 'bug') {
+async function createFeedbackIssue(description, email, kind = 'bug', evidence = []) {
   const feature = kind === 'feature';
   const title = (feature ? '[Función solicitada] ' : '[Bug Mesa de Ayuda] ') +
     description.replace(/\s+/g, ' ').slice(0, 95);
@@ -510,6 +511,7 @@ async function createFeedbackIssue(description, email, kind = 'bug') {
     '## Descripción del usuario',
     description,
     '',
+    ...(evidence.length?['## Evidencia adjunta (almacenamiento privado)',...evidence.map(x=>'- '+x.name+': storage://mesa-bug-evidence/'+x.path),'','Las imágenes se visualizan desde la Ticketera autenticada. No compartir enlaces públicos.','']:[]),
     '## Flujo requerido',
     '- [ ] Reproducir y validar el problema / alcance',
     '- [ ] Diagnóstico técnico y plan de cambio',
@@ -527,11 +529,37 @@ async function createFeedbackIssue(description, email, kind = 'bug') {
   });
 }
 
-async function registerValeriaBug(description, authenticatedEmail) {
+async function saveBugImages(images, userId) {
+  if (!Array.isArray(images) || images.length>3) throw new Error('Se admiten hasta 3 imágenes');
+  if (images.length && !SERVICE_KEY) throw new Error('Almacenamiento no configurado');
+  const saved=[];
+  for (const item of images) {
+    const mime=String(item.type||'');
+    const ext={'image/png':'png','image/jpeg':'jpg','image/webp':'webp'}[mime];
+    if (!ext || typeof item.data!=='string' || !/^[A-Za-z0-9+/]+={0,2}$/.test(item.data))
+      throw new Error('Formato de imagen inválido');
+    const bytes=Buffer.from(item.data,'base64');
+    if (!bytes.length || bytes.length>3145728) throw new Error('Imagen supera 3 MB');
+    const magic=(mime==='image/png'&&bytes.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex')))||
+      (mime==='image/jpeg'&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255)||
+      (mime==='image/webp'&&bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP');
+    if (!magic) throw new Error('El archivo no coincide con el tipo de imagen');
+    const key=userId+'/'+randomUUID()+'.'+ext;
+    const response=await fetch(URL.replace(/\\/$/,'')+'/storage/v1/object/mesa-bug-evidence/'+key,{
+      method:'POST',headers:{apikey:SERVICE_KEY,Authorization:'Bearer '+SERVICE_KEY,'Content-Type':mime,'x-upsert':'false'},
+      body:bytes,signal:AbortSignal.timeout(15000)
+    });
+    if (!response.ok) throw new Error('No se pudo guardar la imagen ('+response.status+')');
+    saved.push({name:String(item.name||'captura.'+ext).replace(/[\\r\\n<>]/g,' ').slice(0,90),path:key});
+  }
+  return saved;
+}
+
+async function registerValeriaBug(description, authenticatedEmail, evidence = []) {
   if (!FEEDBACK_USERS.has(String(authenticatedEmail || '').trim().toLowerCase())) {
     throw new Error('Usuario no autorizado para reportar bugs');
   }
-  return createFeedbackIssue(description, authenticatedEmail, 'bug');
+  return createFeedbackIssue(description, authenticatedEmail, 'bug', evidence);
 }
 
 async function getFeedbackIssue(number) {
@@ -549,11 +577,11 @@ async function assistantChat(req, res) {
   try {
     for await (const chunk of req) {
       body += chunk;
-      if (body.length > 8192) return json(res, 413, { error: 'Mensaje demasiado largo' });
+      if (body.length > 12582912) return json(res, 413, { error: 'Mensaje o imágenes demasiado grandes' });
     }
   } catch { return json(res, 400, { error: 'Solicitud inválida' }); }
-  let question;
-  try { question = String(JSON.parse(body).mensaje || '').trim().slice(0, 3000); }
+  let question, images;
+  try { const input=JSON.parse(body);question = String(input.mensaje || '').trim().slice(0, 3000); images=input.imagenes||[]; }
   catch { return json(res, 400, { error: 'JSON inválido' }); }
   if (!question) return json(res, 400, { error: 'Escribí una consulta' });
 
@@ -594,7 +622,9 @@ async function assistantChat(req, res) {
     if (description.length < 15)
       return json(res, 400, { error: 'Describí el problema con al menos 15 caracteres.' });
     try {
-      const issue = isFeature ? await createFeedbackIssue(description, email, 'feature') : await registerValeriaBug(description, email);
+      if (images.length && (!isBug || !FEEDBACK_USERS.has(email))) return json(res, 403, {error:'Adjuntos no autorizados'});
+      const evidence = isBug ? await saveBugImages(images, userId) : [];
+      const issue = isFeature ? await createFeedbackIssue(description, email, 'feature') : await registerValeriaBug(description, email, evidence);
       return json(res, 200, { respuesta: 'Registré ' + (isFeature ? 'la solicitud' : 'el bug') +
         ' #' + issue.number + '.\nTítulo: ' + issue.title + '\nEnlace: ' + issue.html_url +
         '\nEstado: pendiente de revisión técnica. Todavía no fue corregido ni desplegado.' });
