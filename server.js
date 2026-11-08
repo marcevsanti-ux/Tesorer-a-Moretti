@@ -676,6 +676,42 @@ async function assistantChat(req, res) {
   }
 }
 
+
+async function mesaReclamosApi(req,res,url) {
+  const auth = req.headers.authorization || '';
+  if (!/^Bearer [A-Za-z0-9_.-]+$/.test(auth)) return json(res,401,{error:'Sesión requerida'});
+  const jwt = auth.slice(7);
+  try {
+    const identity=await sb('/auth/v1/user',ANON_KEY,{headers:{Authorization:'Bearer '+jwt}});
+    if(!identity.ok || !identity.data?.id)return json(res,401,{error:'Sesión inválida'});
+    const perms=await sb('/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.'+encodeURIComponent(identity.data.id),ANON_KEY,{headers:{Authorization:'Bearer '+jwt}});
+    if(!perms.ok || !Array.isArray(perms.data) || !perms.data.some(x=>x.activo && ['ADMIN','USUARIO'].includes(x.rol)))return json(res,403,{error:'Sin acceso a Mesa de Ayuda'});
+    const rows=await readMesaTable('mesa_reclamos',jwt);
+    const state=url.searchParams.get('estado'),owner=url.searchParams.get('responsable');
+    const filtered=rows.filter(r=>(!state||normalizeMesa(r.estado)===normalizeMesa(state))&&(!owner||normalizeMesa(r.responsable)===normalizeMesa(owner)));
+    const summary=r=>({id:r.id,numero:r.drive_id??r.id,motivo:r.drive_historico?.Motivo??r.asunto??null,estado:r.estado??null,responsable:r.responsable??null,created_at:r.created_at??null,updated_at:r.updated_at??null});
+    if(url.pathname.endsWith('/stats')){
+      const byStatus={},byOwner={},byOwnerStatus={};
+      for(const r of filtered){const st=r.estado||'SIN_ESTADO',ow=r.responsable||'SIN_RESPONSABLE';byStatus[st]=(byStatus[st]||0)+1;byOwner[ow]=(byOwner[ow]||0)+1;byOwnerStatus[ow]??={};byOwnerStatus[ow][st]=(byOwnerStatus[ow][st]||0)+1;}
+      return json(res,200,{total:filtered.length,por_estado:byStatus,por_responsable:byOwner,por_responsable_y_estado:byOwnerStatus});
+    }
+    if(url.pathname.endsWith('/detalle')){
+      const number=url.searchParams.get('numero');
+      if(!number || !/^\\d+$/.test(number))return json(res,400,{error:'Número de reclamo inválido'});
+      const record=filtered.find(r=>String(r.drive_id??r.id)===number);
+      return record?json(res,200,{reclamo:summary(record),detalle:record.drive_historico??null}):json(res,404,{error:'Reclamo no encontrado'});
+    }
+    const limit=Math.min(100,Math.max(1,Number(url.searchParams.get('limit'))||10));
+    const offset=Math.max(0,Number(url.searchParams.get('offset'))||0);
+    if(!Number.isSafeInteger(limit)||!Number.isSafeInteger(offset))return json(res,400,{error:'Paginación inválida'});
+    const ordered=filtered.sort((a,b)=>String(b.created_at??'').localeCompare(String(a.created_at??''))||Number(b.drive_id??0)-Number(a.drive_id??0));
+    return json(res,200,{total:ordered.length,limit,offset,has_more:offset+limit<ordered.length,reclamos:ordered.slice(offset,offset+limit).map(summary)});
+  } catch(e) {
+    console.error('Mesa reclamos API error',e.message);
+    return json(res,502,{error:'No se pudo consultar reclamos'});
+  }
+}
+
 http.createServer(async (req, res) => {
   const pathname = new NodeURL(
     req.url,
@@ -683,6 +719,8 @@ http.createServer(async (req, res) => {
   ).pathname;
 
   if (pathname === '/api/asistente/chat' && req.method === 'POST') return assistantChat(req,res);
+  if (req.method === 'GET' && ['/api/asistente/reclamos','/api/asistente/reclamos/detalle','/api/asistente/reclamos/stats'].includes(pathname)) return mesaReclamosApi(req,res,new NodeURL(req.url,'http://localhost'));
+
 
   if (pathname === '/api/clarity/estado' && req.method === 'GET') {
     const auth = req.headers.authorization || '';
