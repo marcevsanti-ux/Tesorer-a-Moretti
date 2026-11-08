@@ -108,7 +108,7 @@ function renderTickets(){
  $('ticketTotal').textContent=ticketItems.length; $('ticketOpen').textContent=ticketItems.filter(x=>x.state==='open').length;
  $('ticketClosed').textContent=ticketItems.filter(x=>x.state==='closed').length;
  $('ticketRows').innerHTML=rows.map(x=>{
- const reporter=(x.body.match(/- Reportado por:\\s*([^\\n]+)/i)||[])[1]||'—';
+ const reporter=(x.body.match(/- Reportado por:\s*([^\n]+)/i)||[])[1]||'—';
  const date=x.created_at?new Date(x.created_at).toLocaleDateString('es-AR'):'—';
  return '<tr><td>#'+ticketText(x.number)+'</td><td style="white-space:normal;min-width:220px">'+ticketText(x.title)+'</td><td>'+ticketText(reporter)+'</td><td>'+ticketText(date)+'</td><td><span class="tag">'+(x.state==='open'?'Abierto':'Cerrado')+'</span></td><td><a href="'+ticketText(x.html_url)+'" target="_blank" rel="noopener noreferrer">Ver ticket</a></td></tr>';
  }).join('')||'<tr><td colspan="6">No hay tickets para este filtro.</td></tr>';
