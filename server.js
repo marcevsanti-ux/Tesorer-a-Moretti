@@ -406,6 +406,31 @@ async function puentes(endpoint, options = {}) {
   return data;
 }
 
+const OWNER_NOTIFICATION_GROUP = 'Mesa Moretti · AGENTE WEB';
+async function notifyOwnerOfTicket(issue, reporter) {
+  if (reporter !== 'valeriat@moretti.com.ar') return {sent:false,reason:'not_valeria'};
+  if (!PUENTES_API_KEY) return {sent:false,reason:'puentes_unconfigured'};
+  try {
+    const response=await puentes('/me/groups');
+    const groups=Array.isArray(response)?response:(response?.groups||[]);
+    const matches=groups.filter(g=>g.kind==='group' && g.name===OWNER_NOTIFICATION_GROUP);
+    if(matches.length!==1 || !matches[0].id) {
+      console.error('Ticket notification: owner group missing or ambiguous',matches.length);
+      return {sent:false,reason:'owner_group_unavailable'};
+    }
+    const msg='🎫 Nuevo ticket de Vale #'+issue.number+'\\n'+issue.title+
+      '\\nReportado por: '+reporter+'\\nEstado: Abierto, pendiente de revisión técnica'+
+      '\\nGitHub: '+issue.html_url;
+    await puentes('/groups/'+encodeURIComponent(matches[0].id)+'/messages',{
+      method:'POST',body:JSON.stringify({text:msg,clientId:randomUUID()})
+    });
+    return {sent:true};
+  } catch(e) {
+    console.error('Ticket notification failed',String(e.message||e).slice(0,180));
+    return {sent:false,reason:'delivery_failed'};
+  }
+}
+
 async function assistantGroup(userId) {
   // A distinct private group for each Supabase user; never reuse the owner's direct chat.
   const name = 'Mesa Moretti · ' + userId;
@@ -702,9 +727,11 @@ async function assistantChat(req, res) {
       if (images.length && (!isBug || !FEEDBACK_USERS.has(email))) return json(res, 403, {error:'Adjuntos no autorizados'});
       const evidence = isBug ? await saveBugImages(images, userId) : [];
       const issue = isFeature ? await createFeedbackIssue(description, email, 'feature') : await registerValeriaBug(description, email, evidence);
+      const notification = await notifyOwnerOfTicket(issue, email);
       return json(res, 200, { respuesta: 'Registré ' + (isFeature ? 'la solicitud' : 'el bug') +
         ' #' + issue.number + '.\nTítulo: ' + issue.title + '\nEnlace: ' + issue.html_url +
-        '\nEstado: pendiente de revisión técnica. Todavía no fue corregido ni desplegado.' });
+        '\nEstado: pendiente de revisión técnica. Todavía no fue corregido ni desplegado.' +
+        (email==='valeriat@moretti.com.ar' ? (notification.sent?'\nMarcelo fue notificado en Puentes.':'\nEl aviso a Marcelo está pendiente; el ticket se registró correctamente.') : '') });
     } catch (error) {
       console.error('Feedback error', error.message);
       return json(res, 503, { error: 'No se pudo registrar el ticket en GitHub. Contactá a Sistemas.' });
