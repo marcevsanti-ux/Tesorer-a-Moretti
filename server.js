@@ -644,25 +644,25 @@ async function assistantChat(req, res) {
   const statusMatch = question.match(/^(?:estado|seguimiento) (?:del )?(?:bug|ticket)\s*#?(\d+)\s*\??$/i);
   if (question.startsWith('consulta_ocr: ')) {
     const content=question.slice('consulta_ocr: '.length);
-    const match=content.match(/(?:ticket|tkt|issue)\\s*#?\\s*(\\d{1,7})/i);
+    const match=content.match(/(?:ticket|tkt|issue)\s*#?\s*(\d{1,7})/i);
     const extracted=content.split('Texto extraído de la captura:')[1]?.trim()||'';
     if(!extracted)return json(res,400,{error:'No se encontró texto extraído'});
     let ticket='';
     if(match && FEEDBACK_USERS.has(email)){
       try{
         const issue=await getFeedbackIssue(Number(match[1]));
-        if(/^\\[(?:Bug Mesa de Ayuda|Bug Valeria|Función solicitada)\\]/.test(issue.title||'')){
-          ticket='\\n\\nTicket #'+issue.number+': '+issue.title+'\\nEstado GitHub: '+(issue.state==='closed'?'Cerrado':'Abierto')+'\\nDescripción: '+String(issue.body||'').slice(0,1600)+'\\nEnlace: '+issue.html_url;
+        if(/^\[(?:Bug Mesa de Ayuda|Bug Valeria|Función solicitada)\]/.test(issue.title||'')){
+          ticket='\n\nTicket #'+issue.number+': '+issue.title+'\nEstado GitHub: '+(issue.state==='closed'?'Cerrado':'Abierto')+'\nDescripción: '+String(issue.body||'').slice(0,1600)+'\nEnlace: '+issue.html_url;
         }
       }catch(e){console.error('OCR ticket lookup failed',e.message);}
     }
-    const lines=extracted.split('\\n').map(x=>x.trim()).filter(Boolean);
-    const errors=lines.filter(x=>/\\b(error|failed|exception|timeout|denied|unauthorized|forbidden|404|403|401|500|502|503|429|rechazad|fall[oó]|inv[aá]lid|sin conexi[oó]n)\\b/i.test(x)).slice(0,8);
-    const answer='Analicé el texto de la captura con OCR gratuito (sin usar OpenAI API).\\n\\n'+
-      (errors.length?'Posibles mensajes de error detectados:\\n'+errors.map(x=>'• '+x.slice(0,250)).join('\\n')+'\\n\\n':'')+
-      'Texto reconocido:\\n'+lines.slice(0,25).join('\\n').slice(0,1700)+
-      (ticket?'\\n\\nInformación consultada en GitHub:'+ticket:'')+
-      '\\n\\nEste análisis identifica texto y, cuando corresponde, consulta el ticket. No confirma la causa técnica ni interpreta elementos visuales. Para diagnosticarlo, indicá qué operación estabas realizando y qué resultado esperabas.';
+    const lines=extracted.split('\n').map(x=>x.trim()).filter(Boolean);
+    const errors=lines.filter(x=>/\b(error|failed|exception|timeout|denied|unauthorized|forbidden|404|403|401|500|502|503|429|rechazad|fall[oó]|inv[aá]lid|sin conexi[oó]n)\b/i.test(x)).slice(0,8);
+    const answer='Analicé el texto de la captura con OCR gratuito (sin usar OpenAI API).\n\n'+
+      (errors.length?'Posibles mensajes de error detectados:\n'+errors.map(x=>'• '+x.slice(0,250)).join('\n')+'\n\n':'')+
+      'Texto reconocido:\n'+lines.slice(0,25).join('\n').slice(0,1700)+
+      (ticket?'\n\nInformación consultada en GitHub:'+ticket:'')+
+      '\n\nEste análisis identifica texto y, cuando corresponde, consulta el ticket. No confirma la causa técnica ni interpreta elementos visuales. Para diagnosticarlo, indicá qué operación estabas realizando y qué resultado esperabas.';
     return json(res,200,{respuesta:answer,tipo:'ocr_local'});
   }
   if (isBug || isFeature) {
