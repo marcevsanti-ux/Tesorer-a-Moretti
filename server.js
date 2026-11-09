@@ -644,26 +644,51 @@ async function assistantChat(req, res) {
   const statusMatch = question.match(/^(?:estado|seguimiento) (?:del )?(?:bug|ticket)\s*#?(\d+)\s*\??$/i);
   if (question.startsWith('consulta_ocr: ')) {
     const content=question.slice('consulta_ocr: '.length);
-    const match=content.match(/(?:ticket|tkt|issue)\s*#?\s*(\d{1,7})/i);
-    const extracted=content.split('Texto extraído de la captura:')[1]?.trim()||'';
+    const parts=content.split('Texto extraído de la captura:');
+    const prompt=parts[0].trim();
+    const extracted=(parts[1]||'').trim();
     if(!extracted)return json(res,400,{error:'No se encontró texto extraído'});
-    let ticket='';
-    if(match && FEEDBACK_USERS.has(email)){
-      try{
-        const issue=await getFeedbackIssue(Number(match[1]));
-        if(/^\[(?:Bug Mesa de Ayuda|Bug Valeria|Función solicitada)\]/.test(issue.title||'')){
-          ticket='\n\nTicket #'+issue.number+': '+issue.title+'\nEstado GitHub: '+(issue.state==='closed'?'Cerrado':'Abierto')+'\nDescripción: '+String(issue.body||'').slice(0,1600)+'\nEnlace: '+issue.html_url;
-        }
-      }catch(e){console.error('OCR ticket lookup failed',e.message);}
+    const claimRef=(prompt.match(/\b(?:reclamo|caso)\s*#?\s*(\d{1,9})/i)||
+      extracted.match(/\b(?:reclamo|caso)\s*#?\s*(\d{1,9})/i));
+    const githubRef=prompt.match(/\b(?:ticket|tkt|issue|bug)\s*#?\s*(\d{1,9})/i);
+    const wantsRecord=/\b(?:ticket|tkt|issue|bug|reclamo|caso|estado|detalle|informaci[oó]n|info|explic[aá]|pasame|contame)\b/i.test(prompt);
+    if(githubRef && FEEDBACK_USERS.has(email)) {
+      try {
+        const issue=await getFeedbackIssue(Number(githubRef[1]));
+        if(!/^\[(?:Bug Mesa de Ayuda|Bug Valeria|Función solicitada)\]/.test(issue.title||''))
+          return json(res,404,{error:'No encontré ese ticket en la Ticketera de Moretti.'});
+        const labels=(issue.labels||[]).map(x=>typeof x==='string'?x:x.name).filter(Boolean);
+        return json(res,200,{tipo:'ticket_github',respuesta:'Ticket GitHub #'+issue.number+'\nTítulo: '+issue.title+
+          '\nEstado: '+(issue.state==='closed'?'Cerrado':'Abierto')+
+          '\nCreado: '+(issue.created_at||'Sin fecha')+
+          '\nDescripción:\n'+String(issue.body||'Sin descripción').slice(0,3000)+
+          (labels.length?'\nEtiquetas: '+labels.join(', '):'')+
+          '\nEnlace: '+issue.html_url+
+          '\n\nLa captura se usó para identificar la consulta; estos datos provienen de GitHub.'});
+      }catch(e){console.error('OCR GitHub ticket lookup failed',e.message);return json(res,502,{error:'No pude consultar el ticket de GitHub en este momento.'});}
     }
+    if(claimRef && wantsRecord) {
+      try {
+        const records=await readMesaTable('mesa_reclamos',jwt);
+        const id=String(Number(claimRef[1]));
+        const claim=records.find(r=>String(r.drive_id??'')===id || String(r.id??'')===id);
+        if(!claim)return json(res,200,{tipo:'reclamo_no_encontrado',respuesta:'La imagen menciona el reclamo #'+id+
+          ', pero no encontré su ficha en los reclamos accesibles de Mesa de Ayuda. No puedo confirmar su estado o responsable con esta captura.'});
+        const hist=claim.drive_historico||{};
+        const fields=[['Estado',claim.estado],['Prioridad',claim.prioridad],['Responsable',claim.responsable],
+          ['Cliente',hist.Cliente||claim.cliente],['Asunto',claim.asunto],['Motivo',hist.Motivo],
+          ['Producto',hist.Producto],['Descripción',claim.descripcion],
+          ['Fecha de ingreso',hist['Fecha ingreso']||claim.fecha_ingreso_historica],
+          ['Último contacto',hist['Último contacto']]];
+        return json(res,200,{tipo:'reclamo_mesa',respuesta:'Reclamo #'+id+' — ficha de Mesa de Ayuda\n\n'+
+          fields.filter(([,v])=>v!==null&&v!==undefined&&String(v).trim()).map(([k,v])=>k+': '+String(v).slice(0,700)).join('\n')+
+          '\n\nFuente: registro autorizado de Mesa de Ayuda. La imagen se utilizó para identificar el número del reclamo.'});
+      }catch(e){console.error('OCR claim lookup failed',e.message);return json(res,502,{error:'No pude consultar el reclamo en Mesa de Ayuda.'});}
+    }
+    if(wantsRecord)return json(res,200,{tipo:'referencia_no_identificada',respuesta:'Puedo consultar el detalle del ticket o reclamo, pero necesito identificar su número. En la captura reconocí:\n'+extracted.slice(0,900)+'\n\nIndicame si es un ticket de GitHub o un reclamo de Clarity/Mesa de Ayuda.'});
     const lines=extracted.split('\n').map(x=>x.trim()).filter(Boolean);
-    const errors=lines.filter(x=>/\b(error|failed|exception|timeout|denied|unauthorized|forbidden|404|403|401|500|502|503|429|rechazad|fall[oó]|inv[aá]lid|sin conexi[oó]n)\b/i.test(x)).slice(0,8);
-    const answer='Analicé el texto de la captura con OCR gratuito (sin usar OpenAI API).\n\n'+
-      (errors.length?'Posibles mensajes de error detectados:\n'+errors.map(x=>'• '+x.slice(0,250)).join('\n')+'\n\n':'')+
-      'Texto reconocido:\n'+lines.slice(0,25).join('\n').slice(0,1700)+
-      (ticket?'\n\nInformación consultada en GitHub:'+ticket:'')+
-      '\n\nEste análisis identifica texto y, cuando corresponde, consulta el ticket. No confirma la causa técnica ni interpreta elementos visuales. Para diagnosticarlo, indicá qué operación estabas realizando y qué resultado esperabas.';
-    return json(res,200,{respuesta:answer,tipo:'ocr_local'});
+    return json(res,200,{tipo:'ocr_local',respuesta:'Texto identificado en la captura:\n'+lines.slice(0,25).join('\n').slice(0,1800)+
+      '\n\nEste OCR gratuito lee texto; no realiza diagnóstico visual avanzado.'});
   }
   if (isBug || isFeature) {
     if (isFeature && email !== FEATURE_OWNER)
