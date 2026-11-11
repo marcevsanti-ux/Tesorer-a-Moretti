@@ -10,6 +10,7 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const PROTOCOL_VERSION = '2025-03-26';
 
 const tools = [
+  { name: 'moretti_buscar_manual', description: 'BUSCADOR OBLIGATORIO para preguntas técnicas sobre equipos Moretti, Kinder, cierre Z, programación, mantenimiento, errores, reparación y procedimientos. Busca en manuales PDF indexados y devuelve título, número de página y extracto. Antes de responder instrucciones técnicas, usar esta herramienta y citar manual y página; si no hay evidencia, aclararlo.', annotations:{readOnlyHint:true}, inputSchema:{type:'object',properties:{consulta:{type:'string',description:'Palabras técnicas, marca, modelo o procedimiento a buscar',minLength:2,maxLength:180},limite:{type:'integer',minimum:1,maximum:8}},required:['consulta'],additionalProperties:false} } },
   { name: 'moretti_buscar_ot', description: 'Consulta órdenes de trabajo de Mesa de Ayuda por número de OS o nombre de cliente. Solo lectura; nunca accede a usuarios ni contraseñas.', annotations: { readOnlyHint: true }, inputSchema: { type:'object', properties:{ numero:{type:'string'}, cliente:{type:'string'}, limite:{type:'integer',minimum:1,maximum:30} }, additionalProperties:false } },
   { name: 'moretti_listar_ot', description: 'Lista órdenes de trabajo con filtros opcionales de estado y subestado, solo lectura.', annotations:{readOnlyHint:true}, inputSchema:{type:'object',properties:{estado:{type:'string'},subestado:{type:'string'},limite:{type:'integer',minimum:1,maximum:50}},additionalProperties:false} },
   { name: 'moretti_reclamos_ot', description: 'Consulta reclamos asociados a órdenes de trabajo por ID de OT, estado o prioridad, solo lectura.',annotations:{readOnlyHint:true},inputSchema:{type:'object',properties:{ot_id:{type:'string'},estado:{type:'string'},prioridad:{type:'string'},limite:{type:'integer',minimum:1,maximum:50}},additionalProperties:false} },
@@ -148,6 +149,48 @@ async function resolveOtId(value) {
   return exact[0].id;
 }
 
+
+async function buscarManual(args) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) throw Error('Biblioteca técnica no configurada');
+  const consulta = String(args.consulta || '').trim();
+  if (consulta.length < 2 || consulta.length > 180) throw Error('Consulta inválida');
+  const limite = Number.isInteger(args.limite) ? Math.max(1,Math.min(8,args.limite)) : 5;
+  const tokens = [...new Set(consulta.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().match(/[a-z0-9]{2,}/g) || [])]
+    .filter(x => !['como','para','hacer','una','uno','que','con','del','los','las','por','paso','manual','equipo','sobre','sacar','quiero','necesito'].includes(x)).slice(0,6);
+  if (!tokens.length) throw Error('Indicá una marca, modelo, error o procedimiento');
+  const headers = {apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY};
+  const pageUrl = new URL(SUPABASE_URL+'/rest/v1/biblioteca_paginas');
+  pageUrl.searchParams.set('select','documento_id,numero_pagina,texto');
+  pageUrl.searchParams.set('or','('+tokens.map(t=>'texto.ilike.*'+t+'*').join(',')+')');
+  pageUrl.searchParams.set('limit','500');
+  const response = await fetch(pageUrl,{headers,signal:AbortSignal.timeout(15000)});
+  if(!response.ok)throw Error('Error consultando páginas de biblioteca ('+response.status+')');
+  const pages=await response.json();
+  if(!Array.isArray(pages)||!pages.length)return {consulta,resultados:[],mensaje:'No se encontraron páginas coincidentes. No inventar procedimientos.'};
+  const ids=[...new Set(pages.map(p=>p.documento_id))];
+  const docUrl=new URL(SUPABASE_URL+'/rest/v1/biblioteca_documentos');
+  docUrl.searchParams.set('select','id,titulo,storage_path,paginas');
+  docUrl.searchParams.set('id','in.('+ids.join(',')+')');
+  const docsResponse=await fetch(docUrl,{headers,signal:AbortSignal.timeout(12000)});
+  if(!docsResponse.ok)throw Error('Error consultando documentos ('+docsResponse.status+')');
+  const docs=new Map((await docsResponse.json()).map(d=>[d.id,d]));
+  const scored=pages.map(p=>{
+    const d=docs.get(p.documento_id);
+    if(!d)return null;
+    const text=String(p.texto||'');
+    const hay=(d.titulo+' '+text).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const title=d.titulo.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const matches=tokens.filter(t=>hay.includes(t));
+    const score=matches.length*10+tokens.filter(t=>title.includes(t)).length*8+
+      (hay.includes(tokens.join(' '))?12:0);
+    const first=Math.max(0,text.toLowerCase().search(new RegExp(tokens.map(t=>t.replace(/[^a-z0-9]/g,'')).join('|'),'i')));
+    const start=Math.max(0,first-300);
+    return {score,titulo:d.titulo,pagina:p.numero_pagina,extracto:text.slice(start,start+2100),documento_id:p.documento_id,storage_path:d.storage_path};
+  }).filter(Boolean).sort((a,b)=>b.score-a.score||a.titulo.localeCompare(b.titulo)||a.pagina-b.pagina);
+  return {consulta,paginas_coincidentes:pages.length,resultados:scored.slice(0,limite).map(({score,...rest})=>rest),
+    instruccion:'Responder exclusivamente con evidencia de los extractos; citar título y página. Si los extractos son insuficientes, solicitar modelo o indicar que falta información.'};
+}
+
 async function dispatch(msg, req) {
   const id = msg?.id ?? null;
   if (!msg || msg.jsonrpc !== '2.0' || typeof msg.method !== 'string') return error(id, -32600, 'Solicitud JSON-RPC inválida');
@@ -162,6 +205,10 @@ async function dispatch(msg, req) {
     try {
       let value;
       if (name === 'moretti_estado_conexion') value = { estado: 'OK', supabase_configurado: Boolean(SUPABASE_URL && SUPABASE_KEY) };
+      else if (name === 'moretti_buscar_manual') {
+        if (!accountAuthorized(req)) return rpc(id, { content: [{ type: 'text', text: 'Cuenta Moretti no autorizada' }], isError: true });
+        value = await buscarManual(args);
+      }
       else if (name === 'moretti_contar_reclamos') {
         if (!accountAuthorized(req)) return rpc(id, { content: [{ type: 'text', text: 'Cuenta Moretti no autorizada' }], isError: true });
         value = await supabaseContarReclamos(args);
