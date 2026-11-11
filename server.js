@@ -688,7 +688,7 @@ async function assistantChat(req, res) {
   }
 
   const email = identityEmail.trim().toLowerCase();
-  const isBug = /^(?:reportar )?(?:bug|error):/i.test(question);
+  const isBug = /^(?:(?:quiero|necesito|deseo|pod[eé]s|puedes|por favor|te pido|voy a)\s+)*(?:(?:reportar|registrar|informar|avisar|cargar|crear)\s+(?:(?:un|el|este|nuevo)\s+)?(?:bug|error|fallo|problema)|(?:bug|error|fallo)\s*:)/i.test(question);
   const isFeature = /^(?:(?:solicitar|pedir) )?(?:funci[oó]n nueva|nueva funci[oó]n|mejora):/i.test(question);
   const statusMatch = question.match(/^(?:estado|seguimiento) (?:del )?(?:bug|ticket)\s*#?(\d+)\s*\??$/i);
   if (question.startsWith('consulta_ocr: ')) {
@@ -744,7 +744,7 @@ async function assistantChat(req, res) {
       return json(res, 403, { error: 'Solo Marcelo puede solicitar funciones nuevas.' });
     if (isBug && !FEEDBACK_USERS.has(email))
       return json(res, 403, { error: 'Solo Valeria y Marcelo pueden reportar bugs.' });
-    const description = question.slice(question.indexOf(':') + 1).trim();
+    const description = (question.includes(':') ? question.slice(question.indexOf(':') + 1) : question).trim();
     if (description.length < 15)
       return json(res, 400, { error: 'Describí el problema con al menos 15 caracteres.' });
     try {
