@@ -689,7 +689,10 @@ async function assistantChat(req, res) {
 
   const email = identityEmail.trim().toLowerCase();
   const isBug = /^(?:(?:quiero|necesito|deseo|pod[eé]s|puedes|por favor|te pido|voy a)\s+)*(?:(?:reportar|registrar|informar|avisar|cargar|crear)\s+(?:(?:un|el|este|nuevo)\s+)?(?:bug|error|fallo|problema)|(?:bug|error|fallo)\s*:)/i.test(question);
-  // Accept natural reports such as 'Hola agente, tengo un bug ...' without routing them to Puentes.\n  const naturalBug = /\b(?:tengo|hay|encontr[eé]|detect[eé]|quiero\s+reportar|para\s+reportar|reporto|registr[aá])\b[\s\S]{0,100}\b(?:bug|error|fallo)\b/i.test(question) || /\b(?:bug|error|fallo)\b[\s\S]{0,60}\b(?:reportar|registrar|informar)\b/i.test(question);\n  const shouldRegisterBug = isBug || naturalBug;\n  const isFeature = /^(?:(?:solicitar|pedir) )?(?:funci[oó]n nueva|nueva funci[oó]n|mejora):/i.test(question);
+  // Accept natural reports such as 'Hola agente, tengo un bug ...' without routing them to Puentes.
+  const naturalBug = /\b(?:tengo|hay|encontr[eé]|detect[eé]|quiero\s+reportar|para\s+reportar|reporto|registr[aá])\b[\s\S]{0,100}\b(?:bug|error|fallo)\b/i.test(question) || /\b(?:bug|error|fallo)\b[\s\S]{0,60}\b(?:reportar|registrar|informar)\b/i.test(question);
+  const shouldRegisterBug = isBug || naturalBug;
+  const isFeature = /^(?:(?:solicitar|pedir) )?(?:funci[oó]n nueva|nueva funci[oó]n|mejora):/i.test(question);
   const statusMatch = question.match(/^(?:estado|seguimiento) (?:del )?(?:bug|ticket)\s*#?(\d+)\s*\??$/i);
   if (question.startsWith('consulta_ocr: ')) {
     const content=question.slice('consulta_ocr: '.length);
