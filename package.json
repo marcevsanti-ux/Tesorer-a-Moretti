@@ -1,0 +1,13 @@
+{
+  "name": "moretti-mesa-de-ayuda",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Servidor aislado para Mesa de Ayuda Moretti",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/mesa-indicadores.test.cjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
