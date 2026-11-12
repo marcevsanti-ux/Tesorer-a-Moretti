@@ -776,7 +776,10 @@ function renderAgenda(){
  const root=$('agendaRows');if(!root)return;
  const owner=$('agendaOwner').value,status=$('agendaStatus').value;
  const active=x=>!['CERRADO','RESUELTO'].includes(String(x.estado||'').toUpperCase());
- const subset=claims.filter(x=>(status==='TODOS'||active(x))&&(owner==='TODOS'||(owner==='SIN_ASIGNAR'?!x.responsable:x.responsable===owner)));
+ const normalize=t=>String(t||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+ const query=normalize($('agendaClaimSearch').value.trim());
+ const matchesClaim=x=>!query||normalize([x.drive_id,x.asunto,x.drive_historico?.Cliente,x.responsable].join(' ')).includes(query);
+ const subset=claims.filter(x=>(status==='TODOS'||active(x))&&(owner==='TODOS'||(owner==='SIN_ASIGNAR'?!x.responsable:x.responsable===owner))&&matchesClaim(x));
  const count=name=>claims.filter(x=>active(x)&&x.responsable===name).length;
  $('agendaStats').innerHTML=['Valeria','Estefania','Samanta'].map(name=>'<div class="stat"><strong>'+count(name)+'</strong><small>'+responsableBadge(name)+' · activos</small></div>').join('')+'<div class="stat"><strong>'+claims.filter(x=>active(x)&&!x.responsable).length+'</strong><small>Sin asignar</small></div>';
  const pendingByClaim=new Map();
@@ -791,9 +794,7 @@ function renderAgenda(){
     return '<tr><td>'+escapeHTML(x.drive_id??x.id)+'</td><td>'+escapeHTML(x.asunto||x.drive_historico?.Cliente||'—')+'</td><td>'+responsableBadge(x.responsable)+'</td><td>'+escapeHTML(x.estado||'—')+'</td><td><button type="button" class="btn secondary" data-agenda-claim="'+escapeHTML(x.id)+'" title="Crear nueva acción para este reclamo" style="white-space:normal;text-align:left">'+action+' ＋</button></td></tr>';
   }).join('')||'<tr><td colspan="5">No hay reclamos para estos filtros.</td></tr>';
  const select=$('agendaClaim');const previous=select.value;
- const normalize=t=>String(t||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
- const query=normalize($('agendaClaimSearch').value.trim());
- const matching=claims.filter(x=>!query||normalize([x.drive_id,x.asunto,x.drive_historico?.Cliente,x.responsable].join(' ')).includes(query));
+ const matching=claims.filter(matchesClaim);
  select.innerHTML='<option value="">Sin reclamo (recordatorio general)</option>'+matching.map(x=>'<option value="'+escapeHTML(x.id)+'">#'+escapeHTML(x.drive_id??'—')+' · '+escapeHTML(x.asunto||'Reclamo')+'</option>').join('');
  if(matching.some(x=>String(x.id)===String(previous)))select.value=previous;
  $('agendaClaimCount').textContent=matching.length+' de '+claims.length+' reclamos';
@@ -809,7 +810,7 @@ function renderAgenda(){
     $('agendaDetail').focus();
     $('agendaReminderForm').scrollIntoView({behavior:'smooth',block:'center'});
   });
- const visibleReminders=agendaReminders.filter(x=>status==='TODOS'||x.estado==='PENDIENTE').filter(x=>owner==='TODOS'||(owner==='SIN_ASIGNAR'?x.destinatario==='EQUIPO':x.destinatario===owner||x.destinatario==='EQUIPO'));
+ const visibleReminders=agendaReminders.filter(x=>status==='TODOS'||x.estado==='PENDIENTE').filter(x=>owner==='TODOS'||(owner==='SIN_ASIGNAR'?x.destinatario==='EQUIPO':x.destinatario===owner||x.destinatario==='EQUIPO')).filter(x=>!query||(x.reclamo_id&&claims.some(c=>String(c.id)===String(x.reclamo_id)&&matchesClaim(c))));
  $('agendaReminderRows').innerHTML=visibleReminders.map(x=>{const overdue=x.estado==='PENDIENTE'&&new Date(x.fecha_hora)<new Date();return '<tr><td>'+escapeHTML(fechaHoraVisible(x.fecha_hora))+'</td><td>'+(()=>{const c=claims.find(c=>c.id===x.reclamo_id);return escapeHTML(c?'#'+(c.drive_id??'—')+' · '+(c.drive_historico?.Cliente||c.asunto||'Cliente no informado'):'Recordatorio general');})()+'</td><td>'+escapeHTML(x.detalle)+'</td><td>'+responsableBadge(x.destinatario)+'</td><td>'+(overdue?'🔴 Vencido':escapeHTML(x.estado))+(x.estado==='PENDIENTE'?' <button class="btn secondary" data-complete-reminder="'+escapeHTML(x.id)+'">Completar</button> <button class="btn secondary" data-postpone-reminder="'+escapeHTML(x.id)+'">Postergar</button>':'')+'</td></tr>'}).join('')||'<tr><td colspan="5">No hay recordatorios en esta vista.</td></tr>';
  document.querySelectorAll('[data-postpone-reminder]').forEach(b=>b.onclick=()=>{
   const reminder=agendaReminders.find(x=>String(x.id)===b.dataset.postponeReminder);
