@@ -166,7 +166,7 @@ function renderTickets(){
  const date=x.created_at?new Date(x.created_at).toLocaleDateString('es-AR'):'—';
  const evidence=[...x.body.matchAll(/storage:\/\/mesa-bug-evidence\/([a-f0-9-]{36}\/[a-f0-9-]{36}\.(?:png|jpg|webp))/g)].map(m=>m[1]);
  const attachments=evidence.map((p,j)=>'<button type="button" class="btn secondary" style="padding:5px 8px;margin:3px" data-evidence="'+ticketText(p)+'">📷 Captura '+(j+1)+'</button>').join('');
- return '<tr><td>#'+ticketText(x.number)+'</td><td style="white-space:normal;min-width:220px">'+ticketText(x.title)+(attachments?'<div style="margin-top:7px">'+attachments+'</div>':'')+'</td><td>'+ticketText(reporter)+'</td><td>'+ticketText(date)+'</td><td><span class="tag">'+(x.state==='open'?'Abierto':'Cerrado')+'</span></td><td><a href="'+ticketText(x.html_url)+'" target="_blank" rel="noopener noreferrer">Ver ticket</a></td></tr>';
+ return '<tr><td>#'+ticketText(x.number)+'</td><td style="white-space:normal;min-width:220px">'+ticketText(x.title)+(attachments?'<div style="margin-top:7px">'+attachments+'</div>':'')+'</td><td>'+ticketText(reporter)+'</td><td>'+ticketText(date)+'</td><td><span class="tag" style="'+(x.state==='closed'?'background:#e4f7e9;color:#176c38;border:1px solid #b9e5c5;font-weight:700':'')+'">'+(x.state==='open'?'Abierto':'✓ Cerrado')+'</span></td><td><a href="'+ticketText(x.html_url)+'" target="_blank" rel="noopener noreferrer">Ver ticket</a></td></tr>';
  }).join('')||'<tr><td colspan="6">No hay tickets para este filtro.</td></tr>';
  $('ticketMore').classList.toggle('hidden',!ticketHasMore);
 }
