@@ -119,7 +119,7 @@ b.addEventListener('click',()=>open(p.hidden));document.getElementById('moretti-
 function message(t,from){const d=document.createElement('div');d.textContent=t;d.style.cssText='padding:12px;border-radius:12px;max-width:92%;white-space:pre-wrap;overflow-wrap:anywhere;align-self:'+(from==='user'?'flex-end;background:#e7f0f8':'flex-start;background:#f1f5f8');log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
 f.addEventListener('submit',async e=>{e.preventDefault();const q=i.value.trim()||(selectedImages.length?'¿Qué se observa en esta imagen?':'');if(!q||send.disabled)return;const chosen=[...selectedImages];message(q+(chosen.length?'\n📎 '+chosen.map(x=>x.name).join(', '):''),'user');send.disabled=true;const pending=message('Consultando...','bot');try{
 const {data}=await db.auth.getSession();if(!data.session)throw Error('Tu sesión expiró. Volvé a ingresar.');
-if(chosen.length && !/\b(?:bug|error|fallo)\b/i.test(q)){
+if(chosen.length && !q.trim() && !/\b(?:bug|error|fallo)\b/i.test(q)){
  pending.textContent='Leyendo texto de la imagen con OCR local...';
  const extracted=await extractImageText(chosen);
  const text=extracted.filter(Boolean).join('\n---\n').slice(0,9000);
