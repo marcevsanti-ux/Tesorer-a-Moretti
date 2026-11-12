@@ -694,7 +694,7 @@ async function assistantChat(req, res) {
   const shouldRegisterBug = isBug || naturalBug;
   const isFeature = /^(?:(?:solicitar|pedir) )?(?:funci[oó]n nueva|nueva funci[oó]n|mejora):/i.test(question);
   const statusMatch = question.match(/^(?:estado|seguimiento) (?:del )?(?:bug|ticket)\s*#?(\d+)\s*\??$/i);
-  const helpTicket = /^(?:help|ayuda|comandos|manual)(?:\\s+(?:ticket|tickets))$|^(?:ticket|tickets)\\s+(?:help|ayuda)$/i.test(question.trim());
+  const helpTicket = /^(?:help|ayuda|comandos|manual)(?:\s+(?:ticket|tickets))$|^(?:ticket|tickets)\s+(?:help|ayuda)$/i.test(question.trim());
   if (helpTicket) {
     if (!FEEDBACK_USERS.has(email)) return json(res,403,{error:'No tenés permisos para gestionar tickets.'});
     return json(res,200,{tipo:'ayuda_tickets',respuesta:[
@@ -709,16 +709,16 @@ async function assistantChat(req, res) {
       'La aprobación cierra el issue en GitHub y registra quién aprobó y cuándo.',
       'Si sigue fallando, se registra el resultado y el ticket permanece abierto.',
       'Solo Valeria y Marcelo pueden gestionar estos tickets.'
-    ].join('\\n')});
+    ].join('\n')});
   }
-  const ticketDecision=question.trim().match(/^ticket\\s*#?([1-9]\\d{0,8})\\s+(aprobado|ok|sigue\\s+fallando)$/i);
+  const ticketDecision=question.trim().match(/^ticket\s*#?([1-9]\d{0,8})\s+(aprobado|ok|sigue\s+fallando)$/i);
   if(ticketDecision){
     if(!FEEDBACK_USERS.has(email))return json(res,403,{error:'No tenés permisos para aprobar tickets.'});
     const number=Number(ticketDecision[1]);
     const approved=/^(?:aprobado|ok)$/i.test(ticketDecision[2]);
     try {
       const issue=await getFeedbackIssue(number);
-      if(!/^\\[(?:Bug Mesa de Ayuda|Bug Valeria|Función solicitada)\\]/.test(issue.title||''))
+      if(!/^\[(?:Bug Mesa de Ayuda|Bug Valeria|Función solicitada)\]/.test(issue.title||''))
         return json(res,404,{error:'Ese número no corresponde a un ticket gestionado por Mesa de Ayuda.'});
       const actor=email;
       if(approved && issue.state==='closed')
