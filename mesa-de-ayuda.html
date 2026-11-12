@@ -453,7 +453,13 @@ if(firstFollowup.length>5000||firstAction.length>2000){msg('editMessage','El tex
 if(Boolean(firstAction)!==Boolean(firstWhen)){msg('editMessage','Completá próxima acción y fecha/hora para programar un recordatorio.',true);return;}
 if(firstAction&&firstTarget==='RESPONSABLE'&&!f.responsable){msg('editMessage','Seleccioná una responsable o elegí notificar a todo el equipo.',true);return;}
 if(firstWhen&&(!Number.isFinite(new Date(firstWhen).getTime())||new Date(firstWhen)<=new Date())){msg('editMessage','La fecha del recordatorio debe ser futura.',true);return;}
-const table=type==='ot'?'mesa_ot':'mesa_reclamos';const isUpdate=!!item&&!item._nuevo;const query=isUpdate?db.from(table).update(f).eq('id',item.id).select('id,drive_id').single():db.from(table).insert(f).select('id,drive_id').single();const {data:saved,error}=await query;if(error){msg('editMessage',error.message,true);return}if(type==='claim'){const files=[...($('claimEvidence')?.files||[])];if(files.length){const issues=await uploadEvidence(saved.id,files);if(issues.length){msg('editMessage','Reclamo guardado, pero falló la evidencia: '+issues.join('; '),true);await load();return}}}
+const table=type==='ot'?'mesa_ot':'mesa_reclamos';const isUpdate=!!item&&!item._nuevo;
+if(type==='claim'&&!isUpdate&&f.ot_id){
+  const {data:existing,error:lookupError}=await db.from('mesa_reclamos').select('id,drive_id').eq('ot_id',f.ot_id).limit(1);
+  if(lookupError){msg('editMessage','No se pudo verificar si esta OT ya tiene un reclamo. Intentá nuevamente.',true);return;}
+  if(existing?.length){msg('editMessage','Esta OT ya tiene un reclamo registrado (#'+(existing[0].drive_id||existing[0].id)+'). No se permite generar otro. Abrí el reclamo existente para agregar seguimiento o registrar el reingreso.',true);return;}
+}
+const query=isUpdate?db.from(table).update(f).eq('id',item.id).select('id,drive_id').single():db.from(table).insert(f).select('id,drive_id').single();const {data:saved,error}=await query;if(error){msg('editMessage',error.message,true);return}if(type==='claim'){const files=[...($('claimEvidence')?.files||[])];if(files.length){const issues=await uploadEvidence(saved.id,files);if(issues.length){msg('editMessage','Reclamo guardado, pero falló la evidencia: '+issues.join('; '),true);await load();return}}}
 let actionErrors=[];
 if(isUpdate&&$('followupArea')&&!$('followupArea').classList.contains('hidden')){
  const pendingFollowup=$('followupText').value.trim();
