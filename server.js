@@ -694,6 +694,52 @@ async function assistantChat(req, res) {
   const shouldRegisterBug = isBug || naturalBug;
   const isFeature = /^(?:(?:solicitar|pedir) )?(?:funci[oó]n nueva|nueva funci[oó]n|mejora):/i.test(question);
   const statusMatch = question.match(/^(?:estado|seguimiento) (?:del )?(?:bug|ticket)\s*#?(\d+)\s*\??$/i);
+  const helpTicket = /^(?:help|ayuda|comandos|manual)(?:\\s+(?:ticket|tickets))$|^(?:ticket|tickets)\\s+(?:help|ayuda)$/i.test(question.trim());
+  if (helpTicket) {
+    if (!FEEDBACK_USERS.has(email)) return json(res,403,{error:'No tenés permisos para gestionar tickets.'});
+    return json(res,200,{tipo:'ayuda_tickets',respuesta:[
+      'AYUDA · TICKETS MORETTI',
+      '',
+      'Consultar: Estado ticket 5',
+      'Aprobar tras probar: Ticket 5 aprobado',
+      'También: Ticket 5 OK',
+      'Informar que sigue fallando: Ticket 5 sigue fallando',
+      'Reportar bug: Reportar bug: describí el error y cómo reproducirlo',
+      '',
+      'La aprobación cierra el issue en GitHub y registra quién aprobó y cuándo.',
+      'Si sigue fallando, se registra el resultado y el ticket permanece abierto.',
+      'Solo Valeria y Marcelo pueden gestionar estos tickets.'
+    ].join('\\n')});
+  }
+  const ticketDecision=question.trim().match(/^ticket\\s*#?([1-9]\\d{0,8})\\s+(aprobado|ok|sigue\\s+fallando)$/i);
+  if(ticketDecision){
+    if(!FEEDBACK_USERS.has(email))return json(res,403,{error:'No tenés permisos para aprobar tickets.'});
+    const number=Number(ticketDecision[1]);
+    const approved=/^(?:aprobado|ok)$/i.test(ticketDecision[2]);
+    try {
+      const issue=await getFeedbackIssue(number);
+      if(!/^\\[(?:Bug Mesa de Ayuda|Bug Valeria|Función solicitada)\\]/.test(issue.title||''))
+        return json(res,404,{error:'Ese número no corresponde a un ticket gestionado por Mesa de Ayuda.'});
+      const actor=email;
+      if(approved && issue.state==='closed')
+        return json(res,200,{tipo:'ticket_ya_cerrado',respuesta:'Ticket #'+number+' ya estaba cerrado. '+issue.html_url});
+      const note=approved
+        ?'QA APROBADO por '+actor+' el '+new Date().toISOString()+'. Confirmación recibida desde Agente Moretti: '+question.trim()
+        :'QA RECHAZADO por '+actor+' el '+new Date().toISOString()+'. La corrección sigue fallando. Mensaje: '+question.trim();
+      await githubFeedback('/issues/'+number+'/comments',{method:'POST',body:JSON.stringify({body:note})});
+      if(approved){
+        await githubFeedback('/issues/'+number,{method:'PATCH',body:JSON.stringify({state:'closed',state_reason:'completed'})});
+      }else if(issue.state==='closed'){
+        await githubFeedback('/issues/'+number,{method:'PATCH',body:JSON.stringify({state:'open'})});
+      }
+      return json(res,200,{tipo:approved?'ticket_aprobado':'ticket_qa_rechazado',respuesta:approved
+        ?'Ticket #'+number+' aprobado por '+actor+' y cerrado en GitHub. '+issue.html_url
+        :'Ticket #'+number+' marcado como sigue fallando. Queda abierto para corrección. '+issue.html_url});
+    }catch(error){
+      console.error('Ticket QA decision failed',error.message);
+      return json(res,502,{error:'No se pudo completar la gestión del ticket en GitHub. Consultá Estado ticket '+number+' antes de reintentar.'});
+    }
+  }
   if (question.startsWith('consulta_ocr: ')) {
     const content=question.slice('consulta_ocr: '.length);
     const parts=content.split('Texto extraído de la captura:');
