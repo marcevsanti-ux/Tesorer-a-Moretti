@@ -818,10 +818,10 @@ async function assistantChat(req, res) {
       if (!/^(\[Bug Mesa de Ayuda\]|\[Bug Valeria\]|\[Función solicitada\])/.test(issue.title || ''))
         return json(res, 404, { error: 'No se encontró un ticket del Agente Moretti con ese número.' });
       const labels = (issue.labels || []).map(x => typeof x === 'string' ? x : x.name);
-      const status = issue.state === 'closed' ? 'Cerrado en GitHub (QA no verificado por este comando)' :
+      const status = issue.state === 'closed' ? '✓ Ticket #' + issue.number + ' cerrado' :
         labels.includes('qa-aprobado') ? 'QA aprobado (según etiqueta GitHub)' :
         labels.includes('en-qa') ? 'En QA (según etiqueta GitHub)' : 'Abierto, pendiente de revisión/corrección';
-      return json(res, 200, { respuesta: 'Ticket #' + issue.number + ': ' + status + '. ' + issue.html_url });
+      return json(res, 200, { respuesta: issue.state === 'closed' ? status : 'Ticket #' + issue.number + ': ' + status + '. ' + issue.html_url });
     } catch (error) {
       console.error('Feedback status error', error.message);
       return json(res, 502, { error: 'No se pudo consultar el estado del ticket.' });
