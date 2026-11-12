@@ -969,6 +969,23 @@ async function listOwnerTickets(req, res) {
   }
 }
 
+async function getQaTicketStatuses(req,res){
+ const auth=req.headers.authorization||'';
+ if(!/^Bearer [A-Za-z0-9_.-]+$/.test(auth))return json(res,401,{error:'Sesión requerida'});
+ try{
+  const jwt=auth.slice(7);
+  const identity=await sb('/auth/v1/user',ANON_KEY,{headers:{Authorization:'Bearer '+jwt}});
+  if(!identity.ok||!identity.data?.id)return json(res,401,{error:'Sesión inválida'});
+  const email=String(identity.data.email||'').trim().toLowerCase();
+  if(!FEEDBACK_USERS.has(email))return json(res,403,{error:'Sin acceso a tickets'});
+  const perms=await sb('/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.'+encodeURIComponent(identity.data.id),ANON_KEY,{headers:{Authorization:'Bearer '+jwt}});
+  if(!perms.ok||!Array.isArray(perms.data)||!perms.data.some(x=>x.activo))return json(res,403,{error:'Sin acceso'});
+  const numbers=[6,7];
+  const issues=await Promise.all(numbers.map(n=>getFeedbackIssue(n)));
+  return json(res,200,{tickets:issues.map(x=>({number:x.number,state:x.state}))});
+ }catch(e){console.error('QA ticket status error',e.message);return json(res,502,{error:'No se pudo consultar el estado de los tickets'});}
+}
+
 http.createServer(async (req, res) => {
   const pathname = new NodeURL(
     req.url,
@@ -976,6 +993,7 @@ http.createServer(async (req, res) => {
   ).pathname;
 
   if (pathname === '/api/asistente/chat' && req.method === 'POST') return assistantChat(req,res);
+  if (pathname === '/api/tickets/qa-status' && req.method === 'GET') return getQaTicketStatuses(req,res);
   if (pathname === '/api/tickets' && req.method === 'GET') return listOwnerTickets(req,res);
   if (pathname === '/api/tickets/evidence' && req.method === 'GET') return getBugEvidence(req,res);
 
