@@ -132,12 +132,13 @@ if(!chosen.length && !/\b(?:bug|error|fallo)\b/i.test(q)){const reminderResult=a
 }catch(err){pending.textContent=err.message||'Error de conexión';}finally{send.disabled=false;i.focus();log.scrollTop=log.scrollHeight;}});
 })();</script><div class="hero"><div><h1>Mesa de Ayuda</h1><p>Órdenes de trabajo, garantías, reclamos y seguimiento técnico.</p></div><span class="pill" id="roleLabel">Acceso interno</span></div>
 
+<script>function reportTicketFailure(number){const toggle=document.getElementById('moretti-ai-toggle');const input=document.getElementById('moretti-ai-input');if(!toggle||!input)return;if(toggle.getAttribute('aria-expanded')!=='true')toggle.click();input.value='Ticket '+number+' sigue fallando. Detalle: ';input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();}</script>
 <section id="qaTicket6Banner" role="status" aria-label="Ticket 6 listo para probar" style="background:#fff;border:2px solid #1c6e54;border-left:7px solid #1c6e54;border-radius:12px;padding:17px 20px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
 <div><strong style="display:block;font-size:16px;color:#15583f;margin-bottom:5px">Ticket #6 actualizado — pendiente de validación</strong><span>Valeria: en <b>Agenda</b>, buscá el cliente <b>SOLCOR</b> y verificá que solo aparezcan sus acciones y recordatorios. Si funciona, confirmá tu OK en el ticket.</span> <a href="https://github.com/marcevsanti-ux/Tesorer-a-Moretti/issues/6" target="_blank" rel="noopener noreferrer">Ver ticket #6</a></div>
-<button type="button" class="btn secondary" onclick="document.getElementById('qaTicket6Banner').remove()" aria-label="Cerrar aviso de ticket 6">Entendido</button></section>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn secondary" onclick="reportTicketFailure(6)">⚠ Sigue fallando</button><button type="button" class="btn secondary" onclick="document.getElementById('qaTicket6Banner').remove()" aria-label="Cerrar aviso de ticket 6">Entendido</button></div></section>
 <section id="qaTicket7Banner" role="status" aria-label="Ticket 7 pendiente de validación" style="background:#fff;border:2px solid #1c6e54;border-left:7px solid #1c6e54;border-radius:12px;padding:17px 20px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
 <div style="min-width:0;flex:1 1 250px"><strong style="display:block;font-size:16px;color:#15583f;margin-bottom:5px">Ticket #7 corregido — pendiente de validación</strong><span>Valeria: en <b>Agenda</b>, comprobá que los eventos <b>completados</b> ya no aparezcan en la lista de próximas acciones. Deben mostrarse únicamente los pendientes y vencidos. Podés verificarlo con el caso de <b>Enez Raúl</b>.</span> <a href="https://github.com/marcevsanti-ux/Tesorer-a-Moretti/issues/7" target="_blank" rel="noopener noreferrer">Ver ticket #7</a></div>
-<button type="button" class="btn secondary" onclick="document.getElementById('qaTicket7Banner').remove()" aria-label="Cerrar aviso de ticket 7">Entendido</button></section>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn secondary" onclick="reportTicketFailure(7)">⚠ Sigue fallando</button><button type="button" class="btn secondary" onclick="document.getElementById('qaTicket7Banner').remove()" aria-label="Cerrar aviso de ticket 7">Entendido</button></div></section>
 <section class="panel" id="agendaDashboard" aria-label="Resumen de agenda" style="margin-bottom:18px">
 <div class="topline"><h2>📅 Agenda de Mesa de Ayuda</h2><div class="toolbar"><button type="button" class="btn secondary" id="toggleAgendaDashboard" aria-expanded="true" aria-controls="agendaDashboardDetails">Ocultar detalles</button><span class="tag">Gestiones del equipo</span></div></div><div id="agendaDashboardDetails">
 <div class="grid" style="margin:20px 0"><div class="stat"><strong id="dashToday">0</strong><small>Para hoy</small></div><div class="stat"><strong id="dashOverdue" style="color:#b91c1c">0</strong><small>Vencidas</small></div><div class="stat"><strong id="dashUpcoming">0</strong><small>Próximas</small></div></div>
@@ -856,9 +857,9 @@ function renderAgenda(){
  const root=$('agendaRows');if(!root)return;
  const owner=$('agendaOwner').value,status=$('agendaStatus').value;
  const active=x=>!['CERRADO','RESUELTO'].includes(String(x.estado||'').toUpperCase());
- const normalize=t=>String(t||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+ const normalize=t=>String(t??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es').trim();
  const query=normalize($('agendaClaimSearch').value.trim());
- const matchesClaim=x=>!query||normalize([x.drive_id,x.asunto,x.drive_historico?.Cliente,x.responsable].join(' ')).includes(query);
+ const matchesClaim=x=>!query||normalize([x.drive_id,x.asunto,x.drive_historico?.Cliente,x.drive_historico?.['Razón social'],x.responsable].join(' ')).includes(query);
  const subset=claims.filter(x=>(status==='TODOS'||active(x))&&(owner==='TODOS'||(owner==='SIN_ASIGNAR'?!x.responsable:x.responsable===owner))&&matchesClaim(x));
  const count=name=>claims.filter(x=>active(x)&&x.responsable===name).length;
  $('agendaStats').innerHTML=['Valeria','Estefania','Samanta'].map(name=>'<div class="stat"><strong>'+count(name)+'</strong><small>'+responsableBadge(name)+' · activos</small></div>').join('')+'<div class="stat"><strong>'+claims.filter(x=>active(x)&&!x.responsable).length+'</strong><small>Sin asignar</small></div>';
