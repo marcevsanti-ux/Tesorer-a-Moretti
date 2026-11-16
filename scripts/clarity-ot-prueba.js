@@ -1058,8 +1058,10 @@ async function main() {
       console.log('Finalizadas con FechaFinalizacion explícita:',conFecha,'de',finalizadas.registros.length);
       console.log('OT finalizadas extraídas:',finalizadas.registros.length,'Rango:',JSON.stringify(rango));
       if(process.env.CLARITY_FINALIZADAS_WRITE==='true'){
-        if(finalizadas.registros.some(r=>!r.fechaFinalizacion))throw Error('Escritura bloqueada: no se pudo leer Fecha Final. Vehículo de todas las OT.');
-        const resultado=await sincronizar(finalizadas.registros,{estado:'Finalizado',fechaDesde:rango.desde,fechaHasta:rango.hasta,existingOnly:true});
+        const validas=finalizadas.registros.filter(r=>r.fechaFinalizacion);
+        const omitidas=finalizadas.registros.filter(r=>!r.fechaFinalizacion);
+        if(omitidas.length) console.warn('Finalizadas omitidas por falta de fecha:',JSON.stringify(omitidas.map(r=>r.ot)));
+        const resultado=validas.length?await sincronizar(validas,{estado:'Finalizado',fechaDesde:rango.desde,fechaHasta:rango.hasta,existingOnly:true}):{cantidad:0,actualizadas:0};
         console.log('Resultado Supabase finalizadas:',JSON.stringify(resultado));
       }else console.log('OT finalizadas en modo diagnóstico: sin escritura');
       }
