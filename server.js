@@ -302,6 +302,11 @@ async function railwayDeployments() {
     .filter(Boolean).sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }
 
+function canImportClarity(identity, perms) {
+  const email = String(identity?.email || '').trim().toLowerCase();
+  return Array.isArray(perms) && perms.some(x => x.activo && (x.rol === 'ADMIN' || ['egonzalez@moretti.com.ar','sditullio@moretti.com.ar'].includes(email)));
+}
+
 async function clarityEstado(req, res) {
   if (!valid || !RAILWAY_TOKEN || !CLARITY_SERVICE_ID || !RAILWAY_ENVIRONMENT_ID)
     return json(res, 503, { error: 'Sincronización no configurada' });
@@ -313,8 +318,8 @@ async function clarityEstado(req, res) {
     if (!identity.ok || !identity.data?.id) return json(res, 401, { error: 'Sesión inválida' });
     const perms = await sb('/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.' +
       encodeURIComponent(identity.data.id), ANON_KEY, { headers: { Authorization: 'Bearer ' + jwt } });
-    if (!perms.ok || !Array.isArray(perms.data) || !perms.data.some(x => x.activo && x.rol === 'ADMIN'))
-      return json(res, 403, { error: 'Solo administradores' });
+    if (!perms.ok || !Array.isArray(perms.data) || !canImportClarity(identity.data, perms.data))
+      return json(res, 403, { error: 'Sin permiso de sincronización' });
     const deployments = await railwayDeployments();
     return json(res, 200, { deployment: deployments[0] || null, solicitado_en: lastManualTrigger || null });
   } catch (error) {
@@ -345,8 +350,8 @@ async function importarClarity(req, res) {
       ANON_KEY, { headers: { Authorization: 'Bearer ' + jwt } }
     );
     if (!perms.ok || !Array.isArray(perms.data) ||
-        !perms.data.some(x => x.rol === 'ADMIN' && x.activo)) {
-      return json(res, 403, { error: 'Solo administradores' });
+        !canImportClarity(identity.data, perms.data)) {
+      return json(res, 403, { error: 'Sin permiso de sincronización' });
     }
     if (Date.now() - lastManualTrigger < 120000) {
       return json(res, 429, { error: 'Esperá dos minutos antes de volver a solicitar una importación' });
@@ -1007,7 +1012,7 @@ http.createServer(async (req, res) => {
       const perms = await sb('/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.' +
         encodeURIComponent(identity.data.id), ANON_KEY, { headers: { Authorization: 'Bearer ' + jwt } });
       if (!perms.ok || !Array.isArray(perms.data) ||
-          !perms.data.some(x => x.activo && x.rol === 'ADMIN')) return json(res, 403, { error: 'Solo administradores' });
+          !canImportClarity(identity.data, perms.data)) return json(res, 403, { error: 'Sin permiso de sincronización' });
       return json(res, 200, { manual_configurada: Boolean(valid && RAILWAY_TOKEN && CLARITY_SERVICE_ID && RAILWAY_ENVIRONMENT_ID) });
     } catch { return json(res, 502, { error: 'No se pudo verificar Clarity' }); }
   }
