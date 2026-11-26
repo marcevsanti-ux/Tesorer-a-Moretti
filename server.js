@@ -991,6 +991,30 @@ async function getQaTicketStatuses(req,res){
  }catch(e){console.error('QA ticket status error',e.message);return json(res,502,{error:'No se pudo consultar el estado de los tickets'});}
 }
 
+
+async function surveyGoogleRead(){
+ const c=JSON.parse(process.env.GOOGLE_SURVEY_CREDENTIALS||'{}');
+ if(c.client_email!=='moretti-encuestas@moretti-mcp.iam.gserviceaccount.com'||!c.private_key)throw new Error('credentials_missing');
+ const now=Math.floor(Date.now()/1000);
+ const enc=x=>Buffer.from(JSON.stringify(x)).toString('base64url');
+ const unsigned=enc({alg:'RS256',typ:'JWT'})+'.'+enc({iss:c.client_email,scope:'https://www.googleapis.com/auth/spreadsheets.readonly',aud:'https://oauth2.googleapis.com/token',iat:now,exp:now+300});
+ const assertion=unsigned+'.'+require('node:crypto').sign('RSA-SHA256',Buffer.from(unsigned),c.private_key).toString('base64url');
+ const token=await fetch('https://oauth2.googleapis.com/token',{method:'POST',body:new URLSearchParams({grant_type:'urn:ietf:params:oauth:grant-type:jwt-bearer',assertion}),signal:AbortSignal.timeout(12000)});
+ if(!token.ok)throw new Error('token_http_'+token.status);
+ const {access_token}=await token.json();
+ const base='https://sheets.googleapis.com/v4/spreadsheets/1bvleBxCt-Xht5LWaUvDEBUpBSNqu6Xmwl-l3GMlHDws';
+ const opts={headers:{Authorization:'Bearer '+access_token},signal:AbortSignal.timeout(12000)};
+ const meta=await fetch(base+'?fields=sheets(properties(sheetId,title))',opts);
+ if(!meta.ok)throw new Error('metadata_http_'+meta.status);
+ const sheet=(await meta.json()).sheets?.find(x=>x.properties.sheetId===1092767170);
+ if(!sheet)throw new Error('sheet_missing');
+ const range="'"+sheet.properties.title.replace(/'/g,"''")+"'!1:1";
+ const response=await fetch(base+'/values/'+encodeURIComponent(range),opts);
+ if(!response.ok)throw new Error('values_http_'+response.status);
+ const columns=(await response.json()).values?.[0]||[];
+ console.log('Survey Sheets connection OK; columns:',JSON.stringify(columns));
+}
+
 http.createServer(async (req, res) => {
   const pathname = new NodeURL(
     req.url,
@@ -1093,4 +1117,5 @@ http.createServer(async (req, res) => {
     'configured:',
     valid
   );
+  if(process.env.GOOGLE_SURVEY_CREDENTIALS)surveyGoogleRead().catch(e=>console.error('Survey Sheets connection failed:',/^(credentials_missing|token_http_\\d+|metadata_http_\\d+|values_http_\\d+|sheet_missing)$/.test(e.message)?e.message:'configuration_or_network_error'));
 });
