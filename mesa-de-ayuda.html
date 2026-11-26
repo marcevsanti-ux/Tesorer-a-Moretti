@@ -146,6 +146,9 @@ if(!chosen.length && !/\b(?:bug|error|fallo)\b/i.test(q)){const reminderResult=a
 <section id="qaTicket7Banner" hidden role="status" aria-label="Ticket 7 pendiente de validación" style="background:#fff;border:2px solid #1c6e54;border-left:7px solid #1c6e54;border-radius:12px;padding:17px 20px;margin-bottom:18px;display:none;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
 <div style="min-width:0;flex:1 1 250px"><strong style="display:block;font-size:16px;color:#15583f;margin-bottom:5px">Ticket #7 corregido — pendiente de validación</strong><span>Valeria: en <b>Agenda</b>, comprobá que los eventos <b>completados</b> ya no aparezcan en la lista de próximas acciones. Deben mostrarse únicamente los pendientes y vencidos. Podés verificarlo con el caso de <b>Enez Raúl</b>.</span> <a href="https://github.com/marcevsanti-ux/Tesorer-a-Moretti/issues/7" target="_blank" rel="noopener noreferrer">Ver ticket #7</a></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn secondary" onclick="reportTicketFailure(7)">⚠ Sigue fallando</button><button type="button" class="btn secondary" onclick="resolveTicket(7)" aria-label="Confirmar resolución del ticket 7">✓ Resuelto</button></div></section>
+<section id="qaTicket9Banner" hidden role="status" aria-label="Ticket 9 pendiente de validación" style="background:#fff;border:2px solid #1c6e54;border-left:7px solid #1c6e54;border-radius:12px;padding:17px 20px;margin-bottom:18px;display:none;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+<div style="min-width:0;flex:1 1 250px"><strong style="display:block;font-size:16px;color:#15583f;margin-bottom:5px">Ticket #9 corregido — pendiente de validación</strong><span>Vale: actualizá con F5, ingresá a <b>Reclamos</b> y verificá que el botón <b>Editar</b> sea visible sin desplazarte horizontalmente.</span> <a href="https://github.com/marcevsanti-ux/Tesorer-a-Moretti/issues/9" target="_blank" rel="noopener noreferrer">Ver ticket #9</a></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn secondary" onclick="reportTicketFailure(9)">⚠ Sigue fallando</button><button type="button" class="btn secondary" onclick="resolveTicket(9)" aria-label="Confirmar resolución del ticket 9">✓ Resuelto</button></div></section>
 <section class="panel" id="agendaDashboard" aria-label="Resumen de agenda" style="margin-bottom:18px">
 <div class="topline"><h2>📅 Agenda de Mesa de Ayuda</h2><div class="toolbar"><button type="button" class="btn secondary" id="toggleAgendaDashboard" aria-expanded="true" aria-controls="agendaDashboardDetails">Ocultar detalles</button><span class="tag">Gestiones del equipo</span></div></div><div id="agendaDashboardDetails">
 <div class="grid" style="margin:20px 0"><div class="stat"><strong id="dashToday">0</strong><small>Para hoy</small></div><div class="stat"><strong id="dashOverdue" style="color:#b91c1c">0</strong><small>Vencidas</small></div><div class="stat"><strong id="dashUpcoming">0</strong><small>Próximas</small></div></div>
@@ -220,14 +223,14 @@ async function refreshQaTicketNotices(){
   const response=await fetch('/api/tickets/qa-status',{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'});
   const data=await response.json();
   if(!response.ok)throw new Error(data.error||'No se pudieron consultar tickets');
-  for(const number of [6,7]){
+  for(const number of [6,7,9]){
    const banner=$('qaTicket'+number+'Banner');
    const ticket=(data.tickets||[]).find(x=>x.number===number);
    if(banner)banner.style.display=ticket&&ticket.state==='open'?'flex':'none';
   }
  }catch(error){
   console.warn('Estado de tickets pendiente de consulta:',error.message);
-  for(const number of [6,7]){const banner=$('qaTicket'+number+'Banner');if(banner)banner.style.display='none';}
+  for(const number of [6,7,9]){const banner=$('qaTicket'+number+'Banner');if(banner)banner.style.display='none';}
  }
 }
 function canImportClarity(){return !!session&&(role==='ADMIN'||['egonzalez@moretti.com.ar','sditullio@moretti.com.ar'].includes(String(session.user.email||'').trim().toLowerCase()));}
