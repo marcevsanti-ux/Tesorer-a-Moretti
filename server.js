@@ -985,7 +985,7 @@ async function getQaTicketStatuses(req,res){
   if(!FEEDBACK_USERS.has(email))return json(res,403,{error:'Sin acceso a tickets'});
   const perms=await sb('/rest/v1/mesa_usuarios?select=rol,activo&user_id=eq.'+encodeURIComponent(identity.data.id),ANON_KEY,{headers:{Authorization:'Bearer '+jwt}});
   if(!perms.ok||!Array.isArray(perms.data)||!perms.data.some(x=>x.activo))return json(res,403,{error:'Sin acceso'});
-  const numbers=[6,7];
+  const numbers=[6,7,9];
   const issues=await Promise.all(numbers.map(n=>getFeedbackIssue(n)));
   return json(res,200,{tickets:issues.map(x=>({number:x.number,state:x.state}))});
  }catch(e){console.error('QA ticket status error',e.message);return json(res,502,{error:'No se pudo consultar el estado de los tickets'});}
